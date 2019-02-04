@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1549173854870.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "14E17290",
+    "lastKnownWriteTime" : 1549239937,
+    "last_content_update" : 1549239937751,
+    "path" : "~/CUNY_MSDS/DATA607/WorkingDir/work1.R",
+    "project_path" : "work1.R",
+    "properties" : {
+        "cursorPosition" : "35,0",
+        "scrollLine" : "13",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

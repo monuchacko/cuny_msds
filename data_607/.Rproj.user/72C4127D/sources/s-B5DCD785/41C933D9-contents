@@ -1,0 +1,160 @@
+---
+title: "HW1"
+author: "Monu Chacko"
+date: "February 3, 2019"
+output: html_document
+---
+
+##Assignment – Loading Data into a Data Frame
+
+```{r}
+#Load from remote
+mashroom_url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data"
+
+#Load from local
+#mashroom_url <- "data/mushrooms.csv"
+
+#Load dataframe
+df_mashroom <- read.table(file = mashroom_url, header = TRUE, sep = ",")
+
+#Make sure the data is loaded
+head(df_mashroom)
+
+#View summary of the data
+summary(df_mashroom)
+
+#Count the number of rows
+NROW(df_mashroom)
+
+#Check if there is na values
+NROW(na.omit(df_mashroom))
+
+```
+
+
+###As we see there is data in all rows. Lets rename columns to make it easy to read
+
+```{r}
+df_mashroom_new <- cbind(df_mashroom[,1:4], df_mashroom[,6])
+head(df_mashroom_new)
+
+```
+
+```{r}
+#Read the current row names
+names(df_mashroom_new)
+
+colnames(df_mashroom_new) <- c("edible_poisonous","shape","surface","color","odor")
+
+#We can also rename individual columns like this
+#colnames(df_mashroom)[2] <- "newname"
+
+head(df_mashroom_new)
+```
+
+###Example of extracting numerical value from a column
+
+```{r}
+#Excample of extracting numerical value from a column
+df_mashroom_new$IsEdible[df_mashroom_new$edible_poisonous == 'e'] <- 1
+df_mashroom_new$IsEdible[df_mashroom_new$edible_poisonous == 'p'] <- 0
+
+df_mashroom_new$IsPoisonous[df_mashroom_new$edible_poisonous == 'e'] <- 0
+df_mashroom_new$IsPoisonous[df_mashroom_new$edible_poisonous == 'p'] <- 1
+
+head(df_mashroom_new)
+```
+
+
+```{r}
+levels(df_mashroom_new$edible_poisonous)[levels(df_mashroom_new$edible_poisonous)=='e'] <- 'edible'
+levels(df_mashroom_new$edible_poisonous)[levels(df_mashroom_new$edible_poisonous)=='p'] <- 'poisonous'
+
+head(df_mashroom_new)
+```
+
+
+```{r}
+
+levels(df_mashroom_new$shape)[levels(df_mashroom_new$shape)=='b'] <- 'bell'
+levels(df_mashroom_new$shape)[levels(df_mashroom_new$shape)=='c'] <- 'conical'
+levels(df_mashroom_new$shape)[levels(df_mashroom_new$shape)=='x'] <- 'convex'
+levels(df_mashroom_new$shape)[levels(df_mashroom_new$shape)=='f'] <- 'flat'
+levels(df_mashroom_new$shape)[levels(df_mashroom_new$shape)=='k'] <- 'knobbed'
+levels(df_mashroom_new$shape)[levels(df_mashroom_new$shape)=='s'] <- 'sunken'
+
+head(df_mashroom_new)
+```
+
+
+```{r}
+levels(df_mashroom_new$surface)[levels(df_mashroom_new$surface)=='f'] <- 'fibrous'
+levels(df_mashroom_new$surface)[levels(df_mashroom_new$surface)=='g'] <- 'grooves'
+levels(df_mashroom_new$surface)[levels(df_mashroom_new$surface)=='y'] <- 'scaly'
+levels(df_mashroom_new$surface)[levels(df_mashroom_new$surface)=='s'] <- 'smooth'
+
+head(df_mashroom_new)
+```
+
+```{r}
+
+levels(df_mashroom_new$color)[levels(df_mashroom_new$color)=='n'] <- 'brown'
+levels(df_mashroom_new$color)[levels(df_mashroom_new$color)=='b'] <- 'buff'
+levels(df_mashroom_new$color)[levels(df_mashroom_new$color)=='c'] <- 'cinnamon'
+levels(df_mashroom_new$color)[levels(df_mashroom_new$color)=='g'] <- 'gray'
+levels(df_mashroom_new$color)[levels(df_mashroom_new$color)=='r'] <- 'green'
+levels(df_mashroom_new$color)[levels(df_mashroom_new$color)=='p'] <- 'pink'
+levels(df_mashroom_new$color)[levels(df_mashroom_new$color)=='u'] <- 'purple'
+levels(df_mashroom_new$color)[levels(df_mashroom_new$color)=='e'] <- 'red'
+levels(df_mashroom_new$color)[levels(df_mashroom_new$color)=='w'] <- 'white'
+levels(df_mashroom_new$color)[levels(df_mashroom_new$color)=='y'] <- 'yellow'
+
+head(df_mashroom_new)
+```
+
+```{r}
+levels(df_mashroom_new$odor)[levels(df_mashroom_new$odor)=='a'] <- 'almond'
+levels(df_mashroom_new$odor)[levels(df_mashroom_new$odor)=='l'] <- 'anise'
+levels(df_mashroom_new$odor)[levels(df_mashroom_new$odor)=='c'] <- 'creosote'
+levels(df_mashroom_new$odor)[levels(df_mashroom_new$odor)=='y'] <- 'fishy'
+levels(df_mashroom_new$odor)[levels(df_mashroom_new$odor)=='f'] <- 'foul'
+levels(df_mashroom_new$odor)[levels(df_mashroom_new$odor)=='m'] <- 'musty'
+levels(df_mashroom_new$odor)[levels(df_mashroom_new$odor)=='n'] <- 'none'
+levels(df_mashroom_new$odor)[levels(df_mashroom_new$odor)=='p'] <- 'pungent'
+levels(df_mashroom_new$odor)[levels(df_mashroom_new$odor)=='s'] <- 'spicy'
+
+head(df_mashroom_new)
+```
+
+###Check the levels
+
+```{r}
+levels(df_mashroom_new$edible_poisonous)
+levels(df_mashroom_new$shape)
+levels(df_mashroom_new$surface)
+levels(df_mashroom_new$color)
+levels(df_mashroom_new$odor)
+```
+
+
+###After cleaning up lets see the summary
+
+```{r}
+summary(df_mashroom_new)
+```
+
+###Plot each feature
+
+```{r}
+plot(df_mashroom_new$edible_poisonous)
+plot(df_mashroom_new$shape)
+plot(df_mashroom_new$surface)
+plot(df_mashroom_new$color)
+plot(df_mashroom_new$odor)
+
+```
+
+###Final cleaned up dataset
+```{r}
+head(df_mashroom_new)
+```

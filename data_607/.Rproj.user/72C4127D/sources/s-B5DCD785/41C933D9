@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1549240049434.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "41C933D9",
+    "lastKnownWriteTime" : 1549247768,
+    "last_content_update" : 1549247768943,
+    "path" : "~/CUNY_MSDS/DATA607/WorkingDir/HW01.rmd",
+    "project_path" : "HW01.rmd",
+    "properties" : {
+        "cursorPosition" : "77,0",
+        "scrollLine" : "44",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
