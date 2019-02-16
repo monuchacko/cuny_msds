@@ -1,0 +1,147 @@
+---
+title: "Data607HW03"
+author: "Monu Chacko"
+date: "February 14, 2019"
+output: html_document
+---
+
+
+Please deliver links to an R Markdown file (in GitHub and rpubs.com) with solutions to problems 3 and 4 from chapter 8 of Automated Data Collection in R.  Problem 9 is extra credit.  You may work in a small group, but please submit separately with names of all group participants in your submission.
+
+Here is the referenced code for the introductory example in #3:
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r regex}
+library(stringr)
+library(XML)
+```
+
+
+```{r regexloaddata}
+#Load data
+raw.data <-"555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert" 
+raw.data
+```
+
+
+###(a) Use the tools of this chapter to rearrange the vector so that all elements conform to the standard first_name last_name.
+
+###Option 1
+```{r regexnames}
+
+names = unlist(str_extract_all(raw.data, "[[A-z]., ]{2,}"))
+names
+
+#name <- unlist(str_extract_all(raw.data, "[[:alpha:]., ]{2,}"))
+#name
+
+```
+
+###Option 2
+```{r}
+#First Name
+firstName = unlist(str_extract_all(names, "[.,] [[A-z]]{2,}$|[[A-z]]{2,} "))
+firstName = unlist(str_extract_all(firstName, "[[A-z]]{2,}"))
+firstName
+
+#Last Name
+lastName = unlist(str_extract_all(names, "[^[.,]] [[A-z]]{2,}$|[[A-z]]{2,}, "))
+lastName = unlist(str_extract_all(lastName, "[[A-z]]{2,}"))
+lastName
+
+#Combine
+data.frame("Fist Name" = firstName, "Last Name" = lastName)
+```
+
+
+###(b) Construct a logical vector indicating whether a character has a title (i.e., Rev. and Dr.).
+
+```{r regexlogvec}
+
+
+titles = unlist(str_extract_all(names, "[[A-z]]{2,}\\."))
+titles
+
+data.frame("Name" = names, "HasTitle" = str_detect(names, titles))
+
+```
+
+
+###(c) Construct a logical vector indicating whether a character has a second name.
+
+```{r}
+secondName = unlist(str_extract_all(names, " [[A-z]]{1}\\.? [[A-z]]{1,}\\.?"))
+secondName = unlist(str_extract_all(secondName,"[[A-z]]{1}\\.? [[A-z]]{1,}\\.?"))
+secondName
+
+data.frame("Name" = names, "HasSecondName" = str_detect(names, secondName))
+
+```
+
+
+
+###Describe the types of strings that conform to the following regular expressions and construct an example that is matched by the regular expression.
+###(a) [0-9]+\\$
+
+```{r}
+#Should contain numbers from 0 to 9 and $
+data1 = c("100$", "2019$$", "9$$$ ", "-1$", "12$738372", ".367$", "2334$ is the total amount.")
+str_detect(data1, "[0-9]+\\$")
+
+```
+
+###(b) \\b[a-z]{1,4}\\b
+```{r}
+data2 = c("a", "cuny", "and", "a e", "data", "da t", " s ")
+str_detect(data2, "\\b[a-z]{1,4}\\b")
+
+```
+
+###(c) .*?\\.txt$
+
+```{r}
+data3 = c("*.txt", "filename.txt", "all files with extension .txt", "files like .txt", "note.txt", "klmn.txt", "*.txt", "pqr874238743 .txt", ".txt")
+str_detect(data3, ".*?\\.txt$")
+```
+
+###(d) \\d{2}/\\d{2}/\\d{4}
+```{r}
+#Contains atleast on date with format dd/mm/yyyy or mm/dd/yyyy
+data4 = c("15/12/2019", "12/15/1029", "02/02/2016", "20/20/0000", "00/00/0000", "date like 01/13/2050", "from 01/01/2018 to 1/1/1000", "03/03/1999")
+str_detect(data4, "\\d{2}/\\d{2}/\\d{4}")
+```
+
+###(e) <(.+?)>.+?</\\1>
+
+```{r}
+data5 = c("<html><title>CUNY Data Science</div><body>Data Sets</body></html>", "<div>NumPy</div>", "<div><div>NumPy<div></div>", "<img>NumPy</img>")
+str_detect(data5, "<(.+?)>.+?</\\1>")
+```
+
+
+###Secret Message
+```{r}
+secretCode = "clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hqrfpRxs5Aj5dwpn0TanwoUwisdij7Lj8kpf03AT5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigOd6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPa1otfb7wEm24k6t3sR9zqe5fy89n6Nd5t9kc4fE905gmc4Rgxo5nhDk!gr"
+secretCode
+```
+
+```{r}
+#Looks like if we remove lower case then we get a hidden text
+upperletters = unlist(str_extract_all(secretCode, "[[:upper:].! ]"))
+upperletters
+
+```
+
+```{r}
+upperletters1 = paste(upperletters, collapse="")
+upperletters1
+```
+
+```{r}
+upperlettersfinal = str_replace_all(upperletters1, "[\\.]", " ")
+upperlettersfinal
+```

@@ -1,0 +1,150 @@
+---
+title: "Homework 606"
+author: "Monu Chacko"
+date: "February 10, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+###1.8
+Example 1.8 Suppose we ask a student who happens to be majoring in nutrition
+to select several graduates for the study. What kind of students do you think she
+might collect? Do you think her sample would be representative of all graduates?
+Perhaps she would pick a disproportionate number of graduates from health-related
+fields. Or perhaps her selection would be well-representative of the population. When
+selecting samples by hand, we run the risk of picking a biased sample, even if that
+bias is unintentional or difficult to discern.
+
+###Answer:
+The sample would be biased. The student will pick sample from people he/she knows. Most of the people that the person knows would be from medical background and have prior knowlege of medicine and health conditions. Samples should be random and without biases. Picking an sample from a raffle draw or computers picking a random set would avoid this bias.
+
+
+###1.10
+Guided Practice 1.10 Suppose an observational study tracked sunscreen use and
+skin cancer, and it was found that the more sunscreen someone used, the more likely
+the person was to have skin cancer. Does this mean sunscreen causes skin cancer?
+
+###Answer:
+No, this doesn't mean sun screen causes skin cancer. In this case it is likely to have a confounding variable like sun exposure. This variable has correlation to both explainatory and the response variable.It is important to analyse the features both direct and indirect to avoid such errors.
+
+###1.28
+Guided Practice 1.28 On page 30, the concept of shape of a distribution was
+introduced. A good description of the shape of a distribution should include modality
+and whether the distribution is symmetric or skewed to one side. Using Figure 1.25
+as an example, explain why such a description is important.
+
+###Answer:
+Distribution show if the data is symetric or not. In a normal distribution the mean and the median is the same and the have similar tails on the positive and negative sides. If a data is righ skewed (or positive skew) then the median is on the left of the mean. If the data is left skewed then the median is on the right of the mean. If the dataset is right and left skewed then most of its data is away from its center. These two types of distributions are not symetric.  
+
+###1.36
+Example 1.36 The histogram of MLB player salaries is useful in that we can see
+the data are extremely skewed and centered (as gauged by the median) at about $1
+million. What isn’t useful about this plot?
+
+###Answer:
+Data in this case is concentrated in one bin and is difficult to make sense. Rescaling is done in this case. For example log(salary) would make more sense. These transformations would expand the data and make it easy to analyse.
+
+###1.48
+Guided Practice 1.48 Is this an observational study or an experiment? What
+implications does the study type have on what can be inferred from the results?
+
+###Answer:
+This is an experiment because the reseacher had to change the number of times the experiment was conducted. After finding that the initial conclusion could be a unique occurance, the researcher continued repeating the experiment. He thought that the causal connection was not the bias. After conducting more experiemnts the researcher could not find bias.
+
+###1.50
+Guided Practice 1.50 What is the di↵erence in promotion rates between the two
+simulated groups in Table 1.46? How does this compare to the observed 29.2% in the
+actual groups?
+
+###Answer:
+
+```{r}
+#Actual group
+actagrp <- (21/24) - (14/24)
+#Simulated group
+silugrp <- (18/24) - (17/24)
+
+actagrp
+silugrp
+
+#Difference
+digggrp <- actagrp - silugrp
+digggrp
+```
+
+####The difference due to chance is smaller than the actual group
+
+
+
+
+#1.70
+1.70 Heart transplants. The Stanford University Heart Transplant Study was conducted to
+determine whether an experimental heart transplant program increased lifespan. Each patient
+entering the program was designated an official heart transplant candidate, meaning that he was
+gravely ill and would most likely benefit from a new heart. Some patients got a transplant and
+some did not. The variable transplant indicates which group the patients were in; patients in the
+treatment group got a transplant and those in the control group did not. Another variable called
+survived was used to indicate whether or not the patient was alive at the end of the study.
+
+a. Based on the mosaic plot, is survival independent of whether or not the patient got a transplant?
+Explain your reasoning.
+
+###Answer:
+The survival appears to be dependant on whether or not a patient got a transplant. The box plot shows that a person who did not get transplant had a lesser survival rate than the ones that did get.
+
+b. What do the box plots below suggest about the efficacy (effectiveness) of the heart transplant
+treatment.
+
+###Answer:
+The box plot shows that the transplant helped the treatment group but the rate of survival was less. This could be attributed to the effectiveness of the transplant. But if a person got transplant their survival rate was better than the ones that did not get.
+
+c. What proportion of patients in the treatment group and what proportion of patients in the
+control group died?
+
+###Answer:
+
+****Data not provided in the text
+
+Control group calculation:
+Persons died in the control group /Total person in the control group
+
+
+Treatment group calculation:
+Persons died in the treatment group /Total person in the treatment group
+
+
+One approach for investigating whether or not the treatment is e↵ective is to use a randomization
+technique.
+
+i. What are the claims being tested?
+
+###Answer:
+Weather or not the transplant increased survival
+
+ii. The paragraph below describes the set up for such approach, if we were to do it without
+using statistical software. Fill in the blanks with a number or phrase, whichever is
+appropriate.
+
+###Answer:
+
+We write alive on 28 cards representing patients who were alive at
+the end of the study, and dead on 75 cards representing patients
+who were not. Then, we shuffle these cards and split them into two groups:
+one group of size 69 representing treatment, and another group of
+size 34 representing control. We calculate the di↵erence between
+the proportion of dead cards in the treatment and control groups (treatment -
+control) and record this value. We repeat this 100 times to build a distribution
+centered at 0. Lastly, we calculate the fraction of simulations where
+the simulated differences in proportions are at least extreme or greater. If this fraction is low,
+we conclude that it is unlikely to have observed such an outcome by chance and
+that the null hypothesis should be rejected in favor of the alternative.
+
+iii. What do the simulation results shown below suggest about the effectiveness of the transplant
+program?
+
+###Answer:
+The probability of getting a difference in proportion of .23 by random chance is slim. The null hypothesis is rejected and other alternatives would be looked at.
