@@ -1,0 +1,154 @@
+---
+title: "Project 1"
+author: "Monu Chacko"
+date: "February 24, 2019"
+output: html_document
+---
+
+###In this project, you’re given a text file with chess tournament results where the information has some structure.  Your job is to create an R Markdown file that generates a .CSV file (that could for example be imported into a SQL database) with the following information for all of the players:
+
+###Player’s Name, Player’s State, Total Number of Points, Player’s Pre-Rating, and Average Pre Chess Rating of Opponents
+
+###For the first player, the information would be:
+
+###Gary Hua, ON, 6.0, 1794, 1605
+
+###1605 was calculated by using the pre-tournament opponents’ ratings of 1436, 1563, 1600, 1610, 1649, 1663, 1716, and dividing by the total number of games played. 
+
+##Answer:
+
+###Lets load the content of the file and see the data
+
+```{r message=FALSE, warning=FALSE}
+
+library(stringr)
+
+dschess <- readLines("./tournamentinfo.txt")
+head(dschess)
+tail(dschess)
+```
+
+###This data has to be cleaned up. We have to remove dashes. We can start by removing the header in the first 4 lines.  
+
+```{r message=FALSE, warning=FALSE}
+ds_cp_chess <- dschess[-c(0:4)]
+head(ds_cp_chess, 20)
+```
+
+### Trim characters
+
+```{r}
+ds_cp_chess <- ds_cp_chess[sapply(ds_cp_chess, nchar) > 0]
+```
+
+###Extract line that contains rows with names into a variable. We can use seq() method to do this. This method returns row numbers from 1 to total length (192 rows) and skips by 3. Following are the rows that we will get.
+
+```{r}
+data_1 <- c(seq(1, length(ds_cp_chess), 3))
+data_1
+```
+
+###Apply it to the dataset
+
+```{r}
+data_r1 <- ds_cp_chess[data_1]
+head(data_r1)
+```
+
+
+###Extract name using regex
+
+```{r}
+name <- str_extract(data_r1, "[[:alpha:]]{2,}([[:blank:]][[:alpha:]]{1,}){1,}")
+head(name)
+```
+
+###Extract the rows in the second row. Use the same technique as above.
+
+```{r}
+data_2 <- c(seq(2, length(ds_cp_chess), 3))
+data_2
+```
+
+###Apply it to the dataset
+
+```{r}
+data_r2 <- ds_cp_chess[data_2]
+head(data_r2)
+```
+
+
+###Extract state using regex
+
+```{r}
+state <- str_extract(data_r2, "[[:alpha:]]{2}")
+state
+```
+
+###Extract points using regex
+
+```{r}
+pts <- str_extract(data_r1, "[[:digit:]]+\\.[[:digit:]]")
+pts <- as.numeric(as.character(pts))
+pts
+```
+
+###Extract pre rating using regex
+
+```{r}
+prertg <- str_extract(data_r2, ".\\: \\s?[[:digit:]]{3,4}")
+prertg
+```
+
+###Extract digits using regex and convert it to numeric
+
+```{r}
+prertg <- as.numeric(str_extract(prertg, "\\(?[0-9,.]+\\)?"))
+prertg
+
+```
+
+###Extract opponent number using regex. This data can be used to find opponents prerating average 
+
+```{r message=FALSE, warning=FALSE}
+oppnum <- str_extract_all(data_r1, "[[:digit:]]{1,2}\\|")
+oppnum <- str_extract_all(oppnum, "[[:digit:]]{1,2}")
+oppnum <- lapply(oppnum, as.numeric)
+head(oppnum)
+```
+
+###Calculate prerating average for the opponent
+
+```{r}
+opppreratingavg <- list()
+
+for (i in 1:length(oppnum)){
+  opppreratingavg[i] <- round(mean(prertg[unlist(oppnum[i])]),2)
+}
+opppreratingavg <- lapply(opppreratingavg, as.numeric)
+opppreratingavg <- data.frame(unlist(opppreratingavg))
+
+df_final <- cbind.data.frame(name, state, pts, prertg, opppreratingavg)
+colnames(df_final) <- c("Name", "State", "Points", "Pre_Rating", "Opp_Pre_Rating")
+df_final
+```
+
+###Write the output to a file
+
+```{r}
+write.csv(df_final, "./ChessResults.csv")
+```
+
+###View stats
+
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+
+ggplot(df_final, aes(x=Pre_Rating)) + geom_histogram(binwidth = 50)
+
+ggplot(df_final, aes(x=Opp_Pre_Rating)) + geom_histogram(binwidth = 50)
+
+ggplot(data = df_final, aes(x = Pre_Rating, y = Opp_Pre_Rating)) + 
+  geom_point(color='blue') +
+  geom_smooth(method = "lm", se = FALSE)
+```

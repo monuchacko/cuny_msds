@@ -1,0 +1,385 @@
+---
+title: "Data606Week03"
+author: "Monu Chacko"
+date: "February 16, 2019"
+output: html_document
+---
+
+###2.6 Dice rolls. If you roll a pair of fair dice, what is the probability of
+
+
+(a) getting a sum of 1?
+
+###Answer
+The probability of getting a sum of 1 is 0
+
+
+(b) getting a sum of 5?
+
+###Answer
+
+Total Possibilities of getting 5 is 4
+
+Data:
+<br/>
+1 + 4
+<br/>
+2 + 3
+<br/>
+3 + 2
+<br/>
+4 + 1
+
+Total Possibilities is 6 x 6 = 36
+
+So the probability of getting 5 is
+
+```{r}
+4/36
+#or
+1/9
+```
+
+<br/>
+
+(c) getting a sum of 12?
+
+###Answer
+
+Total Possibilities of getting 12 is 1
+
+Data:
+6 + 6
+
+Total Possibilities is 6 x 6 = 36
+
+So the probability of getting 12 is
+
+```{r}
+1/36
+```
+
+
+###2.8 Poverty and language. The American Community Survey is an ongoing survey that provides data every year to give communities the current information they need to plan investments
+###and services. The 2010 American Community Survey estimates that 14.6% of Americans live below the poverty line, 20.7% speak a language other than English (foreign language) at home, and 4.2% fall into both categories.
+
+
+<br/>
+(a) Are living below the poverty line and speaking a foreign language at home disjoint?
+
+###Answer
+No they are not disjoint. You can be under poverty line and speak foreign language
+<br/>
+
+(b) Draw a Venn diagram summarizing the variables and their associated probabilities.
+
+```{r message=FALSE, warning=FALSE}
+library(VennDiagram)
+
+belowPovertyLine <- 14.6
+speakForeignLanguage <- 20.7
+bothCategories <- 4.2
+
+venn.plot <- draw.pairwise.venn(belowPovertyLine,  speakForeignLanguage, cross.area=bothCategories,  c("Below Poverty", "Speak Only Foreign Language"),  fill=c("green", "yellow"), cat.dist=-0.08, ind=FALSE)
+grid.draw(venn.plot)
+```
+
+###Answer
+
+(c) What percent of Americans live below the poverty line and only speak English at home?
+
+###Answer
+```{r}
+povertyOnly <- belowPovertyLine - bothCategories
+povertyOnly
+```
+
+(d) What percent of Americans live below the poverty line or speak a foreign language at home?
+
+###Answer
+
+```{r}
+speakForeignLanguage + belowPovertyLine - bothCategories
+```
+
+(e) What percent of Americans live above the poverty line and only speak English at home?
+
+###Answer
+
+```{r}
+povertyOnly <- belowPovertyLine - bothCategories
+100 - speakForeignLanguage - povertyOnly  
+```
+
+
+(f) Is the event that someone lives below the poverty line independent of the event that the person
+speaks a foreign language at home?
+
+###Answer
+```{r}
+(belowPovertyLine/100) * (speakForeignLanguage / 100)
+```
+
+
+###2.20 Assortative mating. Assortative mating is a nonrandom mating pattern where individuals with similar genotypes and/or phenotypes mate with one another more frequently than what would be expected under a random mating pattern. Researchers studying this topic collected data on eye colors of 204 Scandinavian men and their female partners. The table below summarizes the results. For simplicity, we only include heterosexual relationships in this exercise.
+
+Partner (female)
+Blue Brown Green Total
+Blue 78 23 13 114
+Self (male)
+Brown 19 23 12 54
+Green 11 9 16 36
+Total 108 55 41 204
+
+<br/>
+(a) What is the probability that a randomly chosen male respondent or his partner has blue eyes?
+
+###Answer
+
+P(A or B) = P(A)+P(B)-P(A and B)
+
+```{r}
+((114+108)/204) - (78/204)
+```
+
+(b) What is the probability that a randomly chosen male respondent with blue eyes has a partner
+with blue eyes?
+
+<br/>
+
+###Answer
+
+P(A|B) = p(A and B)/P(B)
+
+```{r}
+78/114
+```
+
+
+
+(c) What is the probability that a randomly chosen male respondent with brown eyes has a partner
+with blue eyes? What about the probability of a randomly chosen male respondent with green
+eyes having a partner with blue eyes?
+
+<br/>
+
+###Answer
+
+```{r}
+#probability that a randomly chosen male respondent with brown eyes has a partner with blue eyes
+19/54
+
+#probability of a randomly chosen male respondent with green eyes having a partner with blue eyes
+11/36
+```
+
+
+(d) Does it appear that the eye colors of male respondents and their partners are independent?
+Explain your reasoning.
+
+
+###Answer
+
+Eye colors of male respondents and their partners does not appear independent. Data for the same color seem to be larger in all categories. 
+
+
+###2.30 Books on a bookshelf. The table below shows the distribution of books on a bookcase based on whether they are nonfiction or fiction and hardcover or paperback. 
+
+Format
+Hardcover Paperback Total
+Type
+Fiction 13 59 72
+Nonfiction 15 8 23
+Total 28 67 95
+
+
+(a) Find the probability of drawing a hardcover book first then a paperback fiction book second
+when drawing without replacement.
+
+
+<br/>
+
+###Answer
+
+
+```{r}
+(28/95) * (59/94)
+```
+
+(b) Determine the probability of drawing a fiction book first and then a hardcover book second,
+when drawing without replacement.
+
+
+<br/>
+
+###Answer
+
+
+```{r}
+(72/95) * (28/94)
+```
+
+(c) Calculate the probability of the scenario in part (b), except this time complete the calculations
+under the scenario where the first book is placed back on the bookcase before randomly drawing
+the second book.
+
+
+<br/>
+
+###Answer
+
+
+```{r}
+((72/95)*(28/95))
+```
+
+(d) The final answers to parts (b) and (c) are very similar. Explain why this is the case.
+
+<br/>
+
+###Answer
+
+This is because of the total data is large i.e 95. Taking one book is less significant. Take the example below with a smaller size. The difference is larger.
+
+```{r}
+((2/5)*(3/4))
+((2/5)*(3/5))
+```
+
+
+###2.38 Baggage fees. An airline charges the following baggage fees: $25 for the first bag and $35 for the second. Suppose 54% of passengers have no checked luggage, 34% have one piece of checked luggage and 12% have two pieces. We suppose a negligible portion of people check more than two bags.
+
+
+(a) Build a probability model, compute the average revenue per passenger, and compute the
+corresponding standard deviation.
+
+
+<br/>
+
+###Answer
+
+
+```{r}
+#Probability of checked luggage - 0 bags 54%, 1 bag - 34%, 2 bags - 12%
+probabilityCheckedLuggage <- c(0.54, 0.34, 0.12)
+
+#Number of bags
+bagQuantity <- c(0, 1, 2)
+
+#Baggage Fee
+baggageFee <- c(0, 25, 25 + 35)
+
+
+dfCheckinBags <- data.frame(probabilityCheckedLuggage, bagQuantity, baggageFee)
+dfCheckinBags$probabilityFee <- dfCheckinBags$probabilityCheckedLuggage * dfCheckinBags$baggageFee
+dfCheckinBags
+
+#Revenue per passenger
+revenuPassenger <- sum(dfCheckinBags$probabilityFee)
+revenuPassenger
+
+#Variance
+dfCheckinBags$MeanDf <- dfCheckinBags$probabilityFee - revenuPassenger
+dfCheckinBags$Sqr <- dfCheckinBags$MeanDf ^ 2
+dfCheckinBags$sp  <- dfCheckinBags$Sqr * dfCheckinBags$probabilityCheckedLuggage
+dfCheckinBags
+
+#SD
+var <- sum(dfCheckinBags$sp)
+stdDev <- sqrt(var)
+stdDev
+```
+
+(b) About how much revenue should the airline expect for a flight of 120 passengers? With what standard deviation? Note any assumptions you make and if you think they are justified.
+
+###Answer
+
+```{r}
+#120 passengers
+noOfPassengers <- 120
+avgerageInc <- revenuPassenger * noOfPassengers
+avgerageInc
+
+#SD
+var120 <- (noOfPassengers ^ 2) * var
+sd120 <- sqrt(var120)
+sd120
+```
+
+
+###2.44 Income and gender. The relative frequency table below displays the distribution of annual total personal income (in 2009 inflation-adjusted dollars) for a representative sample of 96,420,486 Americans. These data come from the American Community Survey for 2005-2009. This sample is comprised of 59% males and 41% females.
+
+
+<br/>
+
+###Answer
+
+
+(a) Describe the distribution of total personal income.
+
+
+<br/>
+
+###Answer
+
+```{r}
+income <- c("$1 - $9,999 or loss","$10,000 to $14,999", "$15,000 to $24,999", "$25,000 to $34,999", "$35,000 to $49,999", "$50,000 to $64,000", "$65,000 to $74,999", "$75,000 to $99,999", "$100,000 or more")
+total <- c(2.2,4.7,15.8,18.3,21.2,13.9,5.8,8.4,9.7)
+#incomelowerrange <- c(1,10000, 15000, 25000, 35000, 50000, 65000, 75000, 100000)
+#incomeupperrange <- c(9999,14999, 24999, 34999, 49999, 64000, 74999, 99999, 199999)
+#incomeuppermiddle <- (incomelowerrange + incomeupperrange) /2
+#incometotal <- incomeuppermiddle * total
+
+df_incomegender <- data.frame(income, total)
+
+df_incomegender
+hist(df_incomegender$total)
+
+barplot(df_incomegender$total, names.arg=income)
+
+```
+
+
+(b) What is the probability that a randomly chosen US resident makes less than $50,000 per year?
+
+
+<br/>
+
+###Answer
+
+
+```{r}
+#First 5 rows / total
+probab50000 <- sum(df_incomegender[1:5,]$total) / sum(df_incomegender$total)
+probab50000
+```
+
+(c) What is the probability that a randomly chosen US resident makes less than $50,000 per year and is female? Note any assumptions you make.
+
+
+<br/>
+
+###Answer
+
+
+```{r}
+probab50000female <- 0.41 * probab50000
+probab50000female
+```
+
+(d) The same data source indicates that 71.8% of females make less than $50,000 per year. Use this value to determine whether or not the assumption you made in
+part (c) is valid.
+
+
+<br/>
+
+###Answer
+
+
+```{r}
+female50000 <- 0.718 * .41
+female50000
+
+```
+
+There is a small variation from (c). The assumption is not valid.
