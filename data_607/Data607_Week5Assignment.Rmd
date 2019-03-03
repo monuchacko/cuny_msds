@@ -1,0 +1,149 @@
+---
+title: "Week 5 Assignment"
+author: "Monu Chacko"
+date: "March 2, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Assignment– Tidying and Transforming Data
+
+IS 607 Assignment –Tidying and Transforming DataPage 1Assignment–TidyingandTransformingDataSource:  Numbersense, Kaiser Fung, McGraw Hill, 2013
+
+###The chart above describes arrival delays for two airlines across five destinations. Your task is to:
+
+###(1) Create a .CSV file (or optionally, a MySQL database!) that includes all of the information above. You’re encouraged to use a “wide” structure similar to how the information appears above, so that you can practice tidying and transformations as described below.
+###(2) Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and transform your data.  
+###(3) Perform analysis to compare the arrival delays for the two airlines.
+###(4) Your code should be in an R Markdown file, posted to rpubs.com, and should include narrative descriptions of your data cleanup work, analysis,and conclusions.Please include in your homework submission:TheURLto the .Rmd file in your GitHub repository.and T heURL for your rpubs.com web page.
+
+```{r message=FALSE, warning=FALSE}
+library("readxl")
+library("tidyr")
+library("dplyr")
+library("Hmisc")
+library("ggplot2")
+
+#Read from excel file
+dfAirlinesDataXl <- read_excel("airlines_data_5.xlsx", na="")
+dfAirlinesDataXl
+
+#Find the datatype of dfAirlinesData before we do cleanup
+typeof(dfAirlinesDataXl)
+
+#Convert to data frame
+dfAirlinesData <- data.frame(dfAirlinesDataXl)
+
+```
+
+```{r message=FALSE, warning=FALSE}
+#View the data to see what has to be cleaned up
+dfAirlinesData
+
+#Rename columns to readable names
+dfAirlinesData <- dfAirlinesData %>%
+  filter(!is.na(n)) %>%
+  rename(airline = X__1, status = X__2, los_angeles = Los.Angeles, phoenix = Phoenix, san_diego = San.Diego, san_franciso = San.Franciso, seattle = Seattle)
+dfAirlinesData
+
+#Remove NA and smooth data further
+dfAirlinesData <- dfAirlinesData[-c(3),] 
+
+#Add missing values
+dfAirlinesData[2, "airline"] <- "ALASKA"
+dfAirlinesData[4, "airline"] <- "AM WEST"
+
+#Reset index
+rownames(dfAirlinesData) <- NULL
+
+#Add factor
+dfAirlinesData$airline <- factor(dfAirlinesData$airline)
+
+dfAirlinesData
+
+#View column names
+names(dfAirlinesData)
+
+#View datatypes
+sapply(dfAirlinesData, typeof)
+
+#Lets see the stats of the data structure before saving it to csv
+describe(dfAirlinesData)
+
+```
+
+###Save data to csv before analysis
+
+```{r message=FALSE, warning=FALSE}
+write.csv(dfAirlinesData, "./dfAirlinesData.csv", row.names=FALSE)
+dfAirlinesCSVStore <- read.csv("./dfAirlinesData.csv",header=TRUE,stringsAsFactors = FALSE)
+
+#Store data in temp variable for reuse
+dfAirlinesCSV <- dfAirlinesCSVStore
+```
+
+###Analyse the data
+
+```{r message=FALSE, warning=FALSE}
+#List columns we are going to gather
+names(dfAirlinesCSV)[3:7]
+
+#Apply and view output
+dfAirlinesAn1 <- gather(dfAirlinesCSV, "city", "num", names(dfAirlinesCSV)[3:7], factor_key=TRUE)
+dfAirlinesAn1
+
+dfAirlinesAn1 <-  dfAirlinesAn1 %>%
+                 spread(status, `num`)
+dfAirlinesAn1
+
+dfAirlinesAn1 <- dfAirlinesAn1 %>% 
+  mutate(total = delayed + `on time`, percent_delayed = delayed/ total, percent_ontime = `on time`/ total) 
+dfAirlinesAn1
+
+ggplot(data=dfAirlinesAn1, aes(x=airline, y=percent_ontime)) +
+  geom_bar(stat="identity", width=0.5, fill="#52823f") +
+  xlab("Airlines") + ylab("On Time") +
+  ggtitle("On Time")
+
+ggplot(data=dfAirlinesAn1, aes(x=airline, y=percent_delayed)) +
+  geom_bar(stat="identity", width=0.5, fill="#82423f") +
+  xlab("Airlines") + ylab("Delays") +
+  ggtitle("Delays")
+```
+
+###Observation 1: ALASKA has lesser delayed and more on time flights than AM WEST
+
+```{r message=FALSE, warning=FALSE}
+
+ggplot(data=dfAirlinesAn1, aes(x = airline, y=percent_ontime, fill = city)) +  
+          geom_bar(stat="identity",position="dodge") + 
+          xlab("Airlines") + ylab("On Time") + ggtitle("On Time per Airport")
+
+
+ggplot(data=dfAirlinesAn1, aes(x = airline, y=percent_delayed, fill = city)) +  
+          geom_bar(stat="identity",position="dodge") + 
+          xlab("Airlines") + ylab("Delays") + ggtitle("On Time per Airport")
+
+```
+
+###Observation 2: There are more delays in major airports. Could AM WEST be the victim because it operates more flights there than ALASKA? Lets find out.
+
+```{r message=FALSE, warning=FALSE}
+
+#Apply and view output
+dfAirlinesAn2 <- gather(dfAirlinesCSV, "city", "num", names(dfAirlinesCSV)[3:7], factor_key=TRUE)
+dfAirlinesAn2
+
+ggplot(data=dfAirlinesAn2, aes(x = airline, y=num, fill = city)) +  
+          geom_bar(stat="identity",position="dodge") + 
+          xlab("Airlines") + ylab("Number of Flights") + ggtitle("Number of Flights per Airport")
+
+
+```
+
+###Observation 3: AM WEST operates lesser flight in larger airport than ALASKA but has more delays. So our hypothesis is in correct.
+
+###Final conclusion: ALASKA seem to have better flight record than AM WEST. There are many factors that could contribute to this. We would need additional datasets to come to a conclusion. Possible reasons could be that ALASKA has an established hub, they could have better reservation system, better flight maintenance etc. These are simply hypothesis at this point and we have to corroborate it with data.  
