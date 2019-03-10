@@ -1,0 +1,294 @@
+---
+title: "Data 607 Project 2"
+author: "Monu Chacko"
+date: "March 9, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###The goal of this assignment is to give you practice in preparing different datasets for downstream analysis work.
+
+####Your task is to:
+
+####(1) Choose any three of the “wide” datasets identified in the Week 5 Discussion items.  (You may use your own dataset; please don’t use my Sample Post dataset, since that was used in your Week 6 assignment!)  For each of the three chosen datasets:
+
+####- Create a .CSV file (or optionally, a MySQL database!) that includes all of the information included in the dataset.  You’re encouraged to use a “wide” structure similar to how the information appears in the discussion item, so that you can practice tidying and transformations as described below.
+
+####- Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and transform your data.  [Most of your grade will be based on this step!]
+
+####- Perform the analysis requested in the discussion item.
+
+####- Your code should be in an R Markdown file, posted to rpubs.com, and should include narrative descriptions of your data cleanup work, analysis,and conclusions.
+
+####(2) Please include in your homework submission, for each of the three chosen datasets:
+
+####- The URLto the .Rmdfile in your GitHub repository,and
+
+####- The URL for your rpubs.com web page.
+
+<hr/>
+###Solution
+<hr/>
+###DATASET 1: HEART
+####Source: https://www.kaggle.com/ronitf/heart-disease-uci
+
+Attribute Information:
+1. age
+2. sex
+3. chest pain type (4 values)
+4. resting blood pressure
+5. serum cholestoral in mg/dl
+6. fasting blood sugar > 120 mg/dl
+7. resting electrocardiographic results (values 0,1,2)
+8. maximum heart rate achieved
+9. exercise induced angina
+10. oldpeak = ST depression induced by exercise relative to rest
+11. the slope of the peak exercise ST segment
+12. number of major vessels (0-3) colored by flourosopy
+13. thal: 3 = normal; 6 = fixed defect; 7 = reversable defect
+
+
+```{r message=FALSE, warning=FALSE}
+#Load all required packages
+library(DT)
+library(tidyr)
+library(dplyr)    
+library(ggplot2)    
+
+#Read data from csv
+heart_ds <- read.csv(file="Heart.csv", header=TRUE, sep=",")
+
+#View sample data
+head(heart_ds)
+
+#Examine the current columns
+colnames(heart_ds)
+
+#Rename columns
+colnames(heart_ds) <- c("age","sex","chest_pain","bp","chol","sugar","cardio","hrt_rt","exer",  "oldpeak","slope","ca","thal","target")
+
+str(heart_ds)
+
+#Summary
+summary(heart_ds)
+
+#View data
+datatable(heart_ds)
+
+#Remove unwanted data
+new_cols <- c("age","sex","chest_pain","bp","chol","sugar","cardio","hrt_rt")
+heart_ds_new <- heart_ds[new_cols]
+
+#View new data
+datatable(heart_ds_new)
+
+#How many rows and columns
+dim(heart_ds_new)
+
+#Create two new category for sex.
+heart_ds_new <- heart_ds_new %>% mutate(M=if_else(sex==1, 1, 0))
+heart_ds_new <- heart_ds_new %>% mutate(F=if_else(sex==0, 1, 0))
+
+#Put bp in categories
+heart_ds_new <- heart_ds_new %>% mutate(bp_cat=if_else(bp>=120, "high", 
+                                                         if_else(bp<120, "Normal", "")))
+
+#Create a feature for chest pain
+heart_ds_new <- heart_ds_new %>% mutate(has_chest_pain=if_else(chest_pain>2, 1, 0))
+
+
+heart_ds_new <- gather(data=heart_ds_new, key=sex_col, value=sex_count, M, F)
+datatable(heart_ds_new)
+
+```
+
+
+####Analysis
+
+```{r message=FALSE, warning=FALSE}
+
+#Examine data for the entire population,
+qplot(data=heart_ds_new, x=chol, y=hrt_rt, size=I(3), color=bp_cat, alpha=I(0.6), main="Cholesterol vs Heart Rate (All)")
+
+
+```
+
+####Cholesterol vs heart Rate doesn't seems to have any significant relation. We could drop this from analysis and explore more.
+
+####For population above 60
+
+```{r message=FALSE, warning=FALSE}
+
+#Lets look at population above 60
+heart_ds_new_above60 <- filter(heart_ds_new, age > 60)
+
+#60 and male
+heart_ds_new_above60_m <- filter(heart_ds_new_above60, age > 60 & sex==1)
+
+#60 and female
+heart_ds_new_above60_f <- filter(heart_ds_new_above60, age > 60 & sex==1)
+
+#Convert bp to percent
+heart_ds_new_above60 <- mutate(heart_ds_new_above60, bp_pr = (bp/100))
+
+#View above 60 data
+datatable(heart_ds_new_above60)
+
+#Examine data for the entire population,
+qplot(data=heart_ds_new_above60, x=chol, y=hrt_rt, size=I(3), color=bp_cat, alpha=I(0.6), main="Cholesterol vs Heart Rate (Above 60)")
+
+
+```
+
+
+####For population below 60
+
+```{r message=FALSE, warning=FALSE}
+
+#Lets look at population below 60
+heart_ds_new_below60 <- filter(heart_ds_new, age <= 60)
+
+#Less than 60 and male
+heart_ds_new_below60_m <- filter(heart_ds_new_below60, age <= 60 & sex==1)
+
+#Less than 60 and female
+heart_ds_new_above60_f <- filter(heart_ds_new_below60, age <= 60 & sex==1)
+
+#Convert bp to percent
+heart_ds_new_below60 <- mutate(heart_ds_new_below60, bp_pr = (bp/100))
+
+#View above 60 data
+datatable(heart_ds_new_below60)
+
+#Examine data for the entire population,
+qplot(data=heart_ds_new_below60, x=chol, y=hrt_rt, size=I(3), color=bp_cat, alpha=I(0.6), main="Cholesterol vs Heart Rate (Below 60)")
+```
+
+####Examine age and cholesterol
+
+```{r message=FALSE, warning=FALSE}
+#Age and cholesterol
+qplot(data=heart_ds_new, x=chol, y=age, size=I(3), color=bp_cat, alpha=I(0.6), main="Age vs Cholesterol (All)")
+```
+
+
+###Conclusion
+
+####From the above analysis we see that there is no clear relationship between heart rate and cholesterol. We broke the dataset into above 60 and below 60 and did not find any clear evidence there either. However this gave rise to a hypothesis about the relationship between age and cholesterol. After further investigation there seems to be a coorelation between then. We can conclude with a higher degree of certainity that there cholesterol levels increases as the age increases.
+
+
+```{r}
+#Look at the mean bp
+summarise(heart_ds_new, mean(bp, na.rm=TRUE))
+
+#What about sex and bp
+summarise(group_by(heart_ds_new, sex), mean(bp, na.rm=TRUE))
+
+#View random sample
+datatable(sample_n(heart_ds_new, size=20))
+
+#View 10% of the data
+datatable(sample_frac(heart_ds_new, size=.1))
+
+#How many male and female. Looks like we have uneven distribution.
+count(heart_ds_new, sex)
+
+#sort
+datatable(arrange(heart_ds_new, desc(age), sex))
+
+#pipe operator for multiple func
+heart_ds_new %>%
+  filter(sex==1) %>%
+  group_by(age) %>%
+  summary(mean(age, na.rm=TRUE))
+
+```
+
+<hr/>
+###DATASET 2: POPULATION vs MARRIAGE
+####Source: https://rawgit.com/nschettini/CUNY-MSDS-DATA-607/master/national_marriage_divorce_rates_00-16.csv
+
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+
+#Read data from csv
+md_ds <- read.csv(file="national_marriage_divorce_rates_00-16.csv", header=FALSE, sep=",")
+
+#View initial data
+as.tibble(md_ds)
+
+#md_ds_tb <- as.tibble(md_ds)
+colnames(md_ds)
+colnames(md_ds) <- c("years","marriage","population","population_rate","X.3","X.4","X.5","X.6","X.7","X.8")
+
+#md_ds
+md_ds <- md_ds[-c(33:61),]
+md_ds <- md_ds[-c(21:32),]
+md_ds <- md_ds[-c(1:3),]
+
+#Remove unwanted data
+md_ds_cols <- c("years","marriage","population","population_rate")
+md_ds_new <- md_ds[md_ds_cols]
+
+md_ds_new$years <- gsub("/\\d", "", md_ds_new$years)
+
+#Reset the index
+rownames(md_ds_new) <- 1:nrow(md_ds_new)
+
+
+md_ds_new
+
+#qplot(data=md_ds_new, x=population_rate, main="Population Rate")
+#qplot(data=md_ds_new, x=marriage, y=population, size=I(3), color=I("Blue"), main="Marriage vs Population")
+#qplot(data=md_ds_new, x=population_rate, y=population, size=I(3), color=I("Blue"), main="Marriage vs Population")
+#qplot(data=md_ds_new, x=population_rate, y=marriage, size=I(3), color=I("Blue"), main="Marriage vs Population")
+
+qplot(data=md_ds_new, x=years, y=population_rate, size=I(3), color=I("Red"), main="Population Rate vs Years")
+qplot(data=md_ds_new, x=years, y=marriage, size=I(3), color=I("Blue"), main="Marriage vs Years")
+qplot(data=md_ds_new, x=years, y=population, size=I(3), color=I("#CC0000"), main="Population vs Years")
+```
+
+####Conclusion:
+
+####The rate of population is on the decline. Marriage had a downward trend till 2013 but went up a bit till 2016. Population is on the rise but had a dip in 2013. It resumed its upward trend after that. There is a relationship between population and marriage but the rate of change of growth is higher than the rate of change in marriage or population. This could be because of multiplier effect of population. 
+
+<hr/>
+###DATASET 3: IT Revenue
+
+```{r message=FALSE, warning=FALSE}
+library(sqldf)
+
+it_revenue_ds <-sqldf(c("Drop table if exists revenue","CREATE table IT_revenue ( ID serial PRIMARY KEY, Year int (10) NOT NULL, Google int NULL, Facebook int NULL, Yahoo int NULL, Microsoft int NULL, AOL int NULL)",
+  "INSERT INTO IT_revenue (ID, Year, Google, Facebook, Yahoo, Microsoft, AOL) Values ('1','2009','0.36','0.56', '1.26', '0.37', '0.51'), ('2', '2010','0.86','1.21', '1.43', '0.51', '0.47'), ('3', '2011', '1.67', '1.73', '1.36', '0.6', '0.53'), ('4','2012','2.26','2.18', '1.35','0.9','0.7'), ('5','2013','2.99','3.17','1.27','0.79','0.73')", "Select Year, Google, Facebook, Yahoo, Microsoft, AOL from IT_revenue"))
+
+#Original data
+datatable(it_revenue_ds)
+
+it_revenue_ds1 <- gather(it_revenue_ds,"Company","Revenue",2:6)
+
+#Gathered data
+datatable(it_revenue_ds1)
+
+it_revenue_ds1_grp1 <- it_revenue_ds1 %>% 
+  group_by(Company) %>%
+  summarize(total_revenue=sum(Revenue, na.rm=TRUE), count=n(), avg_revenue=mean(Revenue,na.rm=TRUE))
+
+it_revenue_ds1_grp1
+
+qplot(data=it_revenue_ds1_grp1, x=Company, y=total_revenue, color=Company, size=I(10), main="Summary - Total Revenue by Company")
+
+qplot(data=it_revenue_ds1_grp1, x=Company, y=avg_revenue, color=Company, size=I(10), main="Summary - Average Revenue by Company")
+
+qplot(data=it_revenue_ds1, x=Revenue, y=Year, color=Company, size=I(3), main="Revenue by Company") + geom_line()
+
+qplot(data=it_revenue_ds1, x=Company, y=Revenue, size=I(3), main="Revenue by Company")
+
+```
+
+###Conclusion
+
+####We examined the revenue of various companies and from the data it is evident that there are two companies that uses freemium model that took off. Both Facebook and Google offer their services free but their revenue grew more than companies that used paid subscription model. So as they say free is not really free!!! They are a way to attract more paid customers by upselling other products.
