@@ -1,0 +1,56 @@
+<books>
+
+<book>
+  <title>A Tale of Two Brothers</title>
+  <authors>
+    <author>Alex Simmons</author>
+  </authors>
+  <topics>
+    <topic>Broken promise</topic>
+    <topic>Rafiki saved</topic>
+    <topic>A royal crisis</topic>
+  </topics>
+  <audiences>
+    <audience>Teachers</audience>
+    <audience>School Kids</audience>
+    <audience>Casual Readers</audience>
+  </audiences>
+  <publish_year>1994</publish_year>
+</book>
+
+<book>
+  <title>Understanding Computers and Cognition</title>
+  <authors>
+    <author>Terry Winograd</author>
+  </authors>
+  <topics>
+    <topic>Towards a new orientation</topic>
+    <topic>Breakdown and the ontology of design</topic>
+    <topic>Computers and representation</topic>
+  </topics>
+  <audiences>
+    <audience>IT Professionals</audience>
+    <audience>Executives</audience>
+    <audience>Managers</audience>
+  </audiences>
+  <publish_year>1986</publish_year>
+</book>
+
+<book>
+  <title>One Universe:: At Home in the Cosmos</title>
+  <authors>
+    <author>Charles Tsun-Chu Liu</author>
+  </authors>
+  <topics>
+    <topic>Matter</topic>
+    <topic>Energy</topic>
+    <topic>Frontiers</topic>
+  </topics>
+  <audiences>
+    <audience>Scientist</audience>
+    <audience>High School Students</audience>
+    <audience>Teachers</audience>
+  </audiences>
+  <publish_year>1988</publish_year>
+</book>
+</books>
