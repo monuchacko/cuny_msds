@@ -1,0 +1,73 @@
+---
+title: "Data 607 - Week 7"
+author: "Monu Chacko"
+date: "March 15, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Pick three of your favorite books on one of your favorite subjects. At least one of the books should have more than one author. For each book, include the title, authors, and two or three other attributes that you find interesting.
+
+###Take the information that you’ve selected about these three books, and separately create three files which store the book’s information in HTML (using an html table),  XML, and JSON formats (e.g.  “books.html”, “books.xml”, and “books.json”).  To help you better understand the different file structures, I’d prefer that you create each of these files “by hand” unless you’re already very comfortable with the file formats.
+
+###Write R code, using your packages of choice, to load the information from each of the three sources into separate R data frames.   Are the three data frames identical?
+
+###Your deliverable is the three source files and the R code.  If you can, package your assignment solution up into an .Rmd file and publish to rpubs.com.  [This will also require finding a way to make your three text files accessible from the web].
+
+```{r message=FALSE, warning=FALSE}
+library(jsonlite)
+library(XML)
+library(dplyr)
+library(RCurl)
+library(stringr)
+library(plyr)
+```
+
+
+###Load using HTML
+
+```{r message=FALSE, warning=FALSE}
+#Load from HTML
+url_html <- "https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_607/bks1.html"
+html_data <- getURL(url_html)
+
+# parse html
+html_parse = htmlParse(html_data, asText=TRUE)
+text_plain <- xpathSApply(html_parse, "//text()[not(ancestor::script)][not(ancestor::style)][not(ancestor::noscript)][not(ancestor::form)]", xmlValue)
+dataCols <- capture.output(cat(paste(text_plain, collapse = " ")))
+html_df <- data.frame(dataCols)
+html_df
+
+#write.csv(html_df, file = "html_df.csv")
+```
+
+
+
+###Load using XML
+
+```{r message=FALSE, warning=FALSE}
+#Load from XML
+url_xml <- "https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_607/bks1.xml"
+xml_data <- getURL(url_xml)
+xml_list <- xmlToList(xml_data)
+xml_df <- ldply(xml_list, data.frame)
+xml_df
+```
+
+
+###Load using JSON
+
+```{r message=FALSE, warning=FALSE}
+#Load from JSON
+url_json <- "https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_607/bks1.json"
+json_data = jsonlite::fromJSON(url_json)
+json_df <- ldply (json_data, data.frame)
+json_df
+```
+
+##Conclusion:
+
+###The HTML dataset looks different than XML and JSON. This could be because the DOM in HTML is fault tolerance. HTML works even if the data is not well formatted. Extracting data from live websites could be difficult and might require high maintenance. On the other hand XML and JSON for well formatted and does not allow format errors. This type of data is well suited for data extraction.
