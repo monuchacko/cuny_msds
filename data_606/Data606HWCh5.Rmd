@@ -1,0 +1,179 @@
+---
+title: "Data 606 HW Ch5 Inference for Numerical Data"
+author: "Monu Chacko"
+date: "March 24, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+5.14, 5.20, 5.32, 5.48
+
+###5.6 Working backwards, Part II. A 90% confidence interval for a population mean is (65,77). The population distribution is approximately normal and the population standard deviation is unknown. This confidence interval is based on a simple random sample of 25 observations. Calculate the sample mean, the margin of error, and the sample standard deviation.
+
+###Answer
+
+```{r}
+#Lower = 65 and upper = 77
+
+#Sample mean
+mean_value = (65+77)/2
+mean_value
+
+#Margin of error
+margin_of_error = (77-65)/2
+margin_of_error
+
+#Quantile
+qf <- qt(.95, (25-1))
+qf
+
+#Sample SD
+sd <- (margin_of_error/qf) * 5
+sd
+```
+
+###5.14 SAT scores. SAT scores of students at an Ivy League college are distributed with a standard deviation of 250 points. Two statistics students, Raina and Luke, want to estimate the average SAT score of students at this college as part of a class project. They want their margin of error to be no more than 25 points.
+
+###(a) Raina wants to use a 90% confidence interval. How large a sample should she collect? 
+
+###Answer
+
+```{r}
+margin_of_error <- 25
+sd <- 250
+qn <- qnorm(.95)
+qn
+
+#Desired sample size
+((sd*qn)/margin_of_error)^2
+```
+
+
+
+###(b) Luke wants to use a 99% confidence interval. Without calculating the actual sample size, determine whether his sample should be larger or smaller than Raina’s, and explain your reasoning.
+
+###Answer
+
+###It would be higher. Larger sample size would be needed for a higher confidence interval.
+
+###(c) Calculate the minimum required sample size for Luke.
+
+###Answer
+
+
+```{r}
+qn <- 2.58
+
+#Minimum sample size for Luke
+((sd*qn)/margin_of_error)^2
+
+```
+
+
+
+###5.20 High School and Beyond, Part I. The National Center of Education Statistics conducted a survey of high school seniors, collecting test data on reading, writing, and several other subjects. Here we examine a simple random sample of 200 students from this survey. Side-by-side box plots of reading and writing scores as well as a histogram of the differences in scores are shown below.
+
+###(a) Is there a clear difference in the average reading and writing scores?
+
+###Answer
+
+###The median for read is lesser than write. The average seem to be closer. The differential scores appears to be normally distributed.
+
+
+###(b) Are the reading and writing scores of each student independent of each other?
+
+###Answer
+
+###From the spread we can conclude they are independent.
+
+###(c) Create hypotheses appropriate for the following research question: is there an evident difference in the average scores of students in the reading and writing exam?
+
+###Answer
+
+###H-0 No difference 
+
+$U{diff}$ $=$ 0
+
+
+###H-A There is difference 
+
+$U{diff}$ $\ne$ 0
+
+
+###(d) Check the conditions required to complete this test.
+
+###Answer
+###ANOVA analysis (Met all conditions)
+###- Independence
+###- Approximately normal
+###- Constant variance
+
+###(e) The average observed difference in scores is ¯x read−write = −0.545, and the standard deviation of the differences is 8.887 points. Do these data provide convincing evidence of a difference between the average scores on the two exams?
+
+###Answer
+
+```{r}
+t <- ((-0.545) - 0 ) / ((8.887) / sqrt(200)) 
+t
+
+pt(t,200-1)
+```
+
+###(f) What type of error might we have made? Explain what the error means in the context of the application.
+
+###Answer
+
+###Tyoe 2 error. Failing to reject the null hypothesis when the alternative is actually true.
+
+###(g) Based on the results of this hypothesis test, would you expect a confidence interval for the average difference between the reading and writing scores to include 0? Explain your reasoning.
+
+###Answer
+
+###There is no difference and we would expect 0 as our confidence interval.
+
+
+###5.48 Work hours and education. The General Social Survey collects data on demographics, education, and work, among many other characteristics of US residents.47 Using ANOVA, we can consider educational attainment levels for all 1,172 respondents at once. Below are the distributions of hours worked by educational attainment and relevant summary statistics that will be helpful in carrying out this analysis.
+
+
+###(a) Write hypotheses for evaluating whether the average number of hours worked varies across the five groups.
+
+###Answer
+
+###H-0 Difference of all averages are equal 
+
+$U{diff}$ $=$ 0
+
+
+###H-A One average is not equal to the others
+
+$U{diff}$ $\ne$ 0
+
+###(b) Check conditions and describe any assumptions you must make to proceed with the test.
+
+###Answer
+
+###ANOVA analysis (Met all conditions)
+###- Independence
+###- Approximately normal
+###- Constant variance
+
+###(c) Below is part of the output associated with this test. Fill in the empty cells.
+
+###Answer
+
+###Coffee: Df=4; Sum Sq=2006.16; Mean Sq=501.54; F value=2.188992
+###Residuals: Df=1167; Mean Sq=229.1191;
+###Total: 1171
+
+
+###(d) What is the conclusion of the test?
+
+###Answer
+
+###The p value is greater than .05. There is no difference between groups.
+
+
+

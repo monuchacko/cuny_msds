@@ -1,0 +1,61 @@
+---
+title: "Data 607 - Web API"
+author: "Monu Chacko"
+date: "March 30, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Load libraries
+
+```{r message=FALSE, warning=FALSE}
+library(httr)
+library(dplyr)
+library(stringi)
+library(stringr)
+library(jsonlite)
+library(kableExtra)
+```
+
+###Fetch data
+
+```{r message=FALSE, warning=FALSE}
+api_key <- "EFifKA3eey63dolyo33iCamKmfgtO8Ig"
+api_url <- "https://api.nytimes.com/svc/topstories/v2/arts.json?api-key=EFifKA3eey63dolyo33iCamKmfgtO8Ig" 
+
+response <- GET(api_url, query = list(api_key = api_key, order = "by-title", offset = 20))
+
+#Response should be 200 OK
+response[2]
+  
+#Read art books
+arts_books <- readLines(api_url, warn = FALSE)
+
+#Read JSON data
+arts_books <- fromJSON(arts_books)  
+arts_books_df <- arts_books$results
+colnames(arts_books_df)
+```
+
+###Clean data
+
+```{r message=FALSE, warning=FALSE}
+
+#Get only needed columns
+arts_books_df = arts_books_df[c("section","subsection","title", "byline", "org_facet", "per_facet", "short_url")]
+
+```
+
+###Show results
+
+```{r message=FALSE, warning=FALSE}
+#Display output
+kable(arts_books_df)
+
+```
+
+
+

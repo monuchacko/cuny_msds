@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/479517/6282fe57a2e64411b8d816f055e4cc02
+bundleId: https://api.rpubs.com/api/v1/document/479517/6282fe57a2e64411b8d816f055e4cc02
+url: http://rpubs.com/monuchacko/479517
+when: 1553485327.39552
