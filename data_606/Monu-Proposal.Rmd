@@ -8,59 +8,121 @@ output: html_document
 ### Data Preparation
 
 ```{r setup, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
+library(dplyr)
+library(kableExtra)
+library(DT)
+library(ggplot2)
+
 # load data
+data_utl <- "https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_606/security_breaches.csv"
+
+#Read csv data
+security_breaches <- read.csv(data_utl, stringsAsFactors = FALSE)
 
 ```
 
+```{r}
+#Display output
+#kable(sample(security_breaches))
+colnames(security_breaches)
+
+security_breaches_df = security_breaches[c("Name_of_Covered_Entity","State","Individuals_Affected","Date_of_Breach","Type_of_Breach","Location_of_Breached_Information","breach_start","breach_end","year")]
+
+datatable(security_breaches_df)
+
+```
 
 ### Research question 
 
 **You should phrase your research question in a way that matches up with the scope of inference your dataset allows for.**
 
+####Is electronic breach on the rise? There are many types of security breaches. This could happen by persons physically stealing data on premise or by persons who are stealing from disposed materials. It could also happen electronically where a person is not on premise. Hacking, network breaches are some examples. We are trying to find out if remote hacking is on the rise year over year.
 
 
 ### Cases 
 
 **What are the cases, and how many are there?**
 
+```{r}
+dim(security_breaches_df)
+```
 
+####There are 1055 cases.
 
 ### Data collection 
 
 **Describe the method of data collection.**
 
+####Data was collected from https://vincentarelbundock.github.io/Rdatasets/datasets.html. The csv is from https://vincentarelbundock.github.io/Rdatasets/csv/Ecdat/breaches.csv.
 
+- Number: integer record number in the HHS data base 
+- Name_of_Covered_Entity: factor giving the name of the entity experiencing the breach 
+- State: Factor giving the 2-letter code of the state where the breach occurred. This has 52 levels for the 50 states plus the District of Columbia (DC) and Puerto Rico (PR). 
+- Business_Associate_Involved: Factor giving the name of a subcontractor (or blank) associated with the breach. 
+- Individuals_Affected: integer number of humans whose records were compromised in the breach. This is 500 or greater; U.S. law requires reports of breaches involving 500 or more records but not of breaches involving fewer. 
+- Date_of_Breach: character vector giving the date or date range of the breach. Recodes as Dates in breach_start and breach_end. 
+- Type_of_Breach: factor with 29 levels giving the type of breach (e.g., "Theft" vs., "Unauthorized Access/Disclosure", etc.) 
+- Location_of_Breached_Information: factor with 41 levels coding the location from which the breach occurred (e.g., "Paper", "Laptop", etc.) 
+- Date_Posted_or_Updated: Date the information was posted to the HHS data base or last updated. 
+- Summary: character vector of a summary of the incident. 
+- breach_start: Date of the start of the incident = first date given in Date_of_Breach above. 
+- breach_end: Date of the end of the incident or NA if only one date is given in Date_of_Breach above. year integer giving the year of the breach 
 
 ### Type of study 
 
 **What type of study is this (observational/experiment)?**
 
-
+####This is a observational study. We are trying to find out if the methods of breach has changes over the years.
 
 ### Data Source 
 
 **If you collected the data, state self-collected. If not, provide a citation/link.**
 
-
+####Source: https://vincentarelbundock.github.io/Rdatasets/datasets.html
+####csv source:https://vincentarelbundock.github.io/Rdatasets/csv/Ecdat/breaches.csv
+####Documentation: https://vincentarelbundock.github.io/Rdatasets/doc/Ecdat/breaches.html
 
 
 ### Dependent Variable
 
 **What is the response variable? Is it quantitative or qualitative?**
 
-
+####The response variable is Type_of_Breach. It will be converted to boolean (qualitative).
 
 ### Independent Variable
 
 **You should have two independent variables, one quantitative and one qualitative.**
 
+####The independent variable is year and is qualitative. The other one is Individuals_Affected (quantitative) to determine the scale.
 
 
 ### Relevant summary statistics 
 
 **Provide summary statistics for each the variables. Also include appropriate visualizations related to your research question (e.g. scatter plot, boxplots, etc). This step requires the use of R, hence a code chunk is provided below. Insert more code chunks as needed.**
 
-```{r}
 
+
+```{r}
+quantile(security_breaches_df$Individuals_Affected)
+
+#Use regex for find if remote
+security_breaches_df = security_breaches_df %>%
+  mutate(IsRemote = grepl("Unauthorized Access|Hacking", Type_of_Breach , ignore.case = TRUE))
+
+#Show data
+datatable(security_breaches_df)
+
+#Find quantile for IsRemote
+quantile(security_breaches_df$IsRemote)
+
+#summary
+summary(security_breaches_df)
+
+#Plot
+ggplot(security_breaches_df, aes(x=Individuals_Affected)) + stat_function(fun = dnorm) + geom_histogram()
+ggplot(security_breaches_df, aes(x="", y=Individuals_Affected, fill=IsRemote)) + geom_bar(width = 1, stat = "identity")
+
+ggplot(data = security_breaches_df, aes(x = year, y = Individuals_Affected)) + geom_line(color = "#FC4E07", size = 2)
+ggplot(data = security_breaches_df, aes(x = year, y = IsRemote)) + geom_line(color = "#FC4E07", size = 2)
 ```
 

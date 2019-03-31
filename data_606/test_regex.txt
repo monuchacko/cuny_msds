@@ -1,0 +1,26 @@
+Unauthorized Access/Disclosure
+Loss
+Theft
+Other
+Improper Disposal
+Unauthorized Access/Disclosure, Other
+Theft, Unauthorized Access/Disclosure
+Hacking/IT Incident, Other
+Hacking/IT Incident
+Unknown, Other
+Unauthorized Access/Disclosure, Hacking/IT Incident
+Theft, Loss
+Loss, Unknown
+Loss, Unauthorized Access/Disclosure, Unknown
+Theft, Loss, Unauthorized Access/Disclosure, Unknown
+Unauthorized Access/Disclosure, Hacking/IT Incident, Other
+Theft, Unauthorized Access/Disclosure, Hacking/IT Incident
+Theft, Hacking/IT Incident
+Theft, Other
+Theft, Loss, Other
+Theft, Unauthorized Access/Disclosure, Other
+Theft, Improper Disposal, Unauthorized Access/Disclosure
+Improper Disposal, Unauthorized Access/Disclosure
+Loss, Improper Disposal
+Loss, Unauthorized Access/Disclosure
+Loss, Other
