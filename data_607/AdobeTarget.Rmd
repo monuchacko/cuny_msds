@@ -38,6 +38,16 @@ User data is constantly collected and analysed. It increases visitor engagement,
 
 <img src="https://blogsimages.adobe.com/primetime/files/2012/06/single_drm_workflow-1024x481.png">
 
+#### Who are the target users?
+
+The target users are the businesses especially marketing department. End users are people who browse through the products. 
+
+#### What are their goals?
+
+Adobe Target empowers businesses to target relevant users. The goal is to engage and convert users. It can also help build brand loyality. It provides real time solutions based on real data.
+
+#### How can you help them accomplish their goals?
+
 For businesses this engine is very useful becuase it provides relevant user experience. As a user you will be satisfied that you are getting things that you are looking for. It is a win-win situation for both parties.
 
 ### Conclusion
