@@ -1,0 +1,45 @@
+---
+title: "Recommender Systems"
+author: "Monu Chacko"
+date: "4/14/2019"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Adobe Target
+
+### Introduction
+
+There is lot of data in today's world and leveraging it is a challenge. These datasets move beyond the traditional data structures like RDBMS. They take many forms like image, documents, string, date time, spacial data etc. We are seeing a rise of unstructured data that breaks the boundary of traditional data structures. These dataset are large and needs lot of computation to make sense. The rise of cloud computing has taken the solution space to a new level. Businesses can leverage these computational power house to make sense of the data that was otherwise ignored. There are many dimensions to this process like data collection, data storage, algorithms, applying to real world problems. Adobe Target is a platform that enable businesses to create recommendations for their products based on the data that is collected by its cloud platform.
+
+### Structure
+
+<img class="article-image image-media-img" draggable="false" alt="" src="https://blogs.adobe.com/digitalmarketing/wp-content/uploads/2017/08/Internal-Image-Adobe-Target-server-side-optimization%E2%80%94well-beyond-a-testing-solution-750x422.png">
+
+The data is collected from user devices using javascript SDK to Adobe Target platform. These are raw data and are not ready to use yet. The data collected could be millions of data points. The raw data is then sent to Adobe Experience Cloud for storage and processing. Processed data could be used for many purpose. It can also create recommendation.
+
+### Options - Client vs Server
+
+From the above workflow diagram we see the key difference between the client and server-side optimization methodologies. The client device like mobile phone, laptop, or desktop computer, originates the call. These devices typically use at.js, the JavaScript library of Adobe Target, on the browser or one of Adobe’s native mobile SDKs, to tell Adobe Target, “Hey, we have a visitor,” and ask it, “What personalized experience should we give this visitor?”
+ 
+
+In server-side optimization, your server originates the call to Target. Your developers deploy the Adobe Target delivery API in their code so that your server makes a request to Adobe Target when you have a visitor. Your developers can also take advantage of the Adobe Target node.js SDK to easily implement and run server-side tests on node.js applications.
+
+### Scenario Design analysis
+
+User data is constantly collected and analysed. It increases visitor engagement, conversion and brand loyality. It can provide personalised recommendation per page. Since data is collected on real time basis the recommendation is relevant and fresh. The model is constantly trained and corrected. This makes this a powerful recommendation engine. There are 42 criteria templates for just recommendation. 
+
+<img src="https://blogsimages.adobe.com/primetime/files/2012/06/single_drm_workflow-1024x481.png">
+
+For businesses this engine is very useful becuase it provides relevant user experience. As a user you will be satisfied that you are getting things that you are looking for. It is a win-win situation for both parties.
+
+### Conclusion
+
+Adobe Target provides a modern solution to common problem business faces. It is adaptable to user inputs and the recommendation is based on realtime data. This data driven solution is scalable and fits organizations needs. With this cloud based solution both organizations and users benefit.  

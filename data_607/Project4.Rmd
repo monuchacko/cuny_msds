@@ -1,0 +1,249 @@
+---
+title: "Document Classification - Data 607 PROJECT 4"
+author: "Monu Chacko"
+date: "April 11, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+It can be useful to be able to classify new "test" documents using already classified "training" documents.  A common example is using a corpus of labeled spam and ham (non-spam) e-mails to predict whether or not a new document is spam.  
+
+For this project, you can start with a spam/ham dataset, then predict the class of new documents (either withheld from the training dataset or from another source such as your own spam folder).   One example corpus:  https://spamassassin.apache.org/publiccorpus/
+
+<h3>Load libraries</h3>
+
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tm)
+library(knitr)
+library(plyr)
+library(wordcloud)
+library(ggplot2)
+library(lattice)
+
+library(e1071)
+library(caret)
+library(quanteda)
+library(irlba)
+library(randomForest)
+```
+
+<h3>Load Data</h3>
+
+```{r load_data, warning=FALSE, message=FALSE}
+# Get the Ham and Spam data
+dsHS <- read.csv(file="SpamHam.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
+
+str(dsHS)
+
+#Find if there is missing values in columns
+which(!complete.cases(dsHS))
+
+#Count number of ham/spam messages in our dataset
+table(dsHS$v1)
+
+#Find the proportion of ham vs spam messages in our dataset
+prop.table(table(dsHS$v1))
+
+
+#dsHS$v2 <- as.character(dsHS$v2)
+dsHS$v2Len <- nchar(dsHS$v2)
+hist(dsHS$v2Len)
+
+ggplot(dsHS, aes(v2Len, fill=v1)) + geom_histogram(binwidth = 6) + facet_wrap(~v1)
+
+histogram(~v2Len|v1, data=dsHS)
+```
+
+<h3>Build Corpus</h3>
+
+```{r build_corpus, warning=FALSE, message=FALSE}
+corpus_hs <- Corpus(VectorSource(dsHS$v2))
+corpus_hs
+
+#Inspect corpus data
+inspect(corpus_hs[1:5])
+
+#Cleanup
+corpus_hs_clean <- tm_map(corpus_hs, tolower)
+corpus_hs_clean <- tm_map(corpus_hs_clean, removeNumbers)
+corpus_hs_clean <- tm_map(corpus_hs_clean, removePunctuation)
+corpus_hs_clean <- tm_map(corpus_hs_clean, removeWords, stopwords())
+corpus_hs_clean <- tm_map(corpus_hs_clean, stripWhitespace)
+
+inspect(corpus_hs_clean[1:5])
+
+corpus_dtm <- DocumentTermMatrix(corpus_hs_clean)
+inspect(corpus_dtm[1:10, 10:15])
+
+corpus_dtm_1 <- DocumentTermMatrix(corpus_hs_clean, control = list(tolower=TRUE, removeNumbers=TRUE, stopwords=TRUE, removePunctuation=TRUE, stripWhitespace=TRUE ))
+inspect(corpus_dtm_1[1:10, 10:15])
+
+```
+
+
+<h3>Training and Test set</h3>
+
+```{r training_and_test_set, warning=FALSE, message=FALSE}
+
+#Set random number at the same point
+set.seed(32984)
+
+#Split training and test set
+idx <- createDataPartition(dsHS$v1, times = 1, p=0.7, list = FALSE)
+
+#70% Split
+train <- dsHS[idx,]
+
+#30% Split
+test <- dsHS[-idx,]
+
+#Verify proportion. Make sure the proportion is the same as in original dataset.
+prop.table(table(train$v1))
+prop.table(table(test$v1))
+
+```
+
+
+<h3>Cleanup</h3>
+
+```{r cleanup, warning=FALSE, message=FALSE}
+
+#Cleanup
+train_tkns <- tokens(train$v2, what="word", remove_numbers = TRUE, remove_punct = TRUE,
+  remove_symbols = TRUE, remove_separators = TRUE, remove_hyphens = TRUE)
+
+#Convert tokens to lowercase
+train_tkns <- tokens_tolower(train_tkns)
+
+#Take a look at the stopwords before removing
+stopwords()
+
+#Remove stopwords
+train_tkns <- tokens_select(train_tkns, stopwords(), selection="remove")
+
+#Stemming
+train_tkns <- tokens_wordstem(train_tkns, language="english")
+
+#View sample data
+#sample(train_tkns, size = 10)
+
+```
+
+
+<h3>Bag of words model</h3>
+
+```{r bag_of_words, warning=FALSE, message=FALSE}
+#Create bag of words model
+train_tkns_dfm <- dfm(train_tkns, tolower=FALSE)
+
+train_tkns_matrix <- as.matrix(train_tkns_dfm)
+#head(train_tkns_matrix)
+dim(train_tkns_matrix)
+
+#Feature with labels
+train_tkns_df <- cbind(labels=train$v1, convert(train_tkns_dfm, to = "data.frame"))
+#train_tkns_df <- cbind(labels=train$v1, as.data.frame(train_tkns_dfm))
+
+#Make syntactically valid column names to avoid errors with with many R functions. Eg 4txt is not a valid name
+names(train_tkns_df) <- make.names(names(train_tkns_df))
+
+```
+
+
+<h3>Cross Validation</h3>
+
+```{r cross_validation, warning=FALSE, message=FALSE}
+
+set.seed(48743)
+
+#Since there is a class imbalance lets create stratified folds for 10-fold cross validation repeated 3 times. It creates 30 random stratified samples.
+cv_folds <- createMultiFolds(train$v1, k=10, times=3)
+cv_cntrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3, index = cv_folds)
+```
+
+
+<h3>Run Model (Parallel Processing</h3>
+
+```{r run_model, warning=FALSE, message=FALSE}
+
+#For parallel processing. Reduces processing time.
+library(doSNOW)
+
+start_time <- Sys.time()
+
+#Run with 3 cores
+clstr <- makeCluster(3, type="SOCK")
+registerDoSNOW(clstr)
+
+model_cv_1 <- train(labels ~ ., data=train_tkns_df, method="rpart", trControl=cv_cntrl, tuneLength=7)
+
+stopCluster(clstr)
+
+total_time <- Sys.time() - start_time
+total_time
+
+model_cv_1
+```
+
+
+<h3>Alternate Methods for data cleaning<h3>
+
+```{r alternate_methods, warning=FALSE, message=FALSE}
+
+#Custom Function for Data Cleanup
+corpusCleanData <- function(col) {
+
+  corpusData <- col
+  
+  #Remove punctuations
+  corpusData <- gsub(pattern="\\W", replace=" ", corpusData)
+  
+  #Remove digits
+  corpusData <- gsub(pattern="\\d", replace=" ", corpusData)
+  
+  #Lower case
+  corpusData <- tolower(corpusData)
+
+  #Remove stopwords
+  corpusData <- removeWords(corpusData, stopwords("english"))
+  
+  #Remove single chars
+  corpusData <- gsub(pattern="\\b[A-z]\\b{1}", replace=" ", corpusData)
+
+  #Remove whitespaces
+  corpusData <- stripWhitespace(corpusData)
+  
+}
+
+```
+
+
+<h3>Word Cloud - Ham and Spam<h3>
+
+```{r word_cloud, warning=FALSE, message=FALSE}
+
+dsHamSpam <- split(dsHS, dsHS$v1)
+dsHam <- dsHamSpam[[1]] 
+dsSpam <- dsHamSpam[[2]] 
+
+corpusSpam <- corpusCleanData(dsSpam$v2)
+corpusHam <- corpusCleanData(dsHam$v2)
+
+head(corpusSpam)
+head(corpusHam)
+
+wordcloud(corpusSpam, max.words = 200, random.order = FALSE, col=rainbow(3))
+wordcloud(corpusHam, max.words = 200, random.order = FALSE, col=rainbow(3))
+
+```
+
+
+<h6>
+Source: 
+https://www.youtube.com/watch?v=Y7385dGRNLM / https://www.youtube.com/watch?v=jCrQYOsAcv4
+
+Data: 
+https://www.kaggle.com/uciml/sms-spam-collection-dataset/version/1#spam.csv
+</h6>
