@@ -1,0 +1,211 @@
+---
+title: "Multiple and Logistic Regression"
+author: "Monu Chacko"
+date: "5/5/2019"
+output: 
+  html_document:
+    toc: true
+    code_folding: show
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    theme: flatly
+    highlight: kate
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Graded: 8.2, 8.4, 8.8, 8.16, 8.18
+
+### Question 8.2
+
+8.2 Baby weights, Part II. Exercise 8.1 introduces a data set on birth weight of babies. Another variable we consider is parity, which is 0 if the child is the first born, and 1 otherwise. The summary table below shows the results of a linear regression model for predicting the average birth weight of babies, measured in ounces, from parity.
+
+(a) Write the equation of the regression line.
+
+#### Answer 8.2 (a)
+
+$$y = \beta_0 + \beta_1 \times parity + e $$
+
+$$y = 120.07 + -1.93 \times parity + e $$
+
+Useful link: https://www.youtube.com/watch?v=owI7zxCqNY0
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/owI7zxCqNY0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+(b) Interpret the slope in this context, and calculate the predicted birth weight of first borns and others.
+
+#### Answer 8.2 (b)
+
+The slope tells us the rate at which y would increase or decrease for a given value of parity. y in this case is the dependent variable and parity is independent variable. Since the value is negative we can say that there is a decrease as parity increases.
+
+
+```{r}
+# Assume the parity is 0
+y <- 120.07 + (-1.93 * 0)
+y
+
+# Assume the parity is 1
+y <- 120.07 + (-1.93 * 1)
+y
+```
+
+(c) Is there a statistically significant relationship between the average birth weight and parity?
+
+#### Answer 8.2 (c)
+
+Since the p value of parity is above 0.05 i.e 0.1052 we can drop it using backward elimination strategy  
+
+### Question 8.4
+
+8.4 Absenteeism. Researchers interested in the relationship between absenteeism from school and certain demographic characteristics of children collected data from 146 randomly sampled students in rural New SouthWales, Australia, in a particular school year. Below are three observations from this data set.
+
+The summary table below shows the results of a linear regression model for predicting the average number of days absent based on ethnic background (eth: 0 - aboriginal, 1 - not aboriginal), sex (sex: 0 - female, 1 - male), and learner status (lrn: 0 - average learner, 1 - slow learner).
+
+(a) Write the equation of the regression line.
+
+#### Answer 8.4 (a)
+
+$$y = \beta_0 + \beta_1 \times eth + \beta_2 \times sex + \beta_3 \times lrn + e $$
+
+$$y = 18.93 + -9.11 \times eth + 3.10 \times sex + 2.15 \times lrn + e $$
+
+(b) Interpret each one of the slopes in this context.
+
+#### Answer 8.4 (b)
+
+- eth: This is a downward slope because of the negative value.
+- sex: This slope increases at a faster rate than lrn.
+- lrn: This slope increases but at a slower rate than ses.
+
+(c) Calculate the residual for the first observation in the data set: a student who is aboriginal, male, a slow learner, and missed 2 days of school.
+
+#### Answer 8.4 (c)
+
+- Student who is aboriginal: Value = 0
+- Male: Value = 1
+- Slow learner: Value = 1
+- Missed school: Value =  2 days
+
+```{r}
+eth <- 0
+sex <- 1
+lrn <- 1
+actual_missed_school <- 2
+
+dp <- 18.93 + (-9.11 * eth) + (3.10 * sex) + (2.15 * lrn)
+dp
+
+residual <- dp - actual_missed_school
+residual
+```
+
+
+
+(d) The variance of the residuals is 240.57, and the variance of the number of absent days for all students in the data set is 264.17. Calculate the R2 and the adjusted R2. Note that there are 146 observations in the data set.
+
+#### Answer 8.4 (d)
+
+```{r}
+R2 = 1 - (240.57)/(264.17)
+R2
+```
+
+```{r}
+adjR2 = 1 - (240.57)/(264.17) * ((146-1)/(146-3-1))
+adjR2
+```
+
+### Question 8.8
+
+8.8 Absenteeism, Part II. Exercise 8.4 considers a model that predicts the number of days absent using three predictors: ethnic background (eth), gender (sex), and learner status (lrn). The table below shows the adjusted R-squared for the model as well as adjusted R-squared values for all models we evaluate in the first step of the backwards elimination process.
+
+Which, if any, variable should be removed from the model first?
+
+#### Answer 8.8
+
+Since the p value of "No learner status" is above 0.05 i.e 0.0743 we can drop it first. We can then drop "No sex" because its p value is above 0.05 i.e 0.0676. We are using backward elimination strategy.
+
+### Question 8.16
+
+8.16 Challenger disaster, Part I. On January 28, 1986, a routine launch was anticipated for the Challenger space shuttle. Seventy-three seconds into the flight, disaster happened: the shuttle broke apart, killing all seven crew members on board. An investigation into the cause of the disaster focused on a critical seal called an O-ring, and it is believed that damage to these O-rings during a shuttle launch may be related to the ambient temperature during the launch. The table below summarizes observational data on O-rings for 23 shuttle missions, where the mission order is based on the temperature at the time of the launch. Temp gives the temperature in Fahrenheit, Damaged represents the number of damaged O-rings, and Undamaged represents the number of O-rings that were not damaged.
+
+(a) Each column of the table above represents a different shuttle mission. Examine these data and describe what you observe with respect to the relationship between temperatures and damaged O-rings.
+
+#### Answer 8.16 (a)
+
+```{r warning=FALSE, message=FALSE}
+library(ggplot2)
+
+temp <- c(53,57,58,63,66,67,67,67,68,69,70,70,70,70,72,73,75,75,76,76,78,79,81)
+dam <- c(5,1,1,1,0,0,0,0,0,0,1,0,1,0,0,0,0,1,0,0,0,0,0)
+undam <- c(1,5,5,5,6,6,6,6,6,6,5,6,5,6,6,6,6,5,6,6,6,6,6)
+
+dfMission <- data.frame(temp, dam, undam)
+
+ggplot(data=dfMission, aes(x=temp, y=dam)) + geom_point()
+ggplot(data=dfMission, aes(x=temp, y=undam)) + geom_point()
+```
+
+- More damages were reported at around 50 degrees
+- More undamaged O rings were reported above 65 degrees
+
+(b) Failures have been coded as 1 for a damaged O-ring and 0 for an undamaged O-ring, and a logistic regression model was fit to these data. A summary of this model is given below. Describe the key components of this summary table in words.
+
+#### Answer 8.16 (b)
+
+The table helps us to identify variables that may not be helpful. If the "Estimate" is positive then there is a positive influence to the dependent variable. If it is negative then it has negative influence to the dependent variable. "Std. Error" can be used to compute confidence intervals for the "Estimate". The z and p value tell us how much significant the independent variable is.
+
+(c) Write out the logistic model using the point estimates of the model parameters.
+
+#### Answer 8.16 (c)
+
+$$ log_e\binom{p_1}{1-p_1} = 11.6630 − 0.2162 \times Temperature$$
+
+
+(d) Based on the model, do you think concerns regarding O-rings are justified? Explain.
+
+#### Answer 8.16 (d)
+
+There is a high probability of temperature having effect on the O-rings. The concerns are justified given the p value of 0.
+
+### Question 8.18
+
+8.18 Challenger disaster, Part II. Exercise 8.16 introduced us to O-rings that were identified as a plausible explanation for the breakup of the Challenger space shuttle 73 seconds into takeoff in 1986. The investigation found that the ambient temperature at the time of the shuttle launch was closely related to the damage of O-rings, which are a critical component of the shuttle. See this earlier exercise if you would like to browse the original data.
+
+(a) The data provided in the previous exercise are shown in the plot. The logistic model fit to
+these data may be written as where ˆp is the model-estimated probability that an O-ring will become damaged. Use the model to calculate the probability that an O-ring will become damaged at each of the following ambient temperatures: 51, 53, and 55 degrees Fahrenheit. The model-estimated probabilities for several additional ambient temperatures are provided below, where subscripts indicate the temperature:
+
+#### Answer 8.18 (a)
+
+$$ log_e\binom{\hat{p}}{1-\hat{p}} = 11.6630 − 0.2162 \times Temperature$$
+
+$$ \hat{p} = \binom{e^{11.6630 − 0.2162 \times Temperature}}{1+e^{11.6630 − 0.2162 \times Temperature}} $$
+
+```{r}
+exp((11.663 - 0.2162*51))/(1+exp((11.663 - 0.2162*51)))
+exp((11.663 - 0.2162*53))/(1+exp((11.663 - 0.2162*53)))
+exp((11.663 - 0.2162*55))/(1+exp((11.663 - 0.2162*55)))
+```
+
+(b) Add the model-estimated probabilities from part (a) on the plot, then connect these dots using a smooth curve to represent the model-estimated probabilities.
+
+#### Answer 8.18 (b)
+
+```{r warning=FALSE, message=FALSE}
+ggplot(dfMission,aes(x=temp,y=dam)) + geom_point() + stat_smooth(method = 'glm', family = 'binomial')
+```
+
+(c) Describe any concerns you may have regarding applying logistic regression in this application, and note any assumptions that are required to accept the model’s validity.
+
+#### Answer 8.18 (c)
+
+Logistic regression conditions
+There are two key conditions for fitting a logistic regression model:
+1. Each predictor xi is linearly related to logit(pi) if all other predictors are
+held constant.
+2. Each outcome Yi is independent of the other outcomes.
+
+Both the conditions are met.

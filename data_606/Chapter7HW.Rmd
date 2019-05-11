@@ -1,0 +1,182 @@
+---
+title: "Chapter 7 HW"
+author: "Monu Chacko"
+date: "4/16/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Graded: 7.24, 7.26, 7.30, 7.40
+
+<div class="qsection">Question</div>
+<br/>
+
+7.24 Nutrition at Starbucks, Part I. The scatterplot below shows the relationship between the number of calories and amount of carbohydrates (in grams) Starbucks food menu items contain. 21 Since Starbucks only lists the number of calories on the display items, we are interested in predicting the amount of carbs a menu item has based on its calorie content.
+
+<div class="anssection">Answer</div>
+<br/>
+
+(a) Describe the relationship between number of calories and amount of carbohydrates (in grams) that Starbucks food menu items contain.
+
+#### It is a linear and appears to be best fit line. There is a positive relationship between calorie and carbohydrates.
+
+
+(b) In this scenario, what are the explanatory and response variables?
+
+#### The explanatory variable is calories while the response variable is carbohydrates.
+
+(c) Why might we want to fit a regression line to these data?
+
+#### The line appears to be a best fit line or trend line. It best expresses the relationship between the points of the line. 
+
+(d) Do these data meet the conditions required for fitting a least squares line?
+
+#### Yes, it meets the condition of Linearity, Nearly normal residuals, Constant variability and Independent observations
+
+<div class="qsection">Question</div>
+<br/>
+
+7.26 Body measurements, Part III. Exercise 7.15 introduces data on shoulder girth and height of a group of individuals. The mean shoulder girth is 107.20 cm with a standard deviation of 10.37 cm. The mean height is 171.14 cm with a standard deviation of 9.41 cm. The correlation between height and shoulder girth is 0.67.
+
+<div class="anssection">Answer</div>
+<br/>
+
+(a) Write the equation of the regression line for predicting height.
+
+```{r}
+gm <- 107.20
+gsd <- 10.37 
+
+hm <- 171.14
+hsd <- 9.41
+
+cor <- 0.67
+
+#slope
+B1 <- (hsd/gsd)*cor
+B1
+
+
+
+#intercept
+B0 <- hm - B1* gm
+B0
+
+```
+
+#### 105.97 + 0.61 x girth
+
+(b) Interpret the slope and the intercept in this context.
+
+#### slope is 0.61 and interpret is 105.97
+
+
+(c) Calculate R2 of the regression line for predicting height from shoulder girth, and interpret it in the context of the application.
+
+```{r}
+cor^2
+```
+
+#### It measures closeness of the data to the fitted line. 44.89% is the height variation around the mean.
+
+(d) A randomly selected student from your class has a shoulder girth of 100 cm. Predict the height of this student using the model.
+
+```{r}
+g <- 100
+predhgt <- B0 + B1*g
+predhgt
+```
+
+
+(e) The student from part (d) is 160 cm tall. Calculate the residual, and explain what this residual means.
+
+```{r}
+acthgt <- 160
+acthgt - predhgt
+```
+
+(f) A one year old has a shoulder girth of 56 cm. Would it be appropriate to use this linear model to predict the height of this child?
+
+#### Since the value is outside the range, the linear model would not the best one to predict the height of this child.
+
+
+<div class="qsection">Question</div>
+<br/>
+
+7.30 Cats, Part I. The following regression output is for predicting the heart weight (in g) of cats from their body weight (in kg). The coefficients are estimated using a dataset of 144 domestic cats. 
+
+<div class="anssection">Answer</div>
+<br/>
+
+(a) Write out the linear model.
+
+#### B0 + B1 * BodyWeight
+#### -0.357 + 4.034 * BodyWeight
+
+(b) Interpret the intercept.
+
+#### We can expect heart weight of -0.357 grams for a body weight of 0.
+
+(c) Interpret the slope.
+
+#### The slope is 4.034
+
+(d) Interpret R2.
+
+#### R2 is .6466 or 64.66%. 
+
+(e) Calculate the correlation coefficient.
+
+```{r}
+R2=.6466
+
+#correlation coefficient
+sqrt(R2)
+```
+
+<div class="qsection">Question</div>
+<br/>
+
+7.40 Rate my professor. Many college courses conclude by giving students the opportunity to evaluate the course and the instructor anonymously. However, the use of these student evaluations as an indicator of course quality and teaching e↵ectiveness is often criticized because these measures may reflect the influence of non-teaching related characteristics, such as the physical appearance of the instructor. Researchers at University of Texas, Austin collected data on teaching evaluation score (higher score means better) and standardized beauty score (a score of 0 means average, negative score means below average, and a positive score means above average) for a sample of 463 professors.24 The scatterplot below shows the relationship between these variables, and also provided is a regression output for predicting teaching evaluation score from beauty score.
+
+<br/>
+<div class="anssection">Answer</div>
+<br/>
+
+(a) Given that the average standardized beauty score is -0.0883 and average teaching evaluation score is 3.9983, calculate the slope. Alternatively, the slope may be computed using just the information provided in the model summary table.
+
+```{r}
+B0=4.010
+B1=4.13 * 0.0322
+
+#slope
+B1
+```
+
+(b) Do these data provide convincing evidence that the slope of the relationship between teaching evaluation and beauty is positive? Explain your reasoning.
+
+#### The graph does not show trend. It is not clustered in a pattern. We can say that there doesn't appear to have convincing evidence that the slope of the relationship between teaching evaluation and beauty is positive.
+
+(c) List the conditions required for linear regression and check if each one is satisfied for this model based on the following diagnostic plots.
+
+#### There is no Linearity. The residuals is not normal and is skewed.
+
+<style>
+.qsection {
+background-color: #008080;
+padding-left:5px;
+color: #FFF;
+font-size: 18px;
+
+}
+
+.anssection { 
+background-color: #333;
+padding-left:5px;
+color: #FFF;
+font-size: 18px;
+}
+</style>

@@ -1,0 +1,128 @@
+---
+title: "Tidy Verse"
+author: "Monu Chacko"
+date: "5/4/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#### Data
+
+NCAA Women's Basketball Tournament data contains information for every team that has participated in the NCAA Division I Women’s Basketball Tournament since it began in 1982. Every school is shown with its seed, conference record (when available), regular-season record, tournament record and full season record, including winning percentages. More information about select columns is in the table below.
+
+
+```{r warning=FALSE, message=FALSE}
+library(tidyr)
+library(dplyr)
+library(tidyverse)
+library(janitor)
+library(kableExtra)
+```
+
+```{r}
+dsWBB <- read.csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/ncaa-womens-basketball-tournament/ncaa-womens-basketball-tournament-history.csv", sep = ",", stringsAsFactors = F)
+
+```
+
+
+#### View raw data
+
+
+```{r}
+head(dsWBB) %>% kable() %>% kable_styling()
+
+# Check columns
+colnames(dsWBB)
+```
+
+#### Rename columns and view data
+
+```{r}
+# Rename columns
+names(dsWBB) <- c("Year", "School", "Seed", "Conference", "ConfW", "ConfL","Conf", "ConfPlace", "RegW", "RegL", "Reg", "HowQual", "X1stGameAtHome", "TourneyW", "TourneyL", "TourneyFinish", "FullW", "FullL", "Full")
+
+# Vew data
+head(dsWBB) %>% kable() %>% kable_styling()
+
+```
+
+
+#### Drop columns that are not used and view data
+
+```{r}
+# Drop columns that are not necessary
+dsWBB_new <- select(dsWBB, "Year", "Seed", "Conference", "HowQual", "X1stGameAtHome", "TourneyW", "TourneyL", "TourneyFinish", "FullW", "FullL", "Full")
+
+# View new data
+head(dsWBB_new) %>% kable() %>% kable_styling()
+
+```
+
+
+#### Extract and other data operations
+
+```{r}
+# Create new column from existing columns
+dsWBB_new <- mutate(dsWBB_new, FullWToLRatio = round(dsWBB_new$FullW/dsWBB_new$FullL))
+
+# Filter for year 1982
+dsWBB_new_1982 <- filter(dsWBB_new, Year == "1982")
+
+# View new data for 1982
+head(dsWBB_new_1982) %>% kable() %>% kable_styling()
+
+```
+
+
+#### Sorting
+
+```{r}
+
+# Sort desc on FullWToLRatio
+dsWBB_new_sorted <- arrange(dsWBB_new, desc(FullWToLRatio))
+
+# Remove na
+dsWBB_new_sorted$FullWToLRatio <- as.numeric(na.omit(dsWBB_new_sorted$FullWToLRatio))
+
+# View sorted data
+head(dsWBB_new_sorted) %>% kable() %>% kable_styling()
+```
+
+
+#### As we see in the above data, we have a divide by 0 error in column FullWToLRatio. We can replace all FullWToLRatio data with FullW where FullL is 0
+
+
+```{r}
+#Create new calculated colum
+dsWBB_new_sorted = dsWBB_new_sorted %>% mutate(FullWToLRatio = factor(ifelse(FullL == 0, FullW, FullWToLRatio)))
+
+# View sorted data
+head(dsWBB_new_sorted) %>% kable() %>% kable_styling()
+
+```
+
+
+#### Splits and Levels
+
+```{r}
+# View Levels
+FullWToLRatioLevels <- cut(as.numeric(dsWBB_new_sorted$FullWToLRatio), breaks = 10) %>% levels
+FullWToLRatioLevels %>% kable() %>% kable_styling()
+```
+
+
+### Summarise and visualize data
+
+```{r}
+
+# Summarise
+summarise(dsWBB_new_sorted, "MeanWLRatio" = mean(as.numeric(dsWBB_new_sorted$FullWToLRatio), na.rm = TRUE), "SDWLRatio" = sd(as.numeric(dsWBB_new_sorted$FullWToLRatio), na.rm = TRUE))
+
+# View hist
+hist(x=as.numeric(dsWBB_new_sorted$FullWToLRatio), main = "Win to Loss Ratio")
+```
+

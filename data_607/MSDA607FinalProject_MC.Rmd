@@ -1,0 +1,115 @@
+---
+title: "MSDA 607 Final Project"
+author: "Monu Chacko"
+date: "5/6/2019"
+output: 
+  html_document:
+    toc: true
+    code_folding: show
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    theme: flatly
+    highlight: kate
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Motivation
+
+Should Travelers Avoid Flying Airlines That Have Had Crashes in the Past?
+
+The data set contains crash data from many airlines. After a crash people move to other airlines for safety. Does that mean than other airlines are more safe than the airlines that crashed? We will take a look at historical data to find if there is a pattern after the crash or is it just a fear
+
+## Data Source
+
+Parameters
+airline: Airline (asterisk indicates that regional subsidiaries are included)
+avail_seat_km_per_week:	Available seat kilometers flown every week
+incidents_85_99: Total number of incidents, 1985–1999
+fatal_accidents_85_99: Total number of fatal accidents, 1985–1999
+fatalities_85_99: Total number of fatalities, 1985–1999
+incidents_00_14: Total number of incidents, 2000–2014
+fatal_accidents_00_14: Total number of fatal accidents, 2000–2014
+fatalities_00_14: Total number of fatalities, 2000–2014
+
+Source: https://github.com/fivethirtyeight/data/blob/master/airline-safety/airline-safety.csv
+
+```{r warning=FALSE, message=FALSE}
+library(tidyr)
+library(dplyr)
+library(tidyverse)
+library(janitor)
+library(kableExtra)
+library(stringr)
+library(ggplot2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# Read from csv
+dsAL <- read.csv(file="https://raw.githubusercontent.com/fivethirtyeight/data/master/airline-safety/airline-safety.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
+
+# Remove asterisk
+dsAL$airline <- stringr::str_replace(dsAL$airline, '\\*', '')
+
+# Display sample data
+head(dsAL) %>% kable() %>% kable_styling()
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+data_airline <- stringr::str_replace(dsAL$airline, '\\*', '')
+head(unique(data_airline)) %>% kable() %>% kable_styling()
+```
+
+
+```{r}
+
+gather(dsAL, "Yr_85_99", "fatal_accidents", fatal_accidents_85_99)
+```
+
+
+
+https://tidyr.tidyverse.org/reference/gather.html
+
+OSEMN Process
+- Obtain Data
+- Scrub Data
+- Explore Data
+- Model Data
+- Interpret Results
+
+
+
+
+
+
+
+
+
+
+
+### Final Project Checklist
+
+To receive full credit, you’ll need to deliver on all of the items in the checklist below. Please read carefully through this checklist before you make your project proposal. You are (within these checklist constraints) strongly urged to limit scope and make the necessary simplifying assumptions so that you can deliver your work on time!
+ Proposal describes your motivation for performing this analysis.
+ Proposal describes likely data sources.
+ Your project has a recognizable “data science workflow,” such as the OSEMN workflow or Hadley Wickham’s Grammar of Data Science. [Example: First the data is acquired, then necessary transformations and clean-up are performed, then the analysis and presentation work is performed]
+ Project includes data from at least two different types of data sources (e.g., two or more of these: relational or CSV, Neo4J, web page [scraped or API], MongoDB, etc.)
+ Project includes at least one data transformation operation. [Examples: transforming from wide to long; converting columns to date format]
+ Project includes at least one statistical analysis and at least one graphics that describes or validates your data.
+ Project includes at least one graphic that supports your conclusion(s).
+ Project includes at least one statistical analysis that supports your conclusion(s).
+ Project includes at least one feature that we did not cover in class! There are many examples: “I used ggmap; I created a decision tree; I ranked the results; I created my presentation slides directly from R; I figured out to use OAuth 2.0…”
+ Presentation. Was the presentation delivered in the allotted time (3 to 5 minutes)?
+ Presentation. Did you show (at least) one challenge you encountered in code and/or data, and what you did when you encountered that challenge? If you didn’t encounter any challenges, your assignment was clearly too easy for you!
+ Presentation. Did the audience come away with a clear understanding of your motivation for undertaking the project?
+ Presentation. Did the audience come away with a clear understanding of at least one insight you gained or conclusion you reached or hypothesis you “confirmed” (rejected or failed to reject…)?
+ Code and data. Have you delivered the submitted code and data where it is self-contained—preferably in rpubs.com and github? Am I able to fully reproduce your results with what you’ve delivered? You won’t receive full credit if your code references data on your local machine!
+ Code and data. Does all of the delivered code run without errors?
+ Code and data. Have you delivered your code and conclusions using a “reproducible research” tool such as RMarkdown?
+ Deadline management. Were your draft project proposal, project, and presentation delivered on time? Any part of the project that is turned in late will receive a maximum grade of 80%. Please turn in your work on time! You are of course welcome to deliver ahead of schedule!
