@@ -47,7 +47,8 @@ library(janitor)
 library(kableExtra)
 library(stringr)
 library(ggplot2)
-library(caTools)
+library(data.table)
+library(formattable)
 ```
 
 ### SQL Database
@@ -139,8 +140,6 @@ dsALTransformCombined <- dsALTransformCombined %>%
   mutate(incident_year = ifelse(incident == "incidents_85_99", "1999", ifelse(incident == "fatal_accidents_85_99", "1999", ifelse(incident == "fatalities_85_99", "1999", ifelse(incident == "incidents_00_14", "2014", ifelse(incident == "fatal_accidents_00_14", "2014", ifelse(incident == "fatalities_00_14", "2014", ""))))))) %>% 
   mutate(incident_ratio = ifelse(count == 0, round(avail_seat_km_per_week/1000000, 0), round((avail_seat_km_per_week/1000000)/count, 0) ))
 
-#dsALTransformCombined %>% kable() %>% kable_styling()
-
 head(dsALTransformCombined) %>% kable() %>% kable_styling()
 
 al_mean = mean(dsALTransformCombined$count)
@@ -158,72 +157,66 @@ dim(dsALTransformCombined)
 ## Explore Data
 
 ```{r}
-ggplot(data=dsALTransformCombined, aes(x=count, y=incident_type)) + geom_point(aes(count, incident_type), color = "#FC4E07") + ylab("Incident Type") + xlab("Count") 
-ggplot(data=dsALTransformCombined, aes(x=count, y=incident_year)) + geom_point(aes(count, incident_year), color = "#FC4E07") + ylab("Incident Year") + xlab("Count")
-ggplot(data=dsALTransformCombined, aes(x=count, y=incident_ratio)) + geom_line(aes(size=incident_ratio), color = "#FC4E07") + ylab("Incident Ratio") + xlab("Count")
+ggplot(data=dsALTransformCombined, aes(x=count, y=incident_type)) + geom_point(aes(count, incident_type), color = "#FC4E07") + ylab("Incident Type") + xlab("Count") + ggtitle("Incident Type vs Count") +
+  theme(plot.title = element_text(hjust = 0.5))
 
-dsALTransformCombined_dnorm <- dnorm(dsALTransformCombined$count, mean=al_mean, sd=al_sd)
-plot(dsALTransformCombined$count, dsALTransformCombined_dnorm)
+ggplot(data=dsALTransformCombined, aes(x=count, y=incident_year)) + geom_point(aes(count, incident_year), color = "#FC4E07") + ylab("Incident Year") + xlab("Count") + ggtitle("Incident Year vs Count") +
+  theme(plot.title = element_text(hjust = 0.5))
 
-ggplot(data = dsALTransformCombined, aes(dsALTransformCombined$count)) +
-  stat_function(fun = dnorm, n = 101, args = list(mean=al_mean, sd=al_sd)) + ylab("") + xlab("Count") +
-  scale_y_continuous(breaks = NULL)
-
-#plot(dsALTransformCombined$incident, dsALTransformCombined$count)
-
-#dsALTransformCombined
-```
-
-```{r}
-
-#(p <- ggplot(dsALTransformCombined, aes(count, incident)) + geom_tile(aes(fill = rescale),
-#+     colour = "white") + scale_fill_gradient(low = "white",
-#+     high = "steelblue"))
-
-#p
+ggplot(data=dsALTransformCombined, aes(x=count, y=incident_ratio)) + geom_line(aes(size=incident_ratio), color = "#FC4E07") + ylab("Incident Ratio") + xlab("Count") + ggtitle("Incident Ratio vs Count") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ## Model Data
 
+```{r}
+#dsALTransformCombined_dnorm <- dnorm(dsALTransformCombined$count, mean=al_mean, sd=al_sd)
+#plot(dsALTransformCombined$count, dsALTransformCombined_dnorm)
+
+# Find the distribution
+ggplot(data = dsALTransformCombined, aes(dsALTransformCombined$count)) +
+  stat_function(fun = dnorm, n = 101, args = list(mean=al_mean, sd=al_sd)) + ylab("") + xlab("Count") +
+  scale_y_continuous(breaks = NULL) + ggtitle("Distribution") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+
+```{r}
+dsALTransformModel <- dsALTransformCombined
+
+dsALTransformModel <- data.frame(subset(dsALTransformCombined, select = c(airline,incident_type,count)))
+head(dsAL)
+```
+
 ## Interpret Results
 
+<img src="https://github.com/monuchacko/cuny_msds/blob/master/data_607/Images/airlines_safety.png?raw=true" alt="Airlines Safety" />
 
-https://tidyr.tidyverse.org/reference/gather.html
+Passengers tend to avoid airlines that had major incident. They consider these airlines unsafe. We are going to use data to find out if this is true or based on fear. To find out we have a dataset of incidence, year the incident occurred and few other data.
 
-OSEMN Process
-- Obtain Data
-- Scrub Data
-- Explore Data
-- Model Data
-- Interpret Results
+After loading the data, we performed transformation. We put them in categories based on the incident type. We explored the data using the OSEMN workflow. After analyzing we did not see any pattern to suggest the airline that had major incident continued to be unsafe. The below heat map of airlines and incidence per year does not have a continuing pattern. These incidences appear to be independent. If we look at the distribution (see chart above), we cannot find a pattern of normal distribution suggesting that the incidences are not related to each other.
 
 
+```{r}
+ggplot(dsALTransformCombined, aes(incident_year, airline)) + geom_tile(aes(fill = count), colour = "white") + scale_fill_gradient(low = "white", high = "steelblue") + theme(text = element_text(size=7), axis.text.x = element_text(angle=90, hjust=1)) + ylab("Airlines") + xlab("Incident Year") + ggtitle("Incidence per Year Heat Map ") + theme(plot.title = element_text(hjust = 0.5))
+```
 
+The table below shows the incidence type, year, incidence count and ratio to size for every airlines. After examining the data there is no correlation. We can therefore conclude that safety based on major airline incidence are influenced by fear rather than reality.  
 
+```{r}
+customGreen0 = "#DeF7E9"
+customGreen = "#71CA97"
+customRed = "#ff7f7f"
 
+dsALTransformTable <- subset(dsALTransformCombined, select = c(airline,incident_type,incident_year,count,incident_ratio))
 
+names(dsALTransformTable) <- c("Airlines","Incident Type","Year","Count","Ratio")
+  
+formattable(dsALTransformTable, align =c("l","c","c","c","c", "c", "c", "c", "r"), list(
+  `Indicator Name` = formatter("span", style = ~ style(color = "grey",font.weight = "bold")), 
+  `Count`= color_tile(customGreen, customRed),
+  `Ratio`= color_tile(customGreen, customRed)
+))
+```
 
-
-
-
-
-### Final Project Checklist
-
-To receive full credit, you’ll need to deliver on all of the items in the checklist below. Please read carefully through this checklist before you make your project proposal. You are (within these checklist constraints) strongly urged to limit scope and make the necessary simplifying assumptions so that you can deliver your work on time!
- Proposal describes your motivation for performing this analysis.
- Proposal describes likely data sources.
- Your project has a recognizable “data science workflow,” such as the OSEMN workflow or Hadley Wickham’s Grammar of Data Science. [Example: First the data is acquired, then necessary transformations and clean-up are performed, then the analysis and presentation work is performed]
- Project includes data from at least two different types of data sources (e.g., two or more of these: relational or CSV, Neo4J, web page [scraped or API], MongoDB, etc.)
- Project includes at least one data transformation operation. [Examples: transforming from wide to long; converting columns to date format]
- Project includes at least one statistical analysis and at least one graphics that describes or validates your data.
- Project includes at least one graphic that supports your conclusion(s).
- Project includes at least one statistical analysis that supports your conclusion(s).
- Project includes at least one feature that we did not cover in class! There are many examples: “I used ggmap; I created a decision tree; I ranked the results; I created my presentation slides directly from R; I figured out to use OAuth 2.0…”
- Presentation. Was the presentation delivered in the allotted time (3 to 5 minutes)?
- Presentation. Did you show (at least) one challenge you encountered in code and/or data, and what you did when you encountered that challenge? If you didn’t encounter any challenges, your assignment was clearly too easy for you!
- Presentation. Did the audience come away with a clear understanding of your motivation for undertaking the project?
- Presentation. Did the audience come away with a clear understanding of at least one insight you gained or conclusion you reached or hypothesis you “confirmed” (rejected or failed to reject…)?
- Code and data. Have you delivered the submitted code and data where it is self-contained—preferably in rpubs.com and github? Am I able to fully reproduce your results with what you’ve delivered? You won’t receive full credit if your code references data on your local machine!
- Code and data. Does all of the delivered code run without errors?
- Code and data. Have you delivered your code and conclusions using a “reproducible research” tool such as RMarkdown?
- Deadline management. Were your draft project proposal, project, and presentation delivered on time? Any part of the project that is turned in late will receive a maximum grade of 80%. Please turn in your work on time! You are of course welcome to deliver ahead of schedule!
