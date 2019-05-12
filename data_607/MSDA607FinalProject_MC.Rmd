@@ -55,6 +55,8 @@ library(formattable)
 
 Data can be normalised in relation data structure. Following is the structure of the relation data. The main detail table tblAirlinesIncident contains details of the incident and is related to master tables tblAirlines, tblIncidentTypeMst and tblYearRange using foreign key.
 
+View SQL Queries: https://github.com/monuchacko/cuny_msds/blob/master/data_607/DATA607_FinalProject.sql 
+
 <img src="https://github.com/monuchacko/cuny_msds/blob/master/data_607/Images/DATA607_db.png?raw=true" alt="SQL Data" />
 
 ### MongoDB
