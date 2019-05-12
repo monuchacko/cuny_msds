@@ -23,17 +23,19 @@ Should Travelers Avoid Flying Airlines That Have Had Crashes in the Past?
 
 The data set contains crash data from many airlines. After a crash people move to other airlines for safety. Does that mean than other airlines are more safe than the airlines that crashed? We will take a look at historical data to find if there is a pattern after the crash or is it just a fear
 
-## Data Source
+## Obtain Data
 
-Parameters
-airline: Airline (asterisk indicates that regional subsidiaries are included)
-avail_seat_km_per_week:	Available seat kilometers flown every week
-incidents_85_99: Total number of incidents, 1985–1999
-fatal_accidents_85_99: Total number of fatal accidents, 1985–1999
-fatalities_85_99: Total number of fatalities, 1985–1999
-incidents_00_14: Total number of incidents, 2000–2014
-fatal_accidents_00_14: Total number of fatal accidents, 2000–2014
-fatalities_00_14: Total number of fatalities, 2000–2014
+### Data Source
+
+Parameters <br/>
+- airline: Airline (asterisk indicates that regional subsidiaries are included) <br/>
+- avail_seat_km_per_week:	Available seat kilometers flown every week <br/>
+- incidents_85_99: Total number of incidents, 1985–1999 <br/>
+- fatal_accidents_85_99: Total number of fatal accidents, 1985–1999 <br/>
+- fatalities_85_99: Total number of fatalities, 1985–1999 <br/>
+- incidents_00_14: Total number of incidents, 2000–2014 <br/>
+- fatal_accidents_00_14: Total number of fatal accidents, 2000–2014 <br/>
+- fatalities_00_14: Total number of fatalities, 2000–2014 <br/>
 
 Source: https://github.com/fivethirtyeight/data/blob/master/airline-safety/airline-safety.csv
 
@@ -45,33 +47,145 @@ library(janitor)
 library(kableExtra)
 library(stringr)
 library(ggplot2)
+library(caTools)
 ```
 
+### SQL Database
+
+Data can be normalised in relation data structure. Following is the structure of the relation data. The main detail table tblAirlinesIncident contains details of the incident and is related to master tables tblAirlines, tblIncidentTypeMst and tblYearRange using foreign key.
+
+<img src="https://github.com/monuchacko/cuny_msds/blob/master/data_607/Images/DATA607_db.png?raw=true" alt="SQL Data" />
+
+### MongoDB
+
+Data can be stored in scalable document sets in MongoDB. Every row is stored in json format as document. This approach can make this data scalable. Here we are inserting document for each row. For every row MongoDB creates an identifier _id. Airlines incident data is stored with all the fields and corresponding value. 
+
+<img src="https://github.com/monuchacko/cuny_msds/blob/master/data_607/Images/DATA607_mongodb.png?raw=true" alt="SQL MongoDB" />
+
+### CSV data
+
+Data can be extracted from CSV to data frame using R packages. This data can be cleaned and transformed. In the code below we are loading data directly from the source. The data is inspected and cleaned.
 
 ```{r warning=FALSE, message=FALSE}
 # Read from csv
 dsAL <- read.csv(file="https://raw.githubusercontent.com/fivethirtyeight/data/master/airline-safety/airline-safety.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
 
-# Remove asterisk
-dsAL$airline <- stringr::str_replace(dsAL$airline, '\\*', '')
-
 # Display sample data
 head(dsAL) %>% kable() %>% kable_styling()
 ```
 
+## Scrub Data
+
+### Extraction/ Transformation
 
 ```{r warning=FALSE, message=FALSE}
 
-data_airline <- stringr::str_replace(dsAL$airline, '\\*', '')
-head(unique(data_airline)) %>% kable() %>% kable_styling()
+# Remove asterisk
+dsAL$airline <- stringr::str_replace(dsAL$airline, '\\*', '')
+
+# Use this data to populate sql master tables
+# Airlines Master
+airlineMst <- unique(dsAL$airline)
+head(airlineMst) %>% kable() %>% kable_styling()
+
+# Incident Master
+incidentMst <- c("incident", "accident", "fatalities")
+head(incidentMst) %>% kable() %>% kable_styling()
+
+# Year Range Master
+yearRangeMst <- c("yr_85_99", "yr_00_14")
+
+# View Data
+head(yearRangeMst) %>% kable() %>% kable_styling()
+
 ```
 
 
 ```{r}
+str(dsAL)
 
-gather(dsAL, "Yr_85_99", "fatal_accidents", fatal_accidents_85_99)
+# Rename column names (if necessary)
+names(dsAL) <- c("airline", "avail_seat_km_per_week", "incidents_85_99", "fatal_accidents_85_99", "fatalities_85_99", "incidents_00_14", "fatal_accidents_00_14", "fatalities_00_14")
+
+# Gather Data
+dsALTransform01 <- gather(dsAL, "incident", "count", incidents_85_99)
+dsALTransform02 <- gather(dsAL, "incident", "count", fatal_accidents_85_99)
+dsALTransform03 <- gather(dsAL, "incident", "count", fatalities_85_99)
+dsALTransform04 <- gather(dsAL, "incident", "count", incidents_00_14)
+dsALTransform05 <- gather(dsAL, "incident", "count", fatal_accidents_00_14)
+dsALTransform06 <- gather(dsAL, "incident", "count", fatalities_00_14)
+
+# Extract Subset
+dsALTransform01 <- subset(dsALTransform01, select = c(airline,avail_seat_km_per_week,incident,count) )
+dsALTransform02 <- subset(dsALTransform02, select = c(airline,avail_seat_km_per_week,incident,count) )
+dsALTransform03 <- subset(dsALTransform03, select = c(airline,avail_seat_km_per_week,incident,count) )
+dsALTransform04 <- subset(dsALTransform04, select = c(airline,avail_seat_km_per_week,incident,count) )
+dsALTransform05 <- subset(dsALTransform05, select = c(airline,avail_seat_km_per_week,incident,count) )
+dsALTransform06 <- subset(dsALTransform06, select = c(airline,avail_seat_km_per_week,incident,count) )
+
+# View Column Names of one sample DataSet
+names(dsALTransform01)
+
+# Combine Data into one DataSet
+dsALTransformCombined <- rbind(dsALTransform01, dsALTransform02, dsALTransform03, dsALTransform04, dsALTransform05, dsALTransform06)
+
+# Find the mean
+al_seats_mean = mean(dsALTransformCombined$avail_seat_km_per_week)
+al_seats_mean
+
+# Create Columns from Existing
+dsALTransformCombined <- dsALTransformCombined %>% 
+  mutate(incident_type = ifelse(incident == "incidents_85_99", "incident", ifelse(incident == "fatal_accidents_85_99", "fatal_accident", ifelse(incident == "fatalities_85_99", "fatalities", ifelse(incident == "incidents_00_14", "incident", ifelse(incident == "fatal_accidents_00_14", "fatal_accident", ifelse(incident == "fatalities_00_14", "fatalities", ""))))))) %>% 
+  mutate(incident_year = ifelse(incident == "incidents_85_99", "1999", ifelse(incident == "fatal_accidents_85_99", "1999", ifelse(incident == "fatalities_85_99", "1999", ifelse(incident == "incidents_00_14", "2014", ifelse(incident == "fatal_accidents_00_14", "2014", ifelse(incident == "fatalities_00_14", "2014", ""))))))) %>% 
+  mutate(incident_ratio = ifelse(count == 0, round(avail_seat_km_per_week/1000000, 0), round((avail_seat_km_per_week/1000000)/count, 0) ))
+
+#dsALTransformCombined %>% kable() %>% kable_styling()
+
+head(dsALTransformCombined) %>% kable() %>% kable_styling()
+
+al_mean = mean(dsALTransformCombined$count)
+al_mean
+
+al_sd = sd(dsALTransformCombined$count)
+al_sd
+
+dim(dsALTransform01)
+dim(dsALTransformCombined)
+
 ```
 
+
+## Explore Data
+
+```{r}
+ggplot(data=dsALTransformCombined, aes(x=count, y=incident_type)) + geom_point(aes(count, incident_type), color = "#FC4E07") + ylab("Incident Type") + xlab("Count") 
+ggplot(data=dsALTransformCombined, aes(x=count, y=incident_year)) + geom_point(aes(count, incident_year), color = "#FC4E07") + ylab("Incident Year") + xlab("Count")
+ggplot(data=dsALTransformCombined, aes(x=count, y=incident_ratio)) + geom_line(aes(size=incident_ratio), color = "#FC4E07") + ylab("Incident Ratio") + xlab("Count")
+
+dsALTransformCombined_dnorm <- dnorm(dsALTransformCombined$count, mean=al_mean, sd=al_sd)
+plot(dsALTransformCombined$count, dsALTransformCombined_dnorm)
+
+ggplot(data = dsALTransformCombined, aes(dsALTransformCombined$count)) +
+  stat_function(fun = dnorm, n = 101, args = list(mean=al_mean, sd=al_sd)) + ylab("") + xlab("Count") +
+  scale_y_continuous(breaks = NULL)
+
+#plot(dsALTransformCombined$incident, dsALTransformCombined$count)
+
+#dsALTransformCombined
+```
+
+```{r}
+
+#(p <- ggplot(dsALTransformCombined, aes(count, incident)) + geom_tile(aes(fill = rescale),
+#+     colour = "white") + scale_fill_gradient(low = "white",
+#+     high = "steelblue"))
+
+#p
+```
+
+## Model Data
+
+## Interpret Results
 
 
 https://tidyr.tidyverse.org/reference/gather.html
