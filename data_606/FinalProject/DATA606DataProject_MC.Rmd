@@ -1,0 +1,329 @@
+---
+title: "DATA 606 Data Project"
+author: "Monu Chacko"
+date: "5/12/2019"
+output: 
+  html_document:
+    toc: true
+    code_folding: show
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    theme: flatly
+    highlight: kate
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r echo=TRUE, results='hide', warning=FALSE, message=FALSE}
+library(dplyr)
+library(kableExtra)
+library(DT)
+library(ggplot2)
+library(stringr)
+library(ggplot2)
+library(tidyverse)
+library(gmodels)
+
+# load data
+data_utl <- "https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_606/security_breaches.csv"
+
+#Read csv data
+security_breaches <- read.csv(data_utl, stringsAsFactors = FALSE)
+```
+
+
+### Part 1 - Introduction
+
+There are many types of IT security breaches. They can be grouped into two broad categiries - remote and physical. Breaches that happen remotely uses network vulnerability to gain access to electronic data. In this type of breach the hacker is remote. For breaches that happens physically, the hacker is on site and steal physical data like printouts, stealing hard drives etc.
+
+In this study we are trying to determine if the hypothesis of remote IT security breach rising is true or false. In other words we are trying to find if more hackers prefer to be on site (physically) or want to be remote.
+
+
+### Part 2 - Data
+
+The data primarily consists of breaches that occurred from 2010 through early 2014 when the extract was taken. However, a few breaches are recorded including 1 from 1997, 8 from 2002-2007, 13 from 2008 and 56 from 2009. The numbers of breaches from 2010 - 2014 are 211, 229, 227, 254 and 56, respectively. 
+
+A data.frame with 1055 observations on the following 24 variables: 
+
+- Number: integer record number in the HHS data base
+- Name_of_Covered_Entity: factor giving the name of the entity experiencing the breach
+- State: Factor giving the 2-letter code of the state where the breach occurred. This has 52 levels for the 50 states plus the District of Columbia (DC) and Puerto Rico (PR).
+- Business_Associate_Involved: Factor giving the name of a subcontractor (or blank) associated with the breach.
+- Individuals_Affected: integer number of humans whose records were compromised in the breach. This is 500 or greater; U.S. law requires reports of breaches involving 500 or more records but not of breaches involving fewer.
+- Date_of_Breach: character vector giving the date or date range of the breach. Recodes as Dates in breach_start and breach_end.
+- Type_of_Breach: factor with 29 levels giving the type of breach (e.g., "Theft" vs., "Unauthorized Access/Disclosure", etc.)
+- Location_of_Breached_Information: factor with 41 levels coding the location from which the breach occurred (e.g., "Paper", "Laptop", etc.)
+- Date_Posted_or_Updated: Date the information was posted to the HHS data base or last updated.
+- Summary: character vector of a summary of the incident.
+- breach_start: Date of the start of the incident = first date given in Date_of_Breach above.
+
+We don't need all the above columns. We can transform/extract data to form the columns below:
+
+- EntityName
+- State
+- Year
+- BreachType
+- AffectedNumber
+
+
+```{r}
+colnames(security_breaches)
+
+security_breaches_df = security_breaches[c("Name_of_Covered_Entity","State","Individuals_Affected","Date_of_Breach","Type_of_Breach","Location_of_Breached_Information","breach_start","breach_end","year")]
+
+# Display data
+datatable(security_breaches_df)
+
+```
+
+
+#### Data Preparation
+
+The data is stored as text in various columns. We have to extract data that suggest Physical or Remote. For this we create a array "physical_key_words" that contains words that indicates Physical breach. We will examine columns - Summary and Location_of_Breached_Information.
+
+
+```{r}
+# Data cleaning/extraction
+security_breaches_new <- security_breaches
+
+# List of keywords to extract physical/ remote variable
+physical_key_words <- c("binder","transit","public transportation","desk","usb flash drive","cleaning crew","locked facility","tapes","paper","desktop","portable","disposal")
+```
+
+Extract Physical breaches from text from column "Summary"
+
+```{r warning=FALSE, message=FALSE}
+security_breaches_new$PhysicalBreach1 <- str_detect(security_breaches_new$Summary, fixed(physical_key_words, ignore_case=TRUE))
+```
+
+Extract Physical breaches from text from column "Location_of_Breached_Information"
+
+```{r warning=FALSE, message=FALSE}
+security_breaches_new$PhysicalBreach2 <- str_detect(security_breaches_new$Location_of_Breached_Information, fixed(physical_key_words, ignore_case=TRUE))
+```
+
+Combine both variable to one
+
+```{r warning=FALSE, message=FALSE}
+security_breaches_new$PhysicalBreach3 <- (security_breaches_new$PhysicalBreach1 | security_breaches_new$PhysicalBreach2)
+```
+
+Divide Individuals_Affected by 10000 for the charts
+
+```{r}
+security_breaches_new$Individuals_Affected <- (security_breaches_new$Individuals_Affected/10000)
+```
+
+Extract columns
+
+```{r warning=FALSE, message=FALSE}
+security_breaches_new <- select(security_breaches_new, c("State","Individuals_Affected","year","PhysicalBreach3") )
+names(security_breaches_new) <- c("State","AffectedNumber","Year","IsPhysical")
+
+# New data
+head(security_breaches_new)
+```
+
+
+### Part 3 - Exploratory data analysis
+
+#### Chi Squared Tests
+
+- Null Hypothesis - Physical breach is on the rise over year and not remote
+- Alternative Hypothesis - Remote breach is on the rise over year and not physical
+
+```{r warning=FALSE, message=FALSE}
+# Prepare data for analysis
+security_breaches_new_r01 <- security_breaches_new %>% dplyr::select(Year,IsPhysical) 
+
+# Group by year
+security_breaches_new_rg01 <- security_breaches_new_r01 %>% group_by(Year,IsPhysical) %>% summarize(n()) 
+
+# Spread the data
+security_breaches_new_rg01 <- spread(security_breaches_new_rg01, Year,"n()")
+
+# Remove NA. Replace it with 0.
+security_breaches_new_rg01[is.na(security_breaches_new_rg01)] <- 0
+
+security_breaches_new_rg01 <- as.data.frame(t(security_breaches_new_rg01))
+
+security_breaches_new_rg02 <- cbind(rownames(security_breaches_new_rg01), security_breaches_new_rg01)
+rownames(security_breaches_new_rg02) <- NULL
+colnames(security_breaches_new_rg02) <- c("Year","IsRemote", "IsPhysical")
+
+security_breaches_new_rg02 <- security_breaches_new_rg02[!grepl("IsPhysical", security_breaches_new_rg02$Year),]
+
+rownames(security_breaches_new_rg02) <- 1:nrow(security_breaches_new_rg02)
+
+# View data
+head(security_breaches_new_rg02) %>% kable() %>% kable_styling()
+
+# Perform Chi test
+chisq.test(security_breaches_new_rg02[,-1])
+
+```
+
+Since the p-value is less than 0.05, we can reject the null hypothesis that Physical breach is on the rise over year and not remote. We can accept the alternative hypothesis that Remote breach is on the rise over year and not physical
+
+
+```{r}
+summary(security_breaches_new_rg02$IsPhysical)
+summary(security_breaches_new_rg02$IsRemote)
+
+qqnorm(security_breaches_new_rg02$IsPhysical)
+qqline(security_breaches_new_rg02$IsPhysical)
+
+qqnorm(security_breaches_new_rg02$IsRemote)
+qqline(security_breaches_new_rg02$IsRemote)
+
+hist(security_breaches_new_rg02$IsPhysical, main = "Physical Breaches", xlab = "Breach")
+hist(security_breaches_new_rg02$IsRemote, main = "Remote Breaches", xlab = "Breach")
+
+plot(security_breaches_new_rg02$IsPhysical, security_breaches_new_rg02$Year, xlab = "Physical Breaches", ylab = "Year", col = 'darkblue')
+
+plot(security_breaches_new_rg02$IsRemote, security_breaches_new_rg02$Year, xlab = "Remote Breaches", ylab = "Year", col = 'darkblue')
+
+```
+
+
+#### T-Test
+
+Lets begin out t-test. We will examine our assumptions and do the test.
+
+- Assumption 1: Independent Samples
+- Assumption 2: Samples are drawn from population with equal variance
+- Assumption 3: Samples are drawn from the same population with a normal distribution
+
+```{r}
+
+security_breaches_new_rgrm02 <- select(security_breaches_new_rg02, c("Year","IsRemote") )
+security_breaches_new_rgph02 <- select(security_breaches_new_rg02, c("Year","IsPhysical") )
+
+names(security_breaches_new_rgrm02) <- c("Year","Count")
+names(security_breaches_new_rgph02) <- c("Year","Count")
+
+security_breaches_new_rgrm02$BreachType <- "Remote"
+security_breaches_new_rgph02$BreachType <- "Physical"
+
+security_breaches_new_rgrmph02 <- rbind(security_breaches_new_rgrm02, security_breaches_new_rgph02)
+
+security_breaches_new_rgrmph02mtx <- data.frame(as.matrix(security_breaches_new_rgrmph02[,2:3]))
+
+# Examine the data
+boxplot(as.numeric(security_breaches_new_rgrmph02mtx$Count)~security_breaches_new_rgrmph02mtx$BreachType,ylab="Breach Count", main="Physical vs Remote Breach Count")
+
+# Assumption 1: Independent Samples
+# The samples are independent
+
+# Assumption 2: Samples are drawn from population with equal variance (NOT MET)
+var.test(as.numeric(security_breaches_new_rgrmph02mtx$Count)~security_breaches_new_rgrmph02mtx$BreachType)
+```
+
+As we see the p-value is below 0.05 so we reject the null hypothesis. This assumption is not met. If the assumption were met then we countinue with the below.
+
+```{r}
+# Assumption 3: Samples are drawn from the same population with a normal distribution
+isRemote <- subset(security_breaches_new_rgrmph02mtx, BreachType=="Remote")
+isPhysical <- subset(security_breaches_new_rgrmph02mtx, BreachType=="Physical")
+
+shapiro.test(as.numeric(isRemote$Count))
+shapiro.test(as.numeric(isPhysical$Count))
+
+qqnorm(as.numeric(isRemote$Count))
+qqline(as.numeric(isRemote$Count))
+
+qqnorm(as.numeric(isPhysical$Count))
+qqline(as.numeric(isPhysical$Count))
+
+t.test(as.numeric(security_breaches_new_rgrmph02mtx$Count)~security_breaches_new_rgrmph02mtx$BreachType)
+```
+
+The p-value is less than 0.05 and we reject the null hypothesis and keep the alternative hypothesis
+
+
+#### Cross Table
+
+```{r}
+# 2-Way Cross Tabulation
+CrossTable(security_breaches_new_rg02$IsPhysical, security_breaches_new_rg02$IsRemote)
+```
+
+
+
+```{r}
+security_breaches_004 <- security_breaches_new %>% dplyr::select(State,Year,IsPhysical)
+
+security_breaches_a_004 <- security_breaches_004 %>%
+  group_by(State,IsPhysical) %>%
+  summarize(n())
+
+security_breaches_a1_004 <- spread(security_breaches_a_004, State,"n()")
+
+security_breaches_a1_004 <- as.data.frame(t(security_breaches_a1_004))
+security_breaches_a1_004[is.na(security_breaches_a1_004)] <- 0
+
+
+names(security_breaches_a1_004) <- c("IsRemote", "IsPhysical")
+barplot(as.matrix(security_breaches_a1_004), beside = TRUE)
+
+
+#barplot(as.matrix(all_age_contin), beside = TRUE)
+chisq.test(security_breaches_a1_004[,-1]) #We remove the major names for the chi-squared test
+
+```
+
+
+#### Heat map
+
+
+```{r}
+
+ggplot(security_breaches_new, aes(Year, State)) + geom_tile(aes(fill = AffectedNumber), colour = "white") + scale_fill_gradient(low = "steelblue", high = "red") + theme(text = element_text(size=7), axis.text.x = element_text(angle=90, hjust=1)) + ylab("State") + xlab("Year") + ggtitle("Heat Map - Breaches by State per Year") + theme(plot.title = element_text(hjust = 0.5))
+
+security_breaches_new_physical <- security_breaches_new %>% filter(IsPhysical == TRUE)
+
+ggplot(security_breaches_new_physical, aes(Year, State)) + geom_tile(aes(fill = AffectedNumber), colour = "white") + scale_fill_gradient(low = "steelblue", high = "red") + theme(text = element_text(size=7), axis.text.x = element_text(angle=90, hjust=1)) + ylab("State") + xlab("Year") + ggtitle("Heat Map - Physical Breaches by State per Year") + theme(plot.title = element_text(hjust = 0.5))
+
+security_breaches_new_remote <- security_breaches_new %>% filter(IsPhysical == FALSE)
+
+ggplot(security_breaches_new_remote, aes(Year, State)) + geom_tile(aes(fill = AffectedNumber), colour = "white") + scale_fill_gradient(low = "steelblue", high = "red") + theme(text = element_text(size=7), axis.text.x = element_text(angle=90, hjust=1)) + ylab("State") + xlab("Year") + ggtitle("Heat Map - Remote Breaches by State per Year") + theme(plot.title = element_text(hjust = 0.5))
+
+
+ggplot(security_breaches_new, aes(Year, AffectedNumber)) + geom_count(col="tomato3", show.legend=F) 
+
+al_mean <- mean(security_breaches_new$AffectedNumber)
+al_sd <- sd(security_breaches_new$AffectedNumber)
+
+# Find the distribution
+ggplot(data = security_breaches_new, aes(security_breaches_new$AffectedNumber)) +
+  stat_function(fun = dnorm, n = 101, args = list(mean=al_mean, sd=al_sd)) + ylab("") + xlab("Count") +
+  scale_y_continuous(breaks = NULL) + ggtitle("Distribution") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+summary(security_breaches_new$AffectedNumber)
+summary(security_breaches_new$IsPhysical)
+
+#unempl <- cbind(all_ages$Unemployment_rate, rct_grad$Unemployment_rate, grad_stdnt$Grad_unemployment_rate) boxplot(unempl,names = c("All", "Recent Grad", "Grad Student"), ylab = "Unemployment Rate")
+
+#ggplot(all_ages, aes(x = Unemployment_rate, y = Median)) + geom_point(color = 'blue') + geom_smooth(method = "lm", formula = y~x)
+
+#security_breaches_new_g1 <- select(security_breaches_new, c("State","Year","IsPhysical") )
+#security_breaches_new_g1 %>% group_by(State)
+
+```
+
+### Part 4 - Inference
+
+From the various test we conducted, we can see the breach, both physical or remote occurred after 2009. There were smaller breaches prior to that but we not significiant. We can also infer that the breach occurred across all states and not just particular states. Most of the breaches are small. Hackers prefer remote means than on site.
+
+### Part 5 - Conclusion
+
+In this study were are trying to determine if the hypothesis of remote IT security breach rising is true or false. From the study we can conclude that preferred mean of breach continues to be remote. More has to be done to strengthen remote security.
+
+### References
+
+Charts: http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html
