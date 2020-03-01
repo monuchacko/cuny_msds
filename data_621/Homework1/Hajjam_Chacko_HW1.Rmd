@@ -1,0 +1,1271 @@
+---
+title: "DATA 621 Homework 1 - Spring2020"
+author: "Abdelmalek Hajjam / Monu Chacko"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, setup, include=FALSE , warning=FALSE, echo=TRUE}
+library(knitr)
+library(tidyverse)
+library(kableExtra)
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(Hmisc)
+library(PerformanceAnalytics)
+library(ggcorrplot)
+library(corrplot)
+library(Amelia)
+library(reshape)
+library(ggplot2)
+
+opts_chunk$set(echo = TRUE)
+```
+
+## Purpose
+
+This report covers an attempt to build a model to predict number of wins of a baseball team in a season based on several offensive and deffensive statistics. Resulting model explained about 36% of variability in the target variable and included most of the provided explanatory variables. Some potentially helpful variables were not included in the data set. For instance, number of At Bats can be used to calculate on-base percentage which may correlate strongly with winning percentage. The model can be revised with additional variables or further analysis. 
+
+## Data Exploration
+
+The data set describes baseball team statistics for the years 1871 to 2006 inclusive. Each record in the data set represents the performance of the team for the given year adjusted to the current length of the season - 162 games. The data set includes 16 variables (excluding the index) and the training set includes 2,276 records.
+
+#### Dimensions
+
+For reproducibility purposes, we have put the original data sets in git-hub account and then we will read them from there.
+Let’s load our data and look at the the dimensions of our data set.
+```{r }
+#BTraining <- read.csv("moneyball-training-data.csv")
+BTraining <- read.csv("https://raw.githubusercontent.com/theoracley/Data621/master/Homework1/moneyball-training-data.csv")
+dim(BTraining)
+```
+As we can notice, the training data set has a total of 17 different variables. The total number or records available are 2276.
+
+#### Structure
+
+The below structure is currently present in the data, for simplicity purposes, we have loaded and treated this data set as a data frame in which all the variables are integers.
+```{r }
+str(BTraining)
+```
+
+#### Summary
+
+Let's look at the summary of our data.
+```{r}
+BTraining.summary <- data.frame(unclass(summary(BTraining[2:17])),
+check.names = FALSE,
+row.names = NULL,
+stringsAsFactors = FALSE)
+BTraining.summary
+```
+
+From the statistics above, we can see that there are 6 variables that contain some **NA**'s values, and we need to deal with them later. 
+
+```{r}
+BTraining.summary$TEAM_BATTING_SO[7]
+BTraining.summary$TEAM_BASERUN_SB[7]
+BTraining.summary$TEAM_BASERUN_CS[7]
+BTraining.summary$TEAM_BATTING_HBP[7]
+BTraining.summary$TEAM_PITCHING_SO[7]
+BTraining.summary$TEAM_FIELDING_DP[7]
+```
+
+Each variable is presented below with corresponding basic statistics (minimum, median and maximum values, mean and standard deviation, number of records with missing values and zero values), boxplot, density plot with highlighted mean value, and scatterplot against outcome variable (`TARGET_WINS`) with best fit line. This information is used to check general validity of data and adjust as necessary. 
+
+Let's create a statistical container that will hold this information for each variable
+
+```{r}
+
+sumBTraining = data.frame(Variable = character(),
+                   Min = integer(),
+                   Median = integer(),
+                   Mean = double(),
+                   SD = double(),
+                   Max = integer(),
+                   Num_NAs = integer(),
+                   Num_Zeros = integer())
+for (i in 2:17) {
+  sumBTraining <- rbind(sumBTraining, data.frame(Variable = colnames(BTraining)[i],
+                                   Min = min(BTraining[,i], na.rm=TRUE),
+                                   Median = median(BTraining[,i], na.rm=TRUE),
+                                   Mean = mean(BTraining[,i], na.rm=TRUE),
+                                   SD = sd(BTraining[,i], na.rm=TRUE),
+                                   Max = max(BTraining[,i], na.rm=TRUE),
+                                   Num_NAs = sum(is.na(BTraining[,i])),
+                                   Num_Zeros = length(which(BTraining[,i]==0)))
+                 )
+}
+colnames(sumBTraining) <- c("", "Min", "Median", "Mean", "SD", "Max", "Num of NAs", "Num of Zeros")
+
+```
+
+Let's go through every variable and check on the information output.
+
+\newpage
+#### TEAM_BATTING_H: Number of team base hits (includes singles, doubles, triples and home runs)
+
+```{r fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_BATTING_H",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_BATTING_H)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_BATTING_H)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_BATTING_H, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_BATTING_H, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** There are no missing values. The range and distribution are reasonable.
+
+\newpage
+#### TEAM_BATTING_2B: Number of team doubles
+
+```{r fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_BATTING_2B",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_BATTING_2B)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_BATTING_2B)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_BATTING_2B, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_BATTING_2B, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** There are no missing values. The range and distribution are reasonable.
+
+\newpage
+#### TEAM_BATTING_3B: Number of team triples
+
+```{r fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_BATTING_3B",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_BATTING_3B)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_BATTING_3B)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_BATTING_3B, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_BATTING_3B, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** The range and distribution are reasonable. There are 2 records with zero values which is unrealistic for a team in a season. One record (index 1347) has 12 variables with missing values, including the outcome variable. This record will be deleted from the data set. Second record (index 1494) has 7 missing variables, but it does have some recorded values in all categories - batting, pitching and fielding. Zero value for `TEAM_BATTING_3B` can be replaced with the median (because the distribution is right-skewed, median value will provide more realistic estimate).
+
+\newpage
+#### TEAM_BATTING_HR: Number of team home runs
+
+```{r fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_BATTING_HR",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_BATTING_HR)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_BATTING_HR)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_BATTING_HR, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_BATTING_HR, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** The range is reasonable. The distribution is interesting because it is multimodal. Most likely this indicates major changes in game dynamics - perhaps, some rule adjustments started favoring batters. Or perhaps, this is an affect of steroid era. There are 15 records with zero values which is unrealistic for this variable. They can be imputed from other values.
+
+\newpage
+#### TEAM_BATTING_BB: Number of team walks
+
+```{r fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_BATTING_BB",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_BATTING_BB)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_BATTING_BB)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_BATTING_BB, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_BATTING_BB, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** The range and distribution are reasonable. There is one record (index 1347) that has a zero value. This record was discussed above (under `TEAM_BATTING_3B`) and it will be deleted from the data set.
+
+\newpage
+#### TEAM_BATTING_HBP: Number of team batters hit by pitch
+
+```{r, warning=FALSE, fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_BATTING_HBP",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_BATTING_HBP)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_BATTING_HBP)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_BATTING_HBP, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_BATTING_HBP, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** There are 2,085 records - 91.6% of data set - that are missing value. Because this variable is missing for majority of records, it will not be imputed and will be left out from the regression model.
+
+\newpage
+#### TEAM_BATTING_SO: Number of team strikeouts by batters
+
+```{r, warning=FALSE, fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_BATTING_SO",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_BATTING_SO)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_BATTING_SO)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_BATTING_SO, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_BATTING_SO, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** There are 122 records with missing or zero value (as wtih other variables a zero value is unrealistic). These values can be imputed. Similarly to homeruns, the distribution is multimodal, which is interesting enough for additional analysis. Another area of concern is a noticeable left tail. It is highly unlikely to have games without any strikeouts, so anything lower than 162 (average of 1 strikeout per game) is definitely suspect.
+
+\newpage
+#### TEAM_BASERUN_SB: Number of team stolen bases
+
+```{r, warning=FALSE, fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_BASERUN_SB",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_BASERUN_SB)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_BASERUN_SB)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_BASERUN_SB, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_BASERUN_SB, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** The range and distribution are reasonable. The only issue are 133 records with missing or zero value. These values can be imputed in order to use these records in model building.
+
+\newpage
+#### TEAM_BASERUN_CS: Number of team runners caught stealing
+
+```{r, warning=FALSE, fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_BASERUN_CS",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_BASERUN_CS)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_BASERUN_CS)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_BASERUN_CS, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_BASERUN_CS, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** The range and distribution are reasonable; however, there is significant number of missing values - 773, including one zero value. This represents a third of the entire data set. It may be possible to impute this value, but it may be necessary to leave this variable out of model building.
+
+\newpage
+#### TEAM_FIELDING_E: Number of team fielding errors
+
+```{r fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_FIELDING_E",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_FIELDING_E)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_FIELDING_E)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_FIELDING_E, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_FIELDING_E, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** There are no missing values. Distribution has a very long right tail. Values in the 1,000 and above range are highly suspect. One of the highest historical number of errors is 867 errors by Washington in 1886 for 122 games. That is equal about 1,151 errors for 162 game season. There are multiple values above that number. This may unfavorably influence a model.
+
+\newpage
+#### TEAM_FIELDING_DP: Number of team fielding double plays
+
+```{r, warning=FALSE, fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_FIELDING_DP",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_FIELDING_DP)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_FIELDING_DP)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_FIELDING_DP, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_FIELDING_DP, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** The range and distribution are reasonable. Similar to a few other variables there is a medium number off missing values - 286 records. This value can be imputed.
+
+\newpage
+#### TEAM_PITCHING_BB: Number of walks given up by pitchers
+
+```{r fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_PITCHING_BB",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_PITCHING_BB)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_PITCHING_BB)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_PITCHING_BB, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_PITCHING_BB, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** There are no missing values with the exception of record 1347 which will be deleted from model building. There are some unrealistic outliers. Current record of walks by a team in a season is held by 1949 Boston Red Sox - 835 walks in 155 games. For a 162 game season, this number is 873. This variable will be capped at 1,100 and any value over this will be set to this cap.
+
+\newpage
+#### TEAM_PITCHING_H: Number of base hits given up by pitchers
+
+```{r fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_PITCHING_H",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_PITCHING_H)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_PITCHING_H)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_PITCHING_H, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_PITCHING_H, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** Similar to `TEAM_PITCHING_BB` above, there are no missing value, but there issues with outliers. Based on visualizations, this variable will be capped at 13,000 and any value over this will be set to this cap.
+
+\newpage
+#### TEAM_PITCHING_HR: Number of home runs given up by pitchers
+
+```{r fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_PITCHING_HR",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_PITCHING_HR)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_PITCHING_HR)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_PITCHING_HR, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_PITCHING_HR, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** This variable is more consistent than other pitching variables. The range and distribution are reasonable. Multimodality is interesting similar to a few other variables above. There are 15 zero values which can be imputed as needed. 
+
+\newpage
+#### TEAM_PITCHING_SO: Number of strikeouts by pitchers
+
+```{r, warning=FALSE, fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TEAM_PITCHING_SO",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_PITCHING_SO)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_PITCHING_SO)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_PITCHING_SO, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_PITCHING_SO, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** This variable has 122 missing or zero values. They can be imputed as needed. There is also an outlier issue. Based on visualizations, this variable will be capped at 2,500 and any value over this will be set to this cap.
+
+\newpage
+#### TARGET_WINS: Number of wins **(Outcome)**
+
+```{r fig.width=10, fig.height=6}
+kable(sumBTraining[sumBTraining[,1]=="TARGET_WINS",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TARGET_WINS)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TARGET_WINS)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TARGET_WINS, na.rm=TRUE)), color="red", linetype="dashed", size=1)
+
+grid.arrange(bp, hp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+```
+
+**Analysis:** The range and distribution are reasonable. There are no missing values with the exception of record 1347.
+
+
+\newpage
+#### Density Plots
+
+```{r}
+
+par(mfrow = c(3, 3))
+
+datasub = melt(BTraining[c(2:17)])
+ggplot(datasub, aes(x= value)) +
+    geom_density(fill='red') + facet_wrap(~variable, scales = 'free')
+
+```
+
+* The density plots show various issues with skew an non-normality
+
+
+#### Box Plots
+
+Box plots can provide a visual representation of the variance of the data
+```{r}
+vis <- melt(BTraining) %>%
+   dplyr::filter(variable != "INDEX")
+
+ggplot(vis, aes(x = variable, y = value)) +
+  geom_boxplot(show.legend = T) +
+  stat_summary(fun.y = mean, color = "red", geom = "point", shape = 18, size = 3) +
+  coord_flip() +
+  ylim(0, 2200)
+```
+
+ * The box plots reveal that a great majority of the explanatory variables have high variances
+ * Some of the variables contain extreme outliers that this graph does not show because i had to reduce the limits on the graph to get clear box plots
+ * Many of the medians and means are also not aligned which demonstrates the outliers' effects 
+
+
+#### Histograms
+```{r}
+ggplot(vis, aes(value)) +
+  geom_histogram(fill = "red")  +
+  facet_wrap(~ variable, scales = "free")
+```
+
+  * The histograms reveal that very few of the variables are normally distributed
+  * A few variables are multi-modal
+  * Some of the variable exhibit a lot of skew (e.g. BASERUN_SB)
+
+#### Missing Values
+
+```{r}
+missmap(BTraining[2:17])
+```
+
+\newpage
+#### Correlation Matrix
+
+<!-- ```{r } -->
+<!-- cor(BTraining[,2:17]) -->
+<!-- ``` -->
+
+
+
+```{r }
+# Correlation matrix
+cm <- cor(BTraining, use="pairwise.complete.obs")
+cm <- cm[2:17,2:17]
+names <- c("Wins", "H", "2B", "3B", "HR", "BB", "SO", "SB", "CS", "HBP", "P-H", "P-HR", "P-BB", "P-SO", "E", "DP")
+colnames(cm) <- names; rownames(cm) <- names
+cm <- round(cm, 2)
+cmout <- as.data.frame(cm) %>% mutate_all(function(x) {
+  cell_spec(x, "latex", color = ifelse(x>0.5 | x<(-0.5),"blue","black"))
+  })
+rownames(cmout) <- names
+cmout %>%
+  kable("latex", escape = F, align = "c", row.names = TRUE) %>%
+  kable_styling("striped", full_width = F) %>%
+  row_spec(0, angle = -90)
+# cmout %>%
+#   kable("html", escape = F, align = "c", row.names = TRUE) %>%
+#   kable_styling("striped", full_width = F)
+#   
+
+```
+
+Anything over 0.5 or under -0.5 is highlighted in blue. The matrix was created using complete pairwise observations.
+
+A few conclusions: 
+
+- Not surprisingly there is a very strong correlation between home runs batted in and home runs given up by pitching.
+- There is a negative correlation between number of triples and home runs. A less powerful team may not have enough power to hit home runs, but they get a lot of triples. 
+- There is a strong positive correlation between number of strikeouts and home runs. More swings of the bat results in more home runs. 
+
+
+#### Other correlation visualization
+```{r}
+#chart.Correlation(BTraining)
+
+corr <- cor(cm, use="complete.ob")
+ggcorrplot(corr, hc.order = TRUE, type = "lower",
+   lab = TRUE, lab_size = 3, digits = 2)
+
+cor_res <- cor(BTraining[c(2:17)], use = "na.or.complete")
+corrplot(cor_res,
+  type = "upper",
+  order = "original",
+  tl.col = "black",
+  tl.srt = 45,
+  tl.cex = 0.55)
+
+
+```
+
+Let's read the correlations respective values:
+
+```{r}
+cor_res.df <- data.frame(cor_res)
+cor_res.df[1]
+```
+
+We notice also that there are some very strong positive correlations between other variables, represented in the correlation graphic above, among themselves. some of these are:
+
+- **TEAM_BATTING_H** is strongly correlated in a positive way with **TEAM_PITCHING_H**
+```{r}
+cor_res.df['TEAM_BATTING_H','TEAM_PITCHING_H']
+```
+- **TEAM_BATTING_HR** is strongly correlated in a positive way with **TEAM_PITCHING_HR**
+```{r}
+cor_res.df['TEAM_BATTING_HR','TEAM_PITCHING_HR']
+```
+- **TEAM_BATTING_BB** is strongly correlated in a positive way with **TEAM_PITCHING_BB**
+```{r}
+cor_res.df['TEAM_BATTING_BB','TEAM_PITCHING_BB']
+```
+- **TEAM_BATTING_SO** is strongly correlated in a positive way with **TEAM_PITCHING_SO**
+```{r}
+cor_res.df['TEAM_BATTING_SO','TEAM_PITCHING_SO']
+```
+
+#### Primary insigths
+
+Based on the above data exploration, we could note the following:
+
+- **Missing values**
+
+It is confirmed the presence of missing values and these need to be address in a case by case - (will be taken care of in data Preparation section).
+
+- **Zero values**
+
+It is confirmed the presence of Zero values as minimum entries in the data - (will be taken care of in data Preparation section). 
+
+- **Correlations**
+
+There seems to be very strong correlations to the target variable.
+
+In regards to correlations related to other variables, it is confirmed that some variables have stronh correlation between each others.
+
+\newpage
+## Data Preparation
+
+The following steps and/or assumptions will be considered. The idea is to make our given training data set more homogeneous and workable. The final goal is to be able to predict the TARGET_WINS with our data.
+
+As noted in the **Data Exploration** section, the following adjustments have been performed:
+
+- Record 1347 having 0 for outcome variable `TARGET_WINS` has been removed. 
+- Variable `TEAM_BATTING_HBP` has been removed.
+- Any zero value in all variables has been converted to `NA`.  
+- Any `NA` value has been imputed using `aregImpute` function of `Hmisc` R package. Please see https://www.rdocumentation.org/packages/Hmisc/versions/4.3-1/topics/aregImpute for a full documentation of this function.
+
+- Imputation and $R^2$ business:
+
+```{r results='hide'}
+# Remove observations with no target
+BTraining <- BTraining[which(BTraining$TARGET_WINS!=0), ]
+
+# Reset zero values
+BTraining[which(BTraining$TEAM_BATTING_H==0),"TEAM_BATTING_H"] <- NA
+BTraining[which(BTraining$TEAM_BATTING_2B==0),"TEAM_BATTING_2B"] <- NA
+BTraining[which(BTraining$TEAM_BATTING_3B==0),"TEAM_BATTING_3B"] <- NA
+BTraining[which(BTraining$TEAM_BATTING_HR==0),"TEAM_BATTING_HR"] <- NA
+BTraining[which(BTraining$TEAM_BATTING_BB==0),"TEAM_BATTING_BB"] <- NA
+BTraining[which(BTraining$TEAM_BATTING_SO==0),"TEAM_BATTING_SO"] <- NA
+BTraining[which(BTraining$TEAM_BASERUN_SB==0),"TEAM_BASERUN_SB"] <- NA
+BTraining[which(BTraining$TEAM_BASERUN_CS==0),"TEAM_BASERUN_CS"] <- NA
+BTraining[which(BTraining$TEAM_FIELDING_E==0),"TEAM_FIELDING_E"] <- NA
+BTraining[which(BTraining$TEAM_FIELDING_DP==0),"TEAM_FIELDING_DP"] <- NA
+BTraining[which(BTraining$TEAM_PITCHING_BB==0),"TEAM_PITCHING_BB"] <- NA
+BTraining[which(BTraining$TEAM_PITCHING_H==0),"TEAM_PITCHING_H"] <- NA
+BTraining[which(BTraining$TEAM_PITCHING_HR==0),"TEAM_PITCHING_HR"] <- NA
+BTraining[which(BTraining$TEAM_PITCHING_SO==0),"TEAM_PITCHING_SO"] <- NA
+
+# Impute missing values
+BTrainingImpute <- aregImpute(~ TARGET_WINS + TEAM_BATTING_H + TEAM_BATTING_2B + TEAM_BATTING_3B + 
+                         TEAM_BATTING_HR + TEAM_BATTING_BB + TEAM_BATTING_SO + TEAM_BASERUN_SB + 
+                         TEAM_BASERUN_CS + TEAM_FIELDING_DP + TEAM_FIELDING_E + TEAM_PITCHING_BB + 
+                         TEAM_PITCHING_H + TEAM_PITCHING_HR + TEAM_PITCHING_SO, 
+                       data = BTraining, n.impute = 10)
+BTrainingI <- impute.transcan(BTrainingImpute, imputation=10, data=BTraining, 
+                       list.out=TRUE, pr=FALSE, check=FALSE)
+BTraining$TEAM_BASERUN_SB <- BTrainingI$TEAM_BASERUN_SB
+BTraining$TEAM_BASERUN_CS <- BTrainingI$TEAM_BASERUN_CS
+BTraining$TEAM_BATTING_3B <- BTrainingI$TEAM_BATTING_3B
+BTraining$TEAM_BATTING_HR <- BTrainingI$TEAM_BATTING_HR
+BTraining$TEAM_BATTING_SO <- BTrainingI$TEAM_BATTING_SO
+BTraining$TEAM_FIELDING_DP <- BTrainingI$TEAM_FIELDING_DP
+BTraining$TEAM_PITCHING_HR <- BTrainingI$TEAM_PITCHING_HR
+BTraining$TEAM_PITCHING_SO <- BTrainingI$TEAM_PITCHING_SO
+```
+
+```{r }
+BTrainingImpute$rsq
+```
+
+- Outliers for several variables have been capped: `TEAM_PITCHING_SO` at 2,500, `TEAM_PITCHING_H` at 13,000, and `TEAM_PITCHING_BB` at 1100.
+
+- To even out the spread of `TEAM_FIELDING_E` which has a long right tail with low median value, it has been log-transformed.
+
+- A new variable has been created to calculate number of singles batting in. It is equal to number of base hits minus doubles, triples and home runs. 
+
+```{r results='hide'}
+# Adjust outliers
+BTraining[which(BTraining$TEAM_PITCHING_SO>2500),"TEAM_PITCHING_SO"] <- 2500
+BTraining[which(BTraining$TEAM_PITCHING_H>13000),"TEAM_PITCHING_H"] <- 13000
+BTraining[which(BTraining$TEAM_PITCHING_BB>1100),"TEAM_PITCHING_BB"] <- 1100
+
+# Create singles
+BTraining$TEAM_BATTING_S <- BTraining$TEAM_BATTING_H - BTraining$TEAM_BATTING_2B - BTraining$TEAM_BATTING_3B - BTraining$TEAM_BATTING_HR
+summary(BTraining$TEAM_BATTING_S)
+
+# Create log fielding error
+BTraining$TEAM_FIELDING_E_LOG <- log(BTraining$TEAM_FIELDING_E)
+```
+
+\newpage
+## Model Building
+
+### Model 1
+
+The first model includes several variables, selected manually, that have higher than average correlation to the target variable. They cover hitting, walking and fielding errors.
+
+```{r}
+model1 <- lm(TARGET_WINS ~ TEAM_BATTING_H + TEAM_BATTING_BB + TEAM_FIELDING_E, data=BTraining)
+summary(model1)
+```
+
+All variables are significant, but the $R^2$ value is relatively small at 0.2356.
+
+\newpage
+### Model 2
+
+The second model expand the base hit variable, `TEAM_BATTING_H`, into its components - singles, doubles, triples and home runs. 
+
+```{r }
+model2 <- lm(TARGET_WINS ~ TEAM_BATTING_S + TEAM_BATTING_2B + TEAM_BATTING_3B + TEAM_BATTING_HR + 
+           TEAM_BATTING_BB + TEAM_FIELDING_E, data=BTraining)
+summary(model2)
+```
+
+All variables are still significant and $R^2$ is slightly improved at 0.2574. Another variation of this model - with log-transformed fielding error variable - produced slightly worse results. 
+
+\newpage
+### Model 3
+
+The third model includes several variables manually selected to try and cover different aspects of the game:
+
+- `TEAM_BATTING_SO:TEAM_BATTING_H` interaction covers offensive successes (hits) and failures (strikeouts).
+- Similarly `TEAM_BATTING_BB:TEAM_BATTING_H` interaction covers interaction between hits and walks.
+- `TEAM_BASERUN_SB` covers base running.
+- `TEAM_FIELDING_DP` and `TEAM_FIELDING_E_LOG` cover fielding performance. 
+- `TEAM_PITCHING_HR` covers pitching performance.
+
+```{r }
+model3 <- lm(TARGET_WINS ~ TEAM_BATTING_SO:TEAM_BATTING_H + TEAM_BATTING_BB:TEAM_BATTING_H + TEAM_BATTING_SO + 
+           TEAM_BASERUN_SB + TEAM_FIELDING_DP + TEAM_PITCHING_HR + TEAM_FIELDING_E_LOG, data=BTraining)
+summary(model3)
+```
+
+All variables are statistically significant and there is noticeable improvement of the $R^2$ value at 0.3027.
+
+\newpage
+### Model 4
+
+The fourth model started with all variables and used backward elimination to arrive at the optimal model. It started with the following variables: `TEAM_BATTING_S`, `TEAM_BATTING_2B`, `TEAM_BATTING_3B`, `TEAM_BATTING_HR`, `TEAM_BATTING_BB`, `TEAM_BATTING_SO`, `TEAM_BASERUN_SB`, `TEAM_BASERUN_CS`, `TEAM_FIELDING_DP`, `TEAM_FIELDING_E`, `TEAM_PITCHING_BB`, `TEAM_PITCHING_H`, `TEAM_PITCHING_SO`, and `TEAM_PITCHING_HR`. It was necessary to remove only one variable - `TEAM_BASERUN_CS` - to arrive at a model with all significant variables.
+
+```{r }
+#model started with all variables
+model4 <- lm(TARGET_WINS ~ TEAM_BATTING_S + TEAM_BATTING_2B + TEAM_BATTING_3B + 
+           TEAM_BATTING_HR + TEAM_BATTING_BB + TEAM_BATTING_SO + TEAM_BASERUN_SB + 
+           TEAM_BASERUN_CS + TEAM_FIELDING_DP + TEAM_FIELDING_E + TEAM_PITCHING_BB + 
+           TEAM_PITCHING_H + TEAM_PITCHING_SO + TEAM_PITCHING_HR, data=BTraining)
+
+#then removed TEAM_BASERUN_CS variable, the model becomes
+model4 <- lm(TARGET_WINS ~ TEAM_BATTING_S + TEAM_BATTING_2B + TEAM_BATTING_3B + 
+           TEAM_BATTING_HR + TEAM_BATTING_BB + TEAM_BATTING_SO + TEAM_BASERUN_SB + 
+           TEAM_FIELDING_DP + TEAM_FIELDING_E + TEAM_PITCHING_BB + 
+           TEAM_PITCHING_H + TEAM_PITCHING_SO + TEAM_PITCHING_HR, data=BTraining)
+
+summary(model4)
+```
+
+The $R^2$ value is 0.3581. 
+
+\newpage
+### Model 5
+
+Additionally, several models were created by trying out some variables and there interactions. Variables were selected either based on theoretical expectation or correlation information from the first section. The following model has $R^2$ values of 0.3279, which is relatively close to the fourth model; however, this model has fewer variables and may be preferential because of its simplicity. 
+
+```{r }
+model5 <- lm(TARGET_WINS ~ TEAM_BATTING_S  + TEAM_BATTING_3B + 
+           TEAM_BATTING_HR + TEAM_BASERUN_SB  + 
+           TEAM_FIELDING_E_LOG*TEAM_PITCHING_H, data=BTraining)
+summary(model5)
+```
+The $R^2$ value is 0.3294. 
+
+
+\newpage
+## Model Selection
+
+Based on $R^2$ value, the fourth model ($R^2$=0.358)was selected for further analysis. This model also has the lowest AIC score. 
+
+```{r }
+AIC(model1, model2, model3, model4, model5)
+
+summary(model4)
+```
+
+All variables used in this model have statistical significance at 0.01 level. The F-statistic is high with a p-value nearly 0 and, therefore, is significant. Median value of residuals is close to 0 and they are equally distributed. Standard errors are significantly smaller than estimated coefficients. 
+
+Only 4 variables are negatively correlated - strikeouts, double plays, errors, and home runs allowed. Remaining variables are positively correlated. Some correlation is counter-intuitive. For example, double plays are considered successful defensive moves and should increase the winning percentage. Similarly, allowing base hits should decrease winning percentage. The model indicates otherwise and there are probably there factors that influence these variables. 
+
+Consider residuals plotted against data index. There is no pattern. 
+
+```{r }
+plot(model4$residuals, ylab="Residuals")
+abline(h=0)
+
+```
+
+\newpage
+Plotting fitted values against the residuals is more problematic. Although there is no pattern among residuals, there are some outliers and variability does not appear to be constant across the entire range. 
+
+```{r }
+plot(model4$fitted.values, model4$residuals, xlab="Fitted Values", ylab="Residuals")
+abline(h=0)
+```
+
+\newpage
+Q-Q plot confirms that residuals are normally distributed. 
+
+```{r }
+qqnorm(model4$residuals)
+qqline(model4$residuals)
+```
+
+\newpage
+## Prediction
+
+Using selected model and evaluation data (transformed similarly to training data), prediction table is as follows. It includes predicted number of wins along with confidence interval(CI).
+
+```{r results='hide'}
+#BEvaluation <- read.csv("moneyball-evaluation-data.csv")
+BEvaluation <- read.csv("https://raw.githubusercontent.com/theoracley/Data621/master/Homework1/moneyball-evaluation-data.csv")
+
+BEvaluation[which(BEvaluation$TEAM_BATTING_H==0),"TEAM_BATTING_H"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BATTING_2B==0),"TEAM_BATTING_2B"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BATTING_3B==0),"TEAM_BATTING_3B"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BATTING_HR==0),"TEAM_BATTING_HR"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BATTING_BB==0),"TEAM_BATTING_BB"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BATTING_SO==0),"TEAM_BATTING_SO"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BASERUN_SB==0),"TEAM_BASERUN_SB"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BASERUN_CS==0),"TEAM_BASERUN_CS"] <- NA
+BEvaluation[which(BEvaluation$TEAM_FIELDING_E==0),"TEAM_FIELDING_E"] <- NA
+BEvaluation[which(BEvaluation$TEAM_FIELDING_DP==0),"TEAM_FIELDING_DP"] <- NA
+BEvaluation[which(BEvaluation$TEAM_PITCHING_BB==0),"TEAM_PITCHING_BB"] <- NA
+BEvaluation[which(BEvaluation$TEAM_PITCHING_H==0),"TEAM_PITCHING_H"] <- NA
+BEvaluation[which(BEvaluation$TEAM_PITCHING_HR==0),"TEAM_PITCHING_HR"] <- NA
+BEvaluation[which(BEvaluation$TEAM_PITCHING_SO==0),"TEAM_PITCHING_SO"] <- NA
+
+# Impute mimssing values
+BTrainingImpute <- aregImpute(~ TEAM_BATTING_H + TEAM_BATTING_2B + TEAM_BATTING_3B + 
+                         TEAM_BATTING_HR + TEAM_BATTING_BB + TEAM_BATTING_SO + TEAM_BASERUN_SB + 
+                         TEAM_BASERUN_CS + TEAM_FIELDING_DP + TEAM_FIELDING_E + TEAM_PITCHING_BB + 
+                         TEAM_PITCHING_H + TEAM_PITCHING_HR + TEAM_PITCHING_SO, 
+                       data = BEvaluation, n.impute = 10)
+BTrainingImpute
+BTrainingImpute$rsq
+
+BTrainingI <- impute.transcan(BTrainingImpute, imputation=10, data=BEvaluation, 
+                       list.out=TRUE, pr=FALSE, check=FALSE)
+BEvaluation$TEAM_BATTING_HR <- BTrainingI$TEAM_BATTING_HR
+BEvaluation$TEAM_BATTING_SO <- BTrainingI$TEAM_BATTING_SO
+BEvaluation$TEAM_BASERUN_SB <- BTrainingI$TEAM_BASERUN_SB
+BEvaluation$TEAM_BASERUN_CS <- BTrainingI$TEAM_BASERUN_CS
+BEvaluation$TEAM_FIELDING_DP <- BTrainingI$TEAM_FIELDING_DP
+BEvaluation$TEAM_PITCHING_HR <- BTrainingI$TEAM_PITCHING_HR
+BEvaluation$TEAM_PITCHING_SO <- BTrainingI$TEAM_PITCHING_SO
+
+# Adjust outliers
+BEvaluation[which(BEvaluation$TEAM_PITCHING_SO>2500),"TEAM_PITCHING_SO"] <- 2500
+BEvaluation[which(BEvaluation$TEAM_PITCHING_H>13000),"TEAM_PITCHING_H"] <- 13000
+BEvaluation[which(BEvaluation$TEAM_PITCHING_BB>1100),"TEAM_PITCHING_BB"] <- 1100
+
+BEvaluation$TEAM_BATTING_S <- BEvaluation$TEAM_BATTING_H - BEvaluation$TEAM_BATTING_2B - BEvaluation$TEAM_BATTING_3B - BEvaluation$TEAM_BATTING_HR
+
+BEvaluation$PREDICT_WIN <- predict(model4, newdata=BEvaluation, interval="confidence")
+```
+
+```{r }
+BTrainingPredict <- cbind(BEvaluation$INDEX, BEvaluation$PREDICT_WIN[, 1], BEvaluation$PREDICT_WIN[, 2], BEvaluation$PREDICT_WIN[, 3])
+colnames(BTrainingPredict) <- c("Index", "Predicted Wins", "CI Lower", "CI Upper")
+kable(round(BTrainingPredict,0))
+```
+
+Saving our prediction to a prediction file (ourPrediction.csv)
+```{r }
+write.csv(BTrainingPredict, file = "ourPrediction.csv") 
+```
+
+
+\newpage
+## APPENDIX: 
+
+```{r eval=FALSE}
+# Required libraries
+library(tidyverse)
+library(kableExtra)
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(Hmisc)
+library(PerformanceAnalytics)
+library(ggcorrplot)
+library(corrplot)
+library(Amelia)
+library(reshape)
+library(ggplot2)
+
+# Import data
+BTraining <- read.csv("moneyball-training-data.csv")
+
+#structure
+str(BTraining)
+
+#Summary
+BTraining.summary <- data.frame(unclass(summary(BTraining[2:17])),
+check.names = FALSE,
+row.names = NULL,
+stringsAsFactors = FALSE)
+BTraining.summary
+
+#Columns having NA values
+BTraining.summary$TEAM_BATTING_SO[7]
+BTraining.summary$TEAM_BASERUN_SB[7]
+BTraining.summary$TEAM_BASERUN_CS[7]
+BTraining.summary$TEAM_BATTING_HBP[7]
+BTraining.summary$TEAM_PITCHING_SO[7]
+BTraining.summary$TEAM_FIELDING_DP[7]
+
+# Get summary table
+sumBTraining = data.frame(Variable = character(),
+                   Min = integer(),
+                   Median = integer(),
+                   Mean = double(),
+                   SD = double(),
+                   Max = integer(),
+                   Num_NAs = integer(),
+                   Num_Zeros = integer())
+
+for (i in 2:17) {
+  sumBTraining <- rbind(sumBTraining, data.frame(Variable = colnames(BTraining)[i],
+                                   Min = min(BTraining[,i], na.rm=TRUE),
+                                   Median = median(BTraining[,i], na.rm=TRUE),
+                                   Mean = mean(BTraining[,i], na.rm=TRUE),
+                                   SD = sd(BTraining[,i], na.rm=TRUE),
+                                   Max = max(BTraining[,i], na.rm=TRUE),
+                                   Num_NAs = sum(is.na(BTraining[,i])),
+                                   Num_Zeros = length(which(BTraining[,i]==0)))
+                 )
+}
+
+# ----This section is for Exploration of Data used for every variable----
+kable(sumBTraining[sumBTraining[,1]=="TEAM_BASERUN_SB",2:8], row.names=FALSE)
+
+# Boxplot
+bp <- ggplot(BTraining, aes(x = 1, y = TEAM_BASERUN_SB)) + 
+  stat_boxplot(geom ='errorbar') + geom_boxplot() + 
+  xlab("Boxplot") + ylab("") + theme(axis.text.x=element_blank(), 
+                                     axis.ticks.x=element_blank())
+
+# Density plot
+hp <- ggplot(BTraining, aes(x = TEAM_BASERUN_SB)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") + ylab("") + xlab("Density Plot with Mean") +
+  geom_vline(aes(xintercept=mean(TEAM_BASERUN_SB, na.rm=TRUE)), color="red", 
+             linetype="dashed", size=1)
+
+# Scatterplot
+sp <- ggplot(data=BTraining, aes(x=TEAM_BASERUN_SB, y=TARGET_WINS)) + 
+  geom_point() + geom_smooth(method = "loess") +
+  xlab("Scatterplot with Best Fit Line")
+
+grid.arrange(bp, hp, sp, layout_matrix=rbind(c(1,2,2),c(1,3,3)))
+
+##-----End of exploratory Data for every variable--------
+
+
+#Density plots
+par(mfrow = c(3, 3))
+datasub = melt(BTraining[c(2:17)])
+ggplot(datasub, aes(x= value)) +
+    geom_density(fill='red') + facet_wrap(~variable, scales = 'free')
+
+
+# Correlation matrix
+cm <- cor(BTraining, use="pairwise.complete.obs")
+cm <- cm[2:17,2:17]
+names <- c("Wins", "H", "2B", "3B", "HR", "BTraining", "SO", "SB", "CS", "HBP", "P-H", 
+           "P-HR", "P-BTraining", "P-SO", "E", "DP")
+colnames(cm) <- names; rownames(cm) <- names
+cm <- round(cm, 2)
+cmout <- as.data.frame(cm) %>% mutate_all(function(x) {
+  cell_spec(x, "html", color = ifelse(x>0.5 | x<(-0.5),"blue","black"))
+  })
+rownames(cmout) <- names
+cmout %>%
+  kable("html", escape = F, align = "c", row.names = TRUE) %>%
+  kable_styling("striped", full_width = F)
+
+
+#Box plots
+vis <- melt(BTraining) %>%
+   dplyr::filter(variable != "INDEX")
+
+ggplot(vis, aes(x = variable, y = value)) +
+  geom_boxplot(show.legend = T) +
+  stat_summary(fun.y = mean, color = "red", geom = "point", shape = 18, size = 3) +
+  coord_flip() +
+  ylim(0, 2200)
+
+#Histograms
+ggplot(vis, aes(value)) +
+  geom_histogram(fill = "red")  +
+  facet_wrap(~ variable, scales = "free")
+
+#missing values
+missmap(BTraining[2:17])
+
+
+# Correlation matrix
+cm <- cor(BTraining, use="pairwise.complete.obs")
+cm <- cm[2:17,2:17]
+names <- c("Wins", "H", "2B", "3B", "HR", "BB", "SO", "SB", "CS", "HBP", "P-H", "P-HR", "P-BB", "P-SO", "E", "DP")
+colnames(cm) <- names; rownames(cm) <- names
+cm <- round(cm, 2)
+cmout <- as.data.frame(cm) %>% mutate_all(function(x) {
+  cell_spec(x, "latex", color = ifelse(x>0.5 | x<(-0.5),"blue","black"))
+  })
+rownames(cmout) <- names
+cmout %>%
+  kable("latex", escape = F, align = "c", row.names = TRUE) %>%
+  kable_styling("striped", full_width = F) %>%
+  row_spec(0, angle = -90)
+
+
+#Other visualization of correlation
+#1.
+corr <- cor(cm, use="complete.ob")
+ggcorrplot(corr, hc.order = TRUE, type = "lower",
+   lab = TRUE, lab_size = 3, digits = 2)
+
+#2.
+cor_res <- cor(BTraining[c(2:17)], use = "na.or.complete")
+corrplot(cor_res,
+  type = "upper",
+  order = "original",
+  tl.col = "black",
+  tl.srt = 45,
+  tl.cex = 0.55)
+
+#correlation values
+cor_res.df <- data.frame(cor_res)
+cor_res.df[1]
+
+
+# Remove observations with no target
+BTraining <- BTraining[which(BTraining$TARGET_WINS!=0), ]
+
+# Reset zero values
+BTraining[which(BTraining$TEAM_BATTING_H==0),"TEAM_BATTING_H"] <- NA
+BTraining[which(BTraining$TEAM_BATTING_2B==0),"TEAM_BATTING_2B"] <- NA
+BTraining[which(BTraining$TEAM_BATTING_3B==0),"TEAM_BATTING_3B"] <- NA
+BTraining[which(BTraining$TEAM_BATTING_HR==0),"TEAM_BATTING_HR"] <- NA
+BTraining[which(BTraining$TEAM_BATTING_BB==0),"TEAM_BATTING_BB"] <- NA
+BTraining[which(BTraining$TEAM_BATTING_SO==0),"TEAM_BATTING_SO"] <- NA
+BTraining[which(BTraining$TEAM_BASERUN_SB==0),"TEAM_BASERUN_SB"] <- NA
+BTraining[which(BTraining$TEAM_BASERUN_CS==0),"TEAM_BASERUN_CS"] <- NA
+BTraining[which(BTraining$TEAM_FIELDING_E==0),"TEAM_FIELDING_E"] <- NA
+BTraining[which(BTraining$TEAM_FIELDING_DP==0),"TEAM_FIELDING_DP"] <- NA
+BTraining[which(BTraining$TEAM_PITCHING_BB==0),"TEAM_PITCHING_BB"] <- NA
+BTraining[which(BTraining$TEAM_PITCHING_H==0),"TEAM_PITCHING_H"] <- NA
+BTraining[which(BTraining$TEAM_PITCHING_HR==0),"TEAM_PITCHING_HR"] <- NA
+BTraining[which(BTraining$TEAM_PITCHING_SO==0),"TEAM_PITCHING_SO"] <- NA
+
+# Impute mimssing values
+BTrainingImpute <- aregImpute(~ TARGET_WINS + TEAM_BATTING_H + TEAM_BATTING_2B + 
+                         TEAM_BATTING_3B + TEAM_BATTING_HR + TEAM_BATTING_BB + 
+                         TEAM_BATTING_SO + TEAM_BASERUN_SB + TEAM_BASERUN_CS + 
+                         TEAM_FIELDING_DP + TEAM_FIELDING_E + TEAM_PITCHING_BB + 
+                         TEAM_PITCHING_H + TEAM_PITCHING_HR + TEAM_PITCHING_SO, 
+                       data = BTraining, n.impute = 10)
+
+BTrainingI <- impute.transcan(BTrainingImpute, imputation=10, data=BTraining, 
+                       list.out=TRUE, pr=FALSE, check=FALSE)
+BTraining$TEAM_BASERUN_SB <- BTrainingI$TEAM_BASERUN_SB
+BTraining$TEAM_BASERUN_CS <- BTrainingI$TEAM_BASERUN_CS
+BTraining$TEAM_BATTING_3B <- BTrainingI$TEAM_BATTING_3B
+BTraining$TEAM_BATTING_HR <- BTrainingI$TEAM_BATTING_HR
+BTraining$TEAM_BATTING_SO <- BTrainingI$TEAM_BATTING_SO
+BTraining$TEAM_FIELDING_DP <- BTrainingI$TEAM_FIELDING_DP
+BTraining$TEAM_PITCHING_HR <- BTrainingI$TEAM_PITCHING_HR
+BTraining$TEAM_PITCHING_SO <- BTrainingI$TEAM_PITCHING_SO
+
+BTrainingImpute$rsq
+
+# Adjust outliers
+BTraining[which(BTraining$TEAM_PITCHING_SO>2500),"TEAM_PITCHING_SO"] <- 2500
+BTraining[which(BTraining$TEAM_PITCHING_H>13000),"TEAM_PITCHING_H"] <- 13000
+BTraining[which(BTraining$TEAM_PITCHING_BB>1100),"TEAM_PITCHING_BB"] <- 1100
+
+# Creat singles
+BTraining$TEAM_BATTING_S <- BTraining$TEAM_BATTING_H - BTraining$TEAM_BATTING_2B - 
+  BTraining$TEAM_BATTING_3B - BTraining$TEAM_BATTING_HR
+summary(BTraining$TEAM_BATTING_S)
+
+# Create log fielding error
+BTraining$TEAM_FIELDING_E_LOG <- log(BTraining$TEAM_FIELDING_E)
+
+# Model building
+model1 <- lm(TARGET_WINS ~ TEAM_BATTING_H + TEAM_BATTING_BB + TEAM_FIELDING_E, data=BTraining)
+summary(model1)
+
+model2 <- lm(TARGET_WINS ~ TEAM_BATTING_S + TEAM_BATTING_2B + TEAM_BATTING_3B + TEAM_BATTING_HR + 
+           TEAM_BATTING_BB + TEAM_FIELDING_E, data=BTraining)
+summary(model2)
+model2b <- lm(TARGET_WINS ~ TEAM_BATTING_S + TEAM_BATTING_2B + TEAM_BATTING_3B + 
+            TEAM_BATTING_HR + TEAM_BATTING_BB + TEAM_FIELDING_E_LOG, data=BTraining)
+summary(model2b)
+
+model3 <- lm(TARGET_WINS ~ TEAM_BATTING_SO:TEAM_BATTING_H + TEAM_BATTING_BB:TEAM_BATTING_H + TEAM_BATTING_SO + 
+           TEAM_BASERUN_SB + TEAM_FIELDING_DP + TEAM_PITCHING_HR + TEAM_FIELDING_E_LOG, data=BTraining)
+summary(model3)
+
+model4 <- lm(TARGET_WINS ~ TEAM_BATTING_S + TEAM_BATTING_2B + TEAM_BATTING_3B + 
+           TEAM_BATTING_HR + TEAM_BATTING_BB + TEAM_BATTING_SO + TEAM_BASERUN_SB + 
+           TEAM_BASERUN_CS + TEAM_FIELDING_DP + TEAM_FIELDING_E + TEAM_PITCHING_BB + 
+           TEAM_PITCHING_H + TEAM_PITCHING_SO + TEAM_PITCHING_HR, data=BTraining)
+summary(model4)
+model4 <- lm(TARGET_WINS ~ TEAM_BATTING_S + TEAM_BATTING_2B + TEAM_BATTING_3B + 
+           TEAM_BATTING_HR + TEAM_BATTING_BB + TEAM_BATTING_SO + TEAM_BASERUN_SB + 
+           TEAM_FIELDING_DP + TEAM_FIELDING_E + TEAM_PITCHING_BB + 
+           TEAM_PITCHING_H + TEAM_PITCHING_SO + TEAM_PITCHING_HR, data=BTraining)
+summary(model4)
+
+model5 <- lm(TARGET_WINS ~ TEAM_BATTING_S  + TEAM_BATTING_3B + 
+           TEAM_BATTING_HR + TEAM_BASERUN_SB  + 
+           TEAM_FIELDING_E_LOG*TEAM_PITCHING_H, data=BTraining)
+summary(model5)
+
+#AIC Score
+AIC(model1, model2, model3, model4, model5)
+summary(model4)
+
+# Residuals plots
+plot(model4$residuals, ylab="Residuals")
+abline(h=0)
+
+plot(model4$fitted.values, m4$residuals, xlab="Fitted Values", ylab="Residuals")
+abline(h=0)
+
+qqnorm(model4$residuals)
+qqline(model4$residuals)
+
+# Test evaluation data for prediction
+#BEvaluation <- read.csv("moneyball-evaluation-data.csv")
+BEvaluation <- read.csv("https://raw.githubusercontent.com/theoracley/Data621/master/Homework1/moneyball-evaluation-data.csv")
+
+BEvaluation[which(BEvaluation$TEAM_BATTING_H==0),"TEAM_BATTING_H"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BATTING_2B==0),"TEAM_BATTING_2B"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BATTING_3B==0),"TEAM_BATTING_3B"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BATTING_HR==0),"TEAM_BATTING_HR"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BATTING_BB==0),"TEAM_BATTING_BB"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BATTING_SO==0),"TEAM_BATTING_SO"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BASERUN_SB==0),"TEAM_BASERUN_SB"] <- NA
+BEvaluation[which(BEvaluation$TEAM_BASERUN_CS==0),"TEAM_BASERUN_CS"] <- NA
+BEvaluation[which(BEvaluation$TEAM_FIELDING_E==0),"TEAM_FIELDING_E"] <- NA
+BEvaluation[which(BEvaluation$TEAM_FIELDING_DP==0),"TEAM_FIELDING_DP"] <- NA
+BEvaluation[which(BEvaluation$TEAM_PITCHING_BB==0),"TEAM_PITCHING_BB"] <- NA
+BEvaluation[which(BEvaluation$TEAM_PITCHING_H==0),"TEAM_PITCHING_H"] <- NA
+BEvaluation[which(BEvaluation$TEAM_PITCHING_HR==0),"TEAM_PITCHING_HR"] <- NA
+BEvaluation[which(BEvaluation$TEAM_PITCHING_SO==0),"TEAM_PITCHING_SO"] <- NA
+
+# Impute mimssing values
+BTrainingImpute <- aregImpute(~ TEAM_BATTING_H + TEAM_BATTING_2B + TEAM_BATTING_3B + 
+                         TEAM_BATTING_HR + TEAM_BATTING_BB + TEAM_BATTING_SO + 
+                         TEAM_BASERUN_SB + TEAM_BASERUN_CS + TEAM_FIELDING_DP + 
+                         TEAM_FIELDING_E + TEAM_PITCHING_BB + TEAM_PITCHING_H + 
+                         TEAM_PITCHING_HR + TEAM_PITCHING_SO, 
+                       data = BEvaluation, n.impute = 10)
+
+BTrainingImpute$rsq
+
+BTrainingI <- impute.transcan(BTrainingImpute, imputation=10, data=BEvaluation, 
+                       list.out=TRUE, pr=FALSE, check=FALSE)
+BEvaluation$TEAM_BATTING_HR <- BTrainingI$TEAM_BATTING_HR
+BEvaluation$TEAM_BATTING_SO <- BTrainingI$TEAM_BATTING_SO
+BEvaluation$TEAM_BASERUN_SB <- BTrainingI$TEAM_BASERUN_SB
+BEvaluation$TEAM_BASERUN_CS <- BTrainingI$TEAM_BASERUN_CS
+BEvaluation$TEAM_FIELDING_DP <- BTrainingI$TEAM_FIELDING_DP
+BEvaluation$TEAM_PITCHING_HR <- BTrainingI$TEAM_PITCHING_HR
+BEvaluation$TEAM_PITCHING_SO <- BTrainingI$TEAM_PITCHING_SO
+
+# Adjust outliers
+BEvaluation[which(BEvaluation$TEAM_PITCHING_SO>2500),"TEAM_PITCHING_SO"] <- 2500
+BEvaluation[which(BEvaluation$TEAM_PITCHING_H>13000),"TEAM_PITCHING_H"] <- 13000
+BEvaluation[which(BEvaluation$TEAM_PITCHING_BB>1100),"TEAM_PITCHING_BB"] <- 1100
+
+BEvaluation$TEAM_BATTING_S <- BEvaluation$TEAM_BATTING_H - BEvaluation$TEAM_BATTING_2B - 
+  BEvaluation$TEAM_BATTING_3B - BEvaluation$TEAM_BATTING_HR
+
+BEvaluation$PREDICT_WIN <- predict(model4, newdata=BEvaluation, interval="confidence")
+
+BTrainingPredict <- cbind(BEvaluation$INDEX, BEvaluation$PREDICT_WIN[, 1], BEvaluation$PREDICT_WIN[, 2], 
+                   BEvaluation$PREDICT_WIN[, 3])
+colnames(BTrainingPredict) <- c("Index", "Predicted Wins", "CI Lower", "CI Upper")
+round(BTrainingPredict,0)
+
+#write our prediction to a file
+write.csv(BTrainingPredict, file = "ourPrediction.csv") 
+```
