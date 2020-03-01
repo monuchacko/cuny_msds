@@ -2,8 +2,8 @@
 title: "DATA 621 Homework 1 - Spring2020"
 author: "Abdelmalek Hajjam / Monu Chacko"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r, setup, include=FALSE , warning=FALSE, echo=TRUE}
