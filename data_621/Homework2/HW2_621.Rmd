@@ -1,0 +1,195 @@
+---
+title: "Data 621 HW 2"
+author: "Monu Chacko"
+date: "3/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r warning=FALSE, message=FALSE}
+require("plyr")
+require("knitr")
+require("psych")
+require("knitr")
+require("ggplot2")
+require("pracma")
+require("caret")
+require("pROC")
+```
+
+### 1. Download the classification output data set(attached in Blackboard to the assignment).
+
+```{r}
+df <- read.csv(url('https://raw.githubusercontent.com/fung1091/data621/master/HW2/classification-output-data.csv'))
+kable(head(df))
+```
+
+### 2. The dataset has three key columns we will use:  
+###    <b>class:</b> the actual class for the observation  
+###    <b>scored.class:</b> the predicted class for the observation (based on a threshold of 0.5)  
+###    <b>scored.probability:</b> the predicted probability of success for the observation  
+    
+### Use the table() function to get the raw confusion matrix for this scored dataset. Make sure you understand the output. In particular, do the rows represent the actual or predicted class? The columns?
+
+```{r}
+kable(table(df$class,df$scored.class))
+```
+
+### 3. Write a function that takes the dataset as a dataframe, with actual and predicted classifications identified, and returns the accuracy of the predictions.
+
+$$Accuracy = \frac{TP + TN}{TP + FP + TN + FN}$$
+
+```{r}
+confusion_mx <- function(df){
+  data.frame(tp=nrow(df[df$class==1 & df$scored.class==1,]),
+             tn=nrow(df[df$class==0 & df$scored.class==0,]),
+             fp=nrow(df[df$class==0 & df$scored.class==1,]),
+             fn=nrow(df[df$class==1 & df$scored.class==0,])
+  )
+}
+kable(confusion_mx(df))
+```
+
+
+```{r}
+accuracy<-function(df){
+  f <- confusion_mx(df)
+  (f$tp+f$tn)/(f$tp+f$fp+f$tn+f$fn)
+}
+accuracy(df)
+```
+
+### 4. Write a function that takes the dataset as a dataframe, with actual and predicted classifications identified, and returns the classification error rate of the predictions.
+
+$$Classification Error Rate = \frac{FP + FN}{TP + FP + TN + FN}$$
+
+
+```{r}
+classification_error<-function(df){
+  f <- confusion_mx(df)
+  (f$fp+f$fn)/(f$tp+f$fp+f$tn+f$fn)
+}
+classification_error(df)
+```
+
+### Verify that you get an accuracy and an error rate that sums to one
+
+```{r}
+sum <- classification_error(df) + accuracy(df)
+sum
+```
+
+
+### 5. Write a function that takes the dataset as a dataframe, with actual and predicted classifications identified, and returns the precision of the predictions.
+
+$$Precision = \frac{TP}{TP + FP}$$
+
+```{r}
+precision<-function(df){
+  f <- confusion_mx(df)
+  (f$tp)/(f$tp+f$fp)
+}
+precision(df)
+```
+
+### 6. Write a function that takes the dataset as a dataframe, with actual and predicted classifications identified, and returns the sensitivityof the predictions.Sensitivity is also known as recall.
+
+$$Sensitivity = \frac{TP}{TP + FN}$$
+
+```{r}
+sensitivity<-function(df){
+  f <- confusion_mx(df)
+  (f$tp)/(f$tp+f$fn)
+}
+sensitivity(df)
+```
+
+### 7. Write a function that takes the dataset as a dataframe, with actual and predicted classifications identified, and returns the specificity of the predictions
+
+```{r}
+specificity<-function(df){
+  f <- confusion_mx(df)
+  (f$tn)/(f$tn+f$fp)
+}
+specificity(df)
+```
+
+### 8. Write a function that takes the dataset as a dataframe, with actual and predicted classifications identified, and returns the F1 score of the predictions.
+
+$$F1 Score = \frac{2 \times Precision \times Sensitivity}{Precision + Sensitivity}$$
+
+```{r}
+f1_score<-function(df){
+  p<- precision(df)
+  s<- sensitivity(df)
+  2*p*s/(p+s)
+}
+f1_score(df)
+```
+
+### 9. Before we move on, let’s consider a question that was asked: What are the bounds on the F1 score? Show that the F1 score will always be between 0 and 1. (Hint: If 0<𝑎<1 and 0<𝑏<1 then 𝑎𝑏< 𝑎.)
+
+```{r}
+# assume p is prescision and s is sensitivity.
+p <- runif(100, min = 0, max = 1)
+s <- runif(100, min = 0, max = 1)
+f <- (2*p*s)/(p+s)
+summary(f)
+```
+
+### 10. Write a function that generates an ROC curve from a dataset with a true classification column (class in our example) and a probability column (scored.probability in our example). Your function should return a list that  includes  the  plot  of  the  ROC  curve  and  a  vector  that  contains  the  calculated  area  under  the  curve (AUC). Notethat I recommend using a sequence of thresholds ranging from 0 to 1 at 0.01 intervals.
+
+```{r}
+ROC <- function(df)
+{
+  data1 = df
+  thresholds <- seq(0,1,0.01)
+  Y <- c()
+  X <- c()
+  for (threshod in thresholds) {
+    data1$scored.class <- ifelse(data1$scored.probability > threshod,1,0)
+    X <- append(X,1-specificity(data1))
+    Y <- append(Y,sensitivity(data1))
+    }
+  df1 <- data.frame(X=X,Y=Y)
+  df1 <- na.omit(df1)
+  g <- ggplot(df1,aes(X,Y)) + geom_line() + ggtitle('Custom ROC Curve') +
+    xlab('Specificity') + ylab('Sensitivity')
+  height = (df1$Y[-1]+df1$Y[-length(df1$Y)])/2
+  width = -diff(df1$X)
+  area = round(sum(height*width),4)
+  return(list(Plot =g,AUC = area))
+}
+```
+
+### 11. Use  your <b>created  R  functions</a> and  the  provided  classification  output  data  set to produce  all  ofthe classification metrics discussed above.
+
+```{r}
+Name <- c('Accuracy','Classification Error Rate', 'Precision', 'Sensitivity','Specificity', 'F1 Score')
+Value <- round(c(accuracy(df), classification_error(df), precision(df), sensitivity(df), specificity(df), f1_score(df)),4)
+df1 <- as.data.frame(cbind(Name, Value))
+kable(df1)
+```
+
+### 12. Investigate  the <b>caret</b> package.  In  particular,  consider  the  functions  confusionMatrix,  sensitivity,  and specificity. Apply the functions to the data set. How do the results compare with your own functions?
+
+```{r}
+d_tab <- table(df$class,df$scored.class)
+confusionMatrix(d_tab, reference = df$class)
+```
+
+### 13. Investigate  the <b>pROC</b> package.  Use  it  to  generate  an  ROC  curve  for  the  data  set.  How  do the  results compare with your own functions?
+
+```{r}
+d_roc <- roc(df$class,df$scored.probability)
+plot(d_roc, main = "ROC with pROC")
+```
+
+```{r}
+ci(d_roc)
+```
+
+
