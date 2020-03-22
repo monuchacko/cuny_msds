@@ -1,0 +1,272 @@
+---
+title: "DATA 605 HW 2"
+author: "Monu Chacko"
+date: "2/8/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### FUNDAMENTALS OF COMPUTATIONAL MATHEMATICS
+
+> Problem Set 1
+
+(1) Show that A<sup>T</sup> A != AA<sup>T</sup> in general. (Proof and demonstration.)
+
+#### Answer 1  
+
+**Proof with out calculation**  
+
+The Commutative property of multiplication is not always true in a matrix multiplication. Order of multiplication matters. Lets say A<sup>T</sup> is a 5x2 matrix and A is a 2x3 matrix then its can be multiplied because the A<sup>T</sup> has the same number of columns as the number of rows for A i.e 2. Its product will yeild a 5x3 matrix.
+
+So let say we change the order and multiply i.e AA<sup>T</sup> then it becomes *undefined because the number of columns for A will not be same as the number of rows for A<sup>T</sup>*.  
+
+**Proof with calculation** 
+
+Lets take another example, this time where both are not undefined. 
+
+$$
+A^T =
+\left[
+  \begin{array}{cccc}
+  3 & 4 \\ 2 & 1
+  \end{array}
+\right]
+ A =
+\left[
+  \begin{array}{cccc}
+  3 & -4 \\ 1 & 2
+  \end{array}
+\right]
+$$
+
+Find A<sup>T</sup> A  
+
+$$
+A^T A =
+\left[
+  \begin{array}{cccc}
+  3 & 4 \\ 2 & 1
+  \end{array}
+\right]
+\left[
+  \begin{array}{cccc}
+  3 & -4 \\ 1 & 2
+  \end{array}
+\right]
+$$
+
+
+$$
+A^T A =
+\left[
+  \begin{array}{cccc}
+  13 & -4 \\ 7 & -6
+  \end{array}
+\right]
+$$
+
+
+Let us now find AA<sup>T</sup>  
+
+
+$$
+A A^T =
+\left[
+  \begin{array}{cccc}
+  3 & -4 \\ 1 & 2
+  \end{array}
+\right]
+\left[
+  \begin{array}{cccc}
+  3 & 4 \\ 2 & 1
+  \end{array}
+\right]
+$$
+
+$$
+A A^T =
+\left[
+  \begin{array}{cccc}
+  1 & 7 \\ 8 & 6
+  \end{array}
+\right]
+$$
+
+--------
+
+(2) For a special type of square matrix A, we get A<sup>T</sup> A = AA<sup>T</sup>. Under what conditions could this be true?  (Hint:  The Identity matrix I is an example of such a matrix). Please type set your response using LaTeX mode in RStudio. 
+
+#### Answer 2  
+
+The Commutative property of multiplication is true for an identity matrix. For example:
+
+$$
+IA =
+\left[
+  \begin{array}{cccc}
+  1 & 0 \\ 0 & 1
+  \end{array}
+\right]
+\left[
+  \begin{array}{cccc}
+  5 & 3 \\ 3 & 5
+  \end{array}
+\right]
+=
+\left[
+  \begin{array}{cccc}
+  5 & 3 \\ 3 & 5
+  \end{array}
+\right]
+$$
+
+$$
+AI =
+\left[
+  \begin{array}{cccc}
+  5 & 3 \\ 3 & 5
+  \end{array}
+\right]
+\left[
+  \begin{array}{cccc}
+  1 & 0 \\ 0 & 1
+  \end{array}
+\right]
+=
+\left[
+  \begin{array}{cccc}
+  5 & 3 \\ 3 & 5
+  \end{array}
+\right]
+$$
+
+Another example:
+
+$$
+IA =
+\left[
+  \begin{array}{cccc}
+  1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1
+  \end{array}
+\right]
+\left[
+  \begin{array}{cccc}
+  5 & 3 & 2 \\ 3 & 5 & 9 \\ 2 & 7 & 7
+  \end{array}
+\right]
+=
+\left[
+  \begin{array}{cccc}
+  5 & 3 & 2 \\ 3 & 5 & 9 \\ 2 & 7 & 7
+  \end{array}
+\right]
+$$
+
+$$
+AI =
+\left[
+  \begin{array}{cccc}
+  5 & 3 & 2 \\ 3 & 5 & 9 \\ 2 & 7 & 7
+  \end{array}
+\right]
+\left[
+  \begin{array}{cccc}
+  1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1
+  \end{array}
+\right]
+=
+\left[
+  \begin{array}{cccc}
+  5 & 3 & 2 \\ 3 & 5 & 9 \\ 2 & 7 & 7
+  \end{array}
+\right]
+$$
+
+--------
+
+> Problem Set 2
+
+Matrix factorization is a very important problem.  There are super computers built just to  do  matrix  factorizations.   Every  second  you  are  on  an  airplane,  matrices  are  being factorized.  Radars that track flights use a technique called Kalman filtering.  At the heart of Kalman Filtering is a Matrix Factorization operation.  Kalman Filters are solving linear systems of equations when they track your flight using radars. Write an R function to factorize a square matrix A into LU or LDU, which ever you prefer. You don’t have to worry about permuting rows of A and you can assume that A is lessthan  5x5,  if  you  need  to  hard-code  any  variables  in  your  code.   If  you  doing  the  entire assignment in R, then please submit only one markdown document for both the problems.
+
+> LU Decomposition - Shortcut Method  
+
+```{r warning=FALSE}
+luDecompose <- function(A) {
+  # Make sure A is a square matrix
+  if (dim(A)[1]!=dim(A)[2]) {
+    print("Err: A is not a square matrix")
+    return(NA)
+  }
+  
+  U <- A
+  n <- dim(A)[1]
+  L <- diag(n)
+  
+  # If dimension is 1, then return matrix
+  if (n==1) {
+    return(list(L,U))
+  }
+  
+  # Loop through the lower triangle and determine multiplier for each position and add it to L
+  for(i in 2:n) {
+    for(j in 1:(i-1)) {
+      multiplier <- -U[i,j] / U[j,j]
+      U[i, ] <- multiplier * U[j, ] + U[i, ]
+      L[i,j] <- -multiplier
+
+      print("=========U=========")
+      print(U)
+      print("=========L=========")
+      print(L)
+    }
+  }
+  return(list(L,U))
+}
+```
+
+
+#### Test single 1x1 matrix  
+
+```{r warning=FALSE}
+A <- matrix(c(1), nrow=1, byrow=TRUE)
+LU <- luDecompose(A)
+if (!is.na(LU)) {
+  L<-LU[[1]]  
+  U<-LU[[2]]
+  A
+}
+```
+
+#### Test rectangle matrix
+This should return error  
+
+```{r warning=FALSE}
+A = matrix(c(2, 4, 3, 1, 5, 7), nrow=2, ncol=3, byrow = TRUE)
+LU <- luDecompose(A)
+if (!is.na(LU)) {
+  L<-LU[[1]]  
+  U<-LU[[2]]
+  A
+}
+```
+
+#### Test 4x4 square matrix  
+
+```{r warning=FALSE}
+A <- matrix(c(11,12,-4,5,6,9,7,6,4,3,2,5,2,1,4,2), nrow=4, byrow=TRUE)
+LU <- luDecompose(A)
+if (!is.na(LU)) {
+  L<-LU[[1]]  
+  U<-LU[[2]]
+  A
+}
+```
+
+#### Verify the test for square matrix  
+
+```{r}
+A == L %*% U
+```

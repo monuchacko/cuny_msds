@@ -1,0 +1,32 @@
+---
+title: "Data 605 Discussion 2"
+author: "Monu Chacko"
+date: "2/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Question 29:
+
+A student is applying to Harvard and Dartmouth. He estimates that he has a probability of .5 of being accepted at Dartmouth and .3 of being accepted at Harvard. He further estimates the probability that he will be accepted by both is .2. What is the probability that he is accepted by Dartmouth if he is accepted by Harvard? Is the event “accepted at Harvard” independent of the event “accepted at Dartmouth”?
+
+The probability that a student is accepted to Dartmouth if he/she is accepted to Harvard is 
+
+#### P (D|H) = P (D∩H)/ P (H)
+
+#### D∩H is .2 and H is .3
+
+$$\frac{.2}{.3} = \frac{2}{3} = 0.666666667 $$
+
+They are not independent
+
+#### P (D) P (H) =
+
+$$\frac{.5}{.3} = \frac{5}{3} = 1.666666667 $$
+
+This is not equal to
+
+#### P (D∩H) of 0.2

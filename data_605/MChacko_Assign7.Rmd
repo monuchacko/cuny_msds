@@ -1,0 +1,98 @@
+---
+title: "Data 605 HW7"
+author: "Monu Chacko"
+date: "3/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### 1. Let X1, X2, . . . , Xn be n mutually independent random variables, each of which is uniformly distributed on the integers from 1 to k. Let Y denote the minimum of the Xi's. Find the distribution of Y.
+
+If $K^n$ is the sum of variables then $(k-1)^n$ would represent varaibles where $X_i$ does not contain 1
+
+$$P(X=1)=\frac { { k }^{ n }-{ (k-1) }^{ n } }{ { k }^{ n } }$$
+
+$$P(X=2)=\frac { { (k-2+1) }^{ n }-{ (k-2) }^{ n } }{ { k }^{ n } }$$
+
+$$P(X=y)=\frac { { (k-y+1) }^{ n }-{ (k-y) }^{ n } }{ { k }^{ n } }$$
+
+
+### 2. Your organization owns a copier (future lawyers, etc.) or MRI (future doctors).  This machine has a manufacturer's expected lifetime of 10 years.  This means that we expect one failure every ten years.  (Include the probability statements and R Code for each part.). 
+
+### a.  What is the probability that the machine will fail after 8 years?.  Provide also the expected value and standard deviation.  Model as a geometric.  (Hint: the probability is equivalent to not failing during the first 8 years..) 
+
+```{r}
+prob_fail <- 1/10
+prob_fail
+prob <- ((1 - prob_fail)^ (8 - 1) * prob_fail)
+prob
+
+exp_value <- 1/prob_fail
+exp_value
+
+sd <- sqrt((1-prob_fail)/(prob_fail^2))
+sd
+```
+
+### b.  What is the probability that the machine will fail after 8 years?.  Provide also the expected value and standard deviation.  Model as an exponential.
+
+```{r}
+l <- (1 / 10)
+eprob <- exp(1) ^ (- l * 8)
+eprob
+
+evalue <- 1 / l
+evalue
+
+sd <- 1 / (l ^ 2)
+sd
+```
+
+### c.  What is the probability that the machine will fail after 8 years?.  Provide also the expected value and standard deviation.  Model as a binomial.  (Hint:  0 success in 8 years)
+
+```{r}
+p <- 1 / 10
+yrs <- 8
+suc <- 0
+
+# Probability of failure
+prob_b <- choose(yrs, suc)*((p)^(suc))*(1-p)^yrs
+prob_b
+
+# Probability of non failure
+prob_not_b <- 1 - prob_b
+prob_not_b
+
+# Expected Value
+exp_v <- yrs *p
+exp_v
+
+# Standard Deviation
+sd <- sqrt(yrs*p*(1 - p))
+sd
+```
+
+### d.  What is the probability that the machine will fail after 8 years?.  Provide also the expected value and standard deviation.  Model as a Poisson.
+
+$$\frac { { e }^{ -\lambda }{ \lambda }^{ n } }{ n! }$$
+
+```{r}
+yrs <- 8
+
+lp = yrs * (1 / 10)
+e <- exp(1)
+prob_poi <-(e ^ (- lp) * lp ^ 0) / factorial(0)
+prob_poi
+
+pv_exp <- lp
+pv_exp
+
+sd <- sqrt(lp)
+sd
+
+paste("Failure probabiity after,", yrs, " years is", round(prob_poi, 2), ". The expected value is", pv_exp, ". The standard deviation is", round(sd, 2), sep = " ")
+```

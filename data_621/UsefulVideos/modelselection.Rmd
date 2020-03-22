@@ -1,0 +1,14 @@
+---
+title: "Useful Video - Model Selection"
+author: "Monu Chacko"
+date: "3/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Model Selection
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/3kwdDGnV8MM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

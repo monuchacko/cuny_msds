@@ -1,0 +1,179 @@
+---
+title: "Discussion 4"
+author: "Monu Chacko"
+date: "2/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### C25 Define the linear transformation
+
+$$
+T: C^3 \rightarrow C^2, 
+T \left( 
+\left[
+  \begin{array}{cccc}
+  x1 \\
+  x2 \\
+  x3
+  \end{array}
+\right] 
+\right)
+= 
+\left[
+  \begin{array}{cccc}
+  2x1 & -x2 & 5x3 \\
+  -4x1 & +2x2 & -10x3 
+  \end{array}
+\right]
+$$
+
+Verify that T is a linear transformation.
+
+Answer:
+
+Basic concept using example. Let say x1 = 3, x2 = 4 and x3 = 5 then  
+
+$$
+T \left( 
+\left[
+  \begin{array}{cccc}
+  3 \\
+  4 \\
+  5
+  \end{array}
+\right] 
+\right)
+\rightarrow 
+\left[
+  \begin{array}{cccc}
+  2(3) & -(4) & 5(5) \\
+  -4(3) & +2(4) & -10(5) 
+  \end{array}
+\right]
+$$
+
+$$
+T \left( 
+\left[
+  \begin{array}{cccc}
+  3 \\
+  4 \\
+  5
+  \end{array}
+\right] 
+\right)
+\rightarrow 
+\left[
+  \begin{array}{cccc}
+  6 & -4 & 25 \\
+  -12 & 8 & -50 
+  \end{array}
+\right]
+$$
+
+$$
+T \left( 
+\left[
+  \begin{array}{cccc}
+  3 \\
+  4 \\
+  5
+  \end{array}
+\right] 
+\right)
+\rightarrow 
+\left[
+  \begin{array}{cccc}
+  27 \\
+  -54 
+  \end{array}
+\right]
+$$
+
+
+${\rm I\!R}3 \rightarrow {\rm I\!R}2$ transformation
+
+
+### Condition 1 (Are these two equal) 
+
+$$T (\overline {a} + \overline{b}) = T (\overline{a}) + T( \overline{b}) $$
+
+$$ T (\overline {a} + \overline{b}) = \left[
+  \begin{array}{cccc}
+  2a1 + 2b1 - a2 - b2 + 5a3 + 5b3 \\
+  -4a1 - 4b1 + 2a2 + 2b2 - 10a3 - 10b3 
+  \end{array}
+\right]  $$ 
+
+
+
+$$ T (\overline {a}) = \left[
+  \begin{array}{cccc}
+  2a1 - a2 + 5a3 \\
+  -4a1 + 2a2 - 10a3 
+  \end{array}
+\right]  $$
+
+$$ T (\overline {b}) = \left[
+  \begin{array}{cccc}
+  2b1 - b2 + 5b3 \\
+  -4b1 + 2b2 - 10b3 
+  \end{array}
+\right]  $$
+
+
+
+$$ T (\overline {a}) + T (\overline {b}) 
+=
+T (\overline {a} + \overline {b}) 
+= 
+\left[
+  \begin{array}{cccc}
+  2a1 + 2b1 -a2 - b2 + 5a3 + 5b3 \\
+  -4b1 -4b1 + 2a2 + 2b2 - 10a3 - 10b3
+  \end{array}
+\right]  $$
+
+
+
+
+
+### Condition 2 (Are the scalar same) 
+
+$$ c \overline {a}
+= 
+\left[
+  \begin{array}{cccc}
+  ca1 \\
+  ca2 \\
+  ca3
+  \end{array}
+\right] 
+T(c \overline {a})
+= 
+\left[
+  \begin{array}{cccc}
+  2ca1 - ca2 + 5ca3 \\
+  -4ca1 + 2ca2 - 10ca3
+  \end{array}
+\right]
+$$
+
+
+$$ T(c \overline {a})
+= 
+c\left[
+  \begin{array}{cccc}
+  2a1 - ca2 + 5ca3 \\
+  -4a1 + 2a2 - 10a3
+  \end{array}
+\right] 
+$$
+
+Resources:  
+- https://www.youtube.com/watch?v=a9LcIKyuHQo  
+- https://www.youtube.com/watch?v=pQkIYVuacPI

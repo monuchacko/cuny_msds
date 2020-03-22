@@ -1,0 +1,116 @@
+---
+title: "Discussion 3"
+author: "Monu Chacko"
+date: "2/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exercises C10
+
+Find the characteristic polynomial of the matrix
+
+$$
+A=
+\left[
+  \begin{array}{cccc}
+  1 & 2 \\
+  3 & 4 
+  \end{array}
+\right]
+$$
+
+## Answer
+
+```{r}
+library(pracma)
+A <- matrix(c(1, 3, 2, 4), nrow = 2)
+A
+```
+
+
+```{r}
+A <- charpoly(A, info = TRUE)
+```
+
+
+```{r}
+A$cp
+```
+
+The characteristic polynomial or characteristic equation is:
+
+$$
+Det(\lambda I - A) = 0
+$$
+
+$$
+\lambda I = \lambda
+\left[
+  \begin{array}{cccc}
+  1 & 0 \\
+  0 & 1 
+  \end{array}
+\right]
+$$
+
+$$
+\lambda I = 
+\left[
+  \begin{array}{cccc}
+  \lambda & 0 \\
+  0 & \lambda 
+  \end{array}
+\right]
+$$
+
+$$
+\left[
+  \begin{array}{cccc}
+  \lambda & 0 \\
+  0 & \lambda 
+  \end{array}
+\right]
+-
+\left[
+  \begin{array}{cccc}
+  1 & 2 \\
+  3 & 4 
+  \end{array}
+\right]
+$$
+
+$$
+\left[
+  \begin{array}{cccc}
+  \lambda -1 & 0 - 2 \\
+  0 - 3 & \lambda - 4 
+  \end{array}
+\right]
+$$
+
+
+$$
+\left[
+  \begin{array}{cccc}
+  \lambda -1 & - 2 \\
+  - 3 & \lambda - 4 
+  \end{array}
+\right]
+$$
+
+Determinant of a 2x2 matrix 
+
+$$
+\lambda -1 \times \lambda -4 - -2 \times -3 
+$$
+
+
+$$
+\lambda^2 - 5\lambda -2 = 0 
+$$
+
+

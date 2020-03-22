@@ -1,0 +1,204 @@
+---
+title: "FUNDAMENTALS OF COMPUTATIONAL MATHEMATICS"
+author: "Monu Chacko"
+date: "02/23/2020"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## ASSIGNMENT 5
+
+
+Choose independently two numbers B and C at random from the interval [0, 1] with uniform density. Prove that B and C are proper probability distributions.Note that the point (B,C) is then chosen at random in the unit square.Find the probability that  
+
+Uniform Probability Distribution
+
+### Prepare data  
+
+```{r}
+n <- 1000
+
+# Default min - 0 and max - 1
+B = runif(n, min = 0, max = 1)
+C = runif(n, min = 0, max = 1)
+```
+
+
+### Check data
+
+
+```{r}
+plot(1:n, B)
+plot(1:n, C)
+
+hist(B)
+hist(C)
+```
+
+
+### (a) B + C < 1/2.
+
+Solution using custom function
+
+```{r}
+s <- function(B, C) {
+  val <- 0
+  cn <- 0
+  total_len <- length(B)
+  for(i in 1:length(B)) {
+    val <- B[i] + C[i]
+    if (val < .5) {
+      cn = cn + 1    
+    }
+  }
+  
+  p <- cn / total_len
+  return(p)
+}
+
+
+s(B, C)
+```
+
+
+Solution using built-in function
+
+```{r}
+D <- B+C
+sum(punif(D<1/2, min=0, max = 1))/n
+```
+
+
+### (b) BC < 1/2.
+
+Solution using custom function
+
+```{r}
+s <- function(B, C) {
+  val <- 0
+  cn <- 0
+  total_len <- length(B)
+  for(i in 1:length(B)) {
+    val <- B[i] * C[i]
+    if (val < .5) {
+      cn = cn + 1    
+    }
+  }
+  
+  p <- cn / total_len
+  return(p)
+}
+
+s(B, C)
+```
+
+
+Solution using built-in function
+
+```{r}
+E <- B*C
+sum(punif(E<1/2, min=0, max = 1))/n
+```
+
+
+### (c) |B − C| < 1/2.
+
+Solution using custom function
+
+```{r}
+s <- function(B, C) {
+  val <- 0
+  cn <- 0
+  total_len <- length(B)
+  for(i in 1:length(B)) {
+    val <- B[i] - C[i]
+    if (abs(val) < .5) {
+      cn = cn + 1    
+    }
+  }
+  
+  p <- cn / total_len
+  return(p)
+}
+
+s(B, C)
+
+```
+
+Solution using built-in function
+
+```{r}
+G <- abs(B-C)
+sum(punif(G<1/2, min=0, max = 1))/n
+```
+
+
+### (d) max{B,C} < 1/2.
+
+Solution using custom function
+
+```{r}
+s <- function(B, C) {
+  val <- 0
+  cn <- 0
+  total_len <- length(B)
+  for(i in 1:length(B)) {
+    val <- pmax(B[i],C[i])
+    if (val < .5) {
+      cn = cn + 1    
+    }
+  }
+  
+  p <- cn / total_len
+  return(p)
+}
+
+s(B, C)
+```
+
+
+Solution using built-in function
+
+```{r}
+H <- pmax(B,C)
+sum(punif(H<1/2, min=0, max = 1))/n
+```
+
+
+### (e) min{B,C} < 1/2.
+
+Solution using custom function
+
+```{r}
+s <- function(B, C) {
+  val <- 0
+  cn <- 0
+  total_len <- length(B)
+  for(i in 1:length(B)) {
+    val <- pmin(B[i],C[i])
+    if (val < .5) {
+      cn = cn + 1    
+    }
+  }
+  
+  p <- cn / total_len
+  return(p)
+}
+
+s(B, C)
+```
+
+
+Solution using built-in function
+
+```{r}
+H <- pmin(B,C)
+sum(punif(H<1/2, min=0, max = 1))/n
+```
+

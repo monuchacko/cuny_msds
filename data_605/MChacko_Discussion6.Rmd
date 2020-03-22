@@ -1,0 +1,38 @@
+---
+title: "Discussion 6"
+author: "Monu Chacko"
+date: "3/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Exercise 3: How many seven-element subsets are there in a set of nine elements?
+
+if n is total element (here 9) and k is the subset element (here 7) the we can say it is $\left( \begin{array}{cccc} n \\ k\end{array}\right)$ (n choose k)
+
+There is n way we can choose the first element and n-1 ways we can choose the second and n-2 ways we can choose the third element so on..
+
+There are n (n-1) (n-2) .. (n - (k - 1)) ways to choose k
+
+$$\frac{n!}{k!(n-k)!}$$
+
+Let substitute:
+
+```{r}
+n <- 9
+k <- 7
+
+factorial(n)/(factorial(k)*factorial(n-k))
+```
+
+Another method:
+
+```{r}
+choose(9,7)
+```
+
+#### There are 36 seven-element subsets
+

@@ -1,0 +1,43 @@
+---
+title: "Discussion 8 - LAW OF LARGE NUMBERS"
+author: "Monu Chacko"
+date: "3/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Page 312 1: A fair coin is tossed 100 times. The expected number of heads is 50, and the standard deviation for the number of heads is (100 · 1/2 · 1/2)1/2 = 5. What does Chebyshev’s Inequality tell you about the probability that the number of heads that turn up deviates from the expected number 50 by three or more standard deviations (i.e., by at least 15)?  
+
+
+#### Chebyshev Inequality  
+
+
+#### Theorem 8.1 (Chebyshev Inequality)  
+
+##### Let X be a discrete random variable with expected value μ = E(X), and let $\epsilon$ > 0 be any positive real number. Then
+(Page 315 of text book)
+
+$$P(|X-\mu|\ge \epsilon)\le \frac{V(X)}{\epsilon^2}$$
+
+
+$\mu=50$ $\sigma=5$
+
+
+```{r}
+m <- 50
+sd <- 5
+k <- 15/sd
+k
+
+(1/k^2)
+```
+
+
+Resources:
+
+https://www.youtube.com/watch?v=DWsDqKlW7Z4
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/DWsDqKlW7Z4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
