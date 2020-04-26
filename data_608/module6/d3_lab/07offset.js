@@ -1,4 +1,4 @@
-d3.csv('ue_industry.csv', data => {
+d3.csv('https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_608/module6/d3_lab/ue_industry.csv', data => {
 
     const industries = ['Agriculture','Business services','Construction','Education and Health',
         'Finance','Government','Information','Leisure and hospitality','Manufacturing',
@@ -42,6 +42,7 @@ d3.csv('ue_industry.csv', data => {
         .enter().append('path')
         .attr('d', d => stackArea(d))
         .attr('class', d => 'path7')
+		.attr('transform', 'translate(100, -275)')
         .style('fill', d => fillScale(d.key));
 
 });

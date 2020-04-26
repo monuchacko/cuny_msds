@@ -1,4 +1,4 @@
-d3.csv('ue_industry.csv', data => {
+d3.csv('https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_608/module6/d3_lab/ue_industry.csv', data => {
 
     console.log(data);
 
