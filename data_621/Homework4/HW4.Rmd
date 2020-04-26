@@ -1,0 +1,39 @@
+---
+title: "DATA 621 – Business Analytics and Data Mining"
+author: "Monu Chacko"
+date: "4/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### In this homework assignment, you will explore, analyze and model a dataset containing approximately 8000 records representing  a  customer  at  an  auto  insurance  company. Each  record  has  two response variables.  The first responsevariable, TARGET_FLAG, is a 1 or a 0. A “1” means that the person was in a car crash. A zero means that the person was not in a car crash.The second responsevariable is TARGET_AMT. This value is zero if the person did not crash their car. But if they did crash their car, this number will be a value greater than zero.
+
+
+```{r message=FALSE}
+library(e1071)
+library(dplyr)
+library(purrr)
+library(tidyr)
+library(ggplot2)
+library(corrplot)
+library(FactoMineR)
+library(VIF)
+library(knitr)
+library(kableExtra)
+library(Hmisc)
+library(pROC)
+library(binr)
+library(MASS)
+library(pscl)
+library(AER)
+```
+
+
+```{r}
+# read data
+train = read.csv(file="data/wine-training-data.csv")
+dim(train)
+```
