@@ -1,0 +1,48 @@
+---
+title: "DATA 605 - Homework 10"
+author: "Monu Chacko"
+date: "4/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Smith is in jail and has 1 dollar; he can get out on bail if he has 8 dollars. A guard agrees to make a series of bets with him. If Smith bets A dollars, he wins A dollars with probability .4 and loses A dollars with probability .6. Find the probability that he wins 8 dollars before losing all of his money if 
+
+### (a) he bets 1 dollar each time (timid strategy).
+
+```{r}
+q <- 0.6
+p <- 0.4
+s <- 1
+M <- 8
+qp <- q/p
+
+qp
+
+(qp^1-1)/(qp^8-1)
+```
+
+There is a 2% chance here.
+
+### (b) he bets, each time, as much as possible but not more than necessary tobring his fortune up to 8 dollars (bold strategy).
+
+```{r}
+(0.4) ^ 3
+```
+
+OR
+
+```{r}
+dbinom(3,3,0.4)
+```
+
+There is a 6.4% chance with bold strategy.
+
+### (c) Which strategy gives Smith the better chance of getting out of jail?
+
+
+The bold strategy gives him better chance i.e 6.4% 
+

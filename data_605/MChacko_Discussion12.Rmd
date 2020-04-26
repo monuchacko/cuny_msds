@@ -1,0 +1,39 @@
+---
+title: "Data 605 -Discussion Week12"
+author: "Monu Chacko"
+date: "4/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Using R, build a  regression model for data that interests you. Conduct residual analysis.  Was the linear model appropriate? Why or why not?
+
+```{r}
+processors <- read.csv("full_data.csv")
+head(processors)
+
+plot(processors$new_cases, processors$new_deaths)
+```
+
+
+```{r}
+lm1=lm(processors$new_deaths~processors$new_cases)
+
+plot(processors$new_cases, processors$new_deaths)
+abline(lm1)
+
+summary(lm1)
+```
+
+
+```{r}
+plot(fitted(lm1),resid(lm1))
+
+qqnorm(resid(lm1))
+qqline(resid(lm1))
+
+```
+

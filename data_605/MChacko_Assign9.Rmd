@@ -1,0 +1,78 @@
+---
+title: "Assignment 9"
+author: "Monu Chacko"
+date: "3/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Q 11 (Page 363)
+
+The price of one share of stock in the Pilsdorff Beer Company is given by $Y_n$ on the nth day of the year. Finn observes that the differences $X_n = Y_{n+1} - Y_n$ appear to be independent random variables with a common distribution having mean $\mu = 0$ and variance $\sigma^2 = 1/4$. If $Y_1 = 100$, estimate the probability that $Y_{365}$ is
+
+(a) $\geq$ 100
+
+```{r}
+pnorm(100 - 100, mean = 0, sd = sqrt(364/4), lower.tail = FALSE)
+```
+
+(b) $\geq$ 110
+
+```{r}
+pnorm(110 - 100, mean = 0, sd = sqrt(364/4), lower.tail = FALSE)
+```
+
+(c) $\geq$ 120
+
+```{r}
+pnorm(120 - 100, mean = 0, sd = sqrt(364/4), lower.tail = FALSE)
+```
+
+
+### Calculate the expected value and variance of the binomial distribution using the moment generating function.
+
+Moment generating function for a random variable X: $M(t)=[(1-p) +pe^t]^n$
+
+First Derivative $M(t)$: $M'(t) = n(pe^t)[(1-p)+pe^t]^{n-1}$
+
+for t = 0: $M'(0) = n [ 1 - p + p ]^{n-1} p(1) = np$
+
+Expected value: $E(X) = \mu = M'(0) = np$
+
+Variance: $M''(t) = n[1 - p + pe^t]^{n-1}(pe^t)+ (pe^t) n(n-1)[1 - p + pe^t]^{n-2}(pe^t)$
+
+for t = 0: $M''(0) = np + n^2p^2 -np^2$
+
+Variance: $M''(0) = n(n-1)p^2 + np$ OR $\sigma^2 = np(1-p)$
+
+
+### Calculate the expected value and variance of the exponential distribution using the moment generating function.
+
+Moment generating function for exponential distribution: $f(x)= \lambda e^{−\lambda x}$
+
+$$g(t)=∫_{ 0 }^{ \infty }e^{ tx }λe^{ -λe }dx$$
+
+$$g(t)=\frac { λe^{ (t-λ)x } }{ t-λ } |_{ 0 }^{ ∞ }$$
+
+$$g(t)=\frac { λ }{ λ-t }$$
+
+$$g(t)=\frac { λ }{ (λ-t)^{ 2 } }$$
+
+$$g(t)=\frac { λ }{ λ^{ 2 } } =\frac { 1 }{ λ }$$
+
+$$g''(t)=\frac { 2λ }{ (λ-t)^{ 3 } }$$
+
+$$g''(0)=\frac { 2λ }{ λ^{ 3 } } =\frac { 2 }{ λ^{ 2 } }$$
+
+Expected Value:
+
+$$\mu =g'(0)=λ^{ -1 }$$
+
+Variance:
+
+$$σ^{ 2 }=g''(0)-g'(0)^{ 2 }=\frac { 2 }{ λ^{ 2 } } =\frac { 1 }{ λ^{ 2 } } =λ^{ -2 }$$
+

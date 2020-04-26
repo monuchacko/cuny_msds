@@ -1,0 +1,49 @@
+---
+title: "DATA 605 Assignment 11"
+author: "Monu Chacko"
+date: "4/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Using the “cars” dataset in R, build a linear model for stopping distance as a function of speed and replicate the analysis of your textbook chapter 3 (visualization, quality evaluation of the model, and residual analysis.)
+
+```{r}
+head(cars)
+summary(cars)
+plot(cars)
+```
+
+
+```{r}
+clm = lm(cars$dist~cars$speed, data=cars)
+clm
+```
+
+
+```{r}
+plot(cars$speed, cars$dist, xlab='Speed (mph)', ylab='Stopping Distance (ft)', main='Stopping Distance vs. Speed')
+abline(clm,col=c("red"))
+```
+
+
+```{r}
+summary(clm)
+```
+
+### Looks like the distribution is normal. 
+
+```{r}
+plot(clm$fitted.values, clm$residuals, xlab='Fitted Values', ylab='Residuals')
+abline(0,0,col=c("red"))
+```
+
+
+```{r}
+qqnorm(clm$residuals)
+qqline(clm$residuals)
+```
+

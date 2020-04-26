@@ -1,0 +1,40 @@
+---
+title: "COVID-19 - DATA 608 Final Proposal"
+author: "Monu Chacko"
+date: "3/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Final Project Proposal
+
+For this project I want to investigate the coronavirus data and find interesting insights from them
+
+### Finding Dataset 
+
+This is an emerging dataset and I intend to use dataset from https://data.humdata.org/dataset/novel-coronavirus-2019-ncov-cases or https://ourworldindata.org/coronavirus-source-data . 
+
+Total confirmed cases: https://covid.ourworldindata.org/data/ecdc/total_cases.csv
+Total deaths: https://covid.ourworldindata.org/data/ecdc/total_deaths.csv
+New confirmed cases: https://covid.ourworldindata.org/data/ecdc/new_cases.csv
+New deaths: https://covid.ourworldindata.org/data/ecdc/new_deaths.csv
+Full dataset: https://covid.ourworldindata.org/data/ecdc/full_data.csv
+
+Note: If I find other dataset during the final project at will be more interesting, I would like to use that.
+
+
+### Data Handling
+
+Data will be merged and scrubbed to make it ready to find trends and other insights. It would be interesting to find responses by various countries and outcomes in actually flattening the curve. This is an emerging data with lot of factors. For example the regions that have high reported numbers would be bacause of more test being conducted there. The symptoms are visible from 2 to 14 days but the reported number is the based on the outcome of the result that could happen long after the person is actually infected. The numbers reported and the response therefore is not at sync.
+
+### Data Presentation
+
+The best data visualization practices will be followed. This includes clarity, data-to-ink ratio and all other visualization techniques that we learned in the class.
+
+### Contextual Write-Up
+
+Novel-CoronaVirus-2019 (COVID-19) is emerging and the dataset is still forming. It is interesting to study the trends and responses from various countries. We can see the impact of various measures.
+

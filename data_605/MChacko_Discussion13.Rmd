@@ -1,0 +1,104 @@
+---
+title: "MChacko_Discussion13.Rmd"
+author: "Monu Chacko"
+date: "4/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Using R, build a multiple regression model for data that interests you.  Include in this model at least one quadratic term, one dichotomous term, and one dichotomous vs. quantitative interaction term.  Interpret all coefficients. Conduct residual analysis.  Was the linear model appropriate? Why or why not?
+
+
+```{r}
+# Data import
+library(foreign)
+salary <- read.dta("http://data.princeton.edu/wws509/datasets/salary.dta")
+
+knitr::kable(head(salary))
+```
+
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+glimpse(salary)
+```
+
+```{r}
+salary$sx <- as.character(salary$sx)
+salary$sx[salary$sx == "Male"] <- 0
+salary$sx[salary$sx == "Female"] <- 1
+salary$sx <- as.integer(salary$sx)
+salary$rk <- as.character(salary$rk)
+salary$rk[salary$rk == "Assistant"] <- 1
+salary$rk[salary$rk == "Associate"] <- 2
+salary$rk[salary$rk == "Full"] <- 3
+salary$rk <- as.integer(salary$rk)
+```
+
+
+
+```{r}
+# Quadratic variable
+rk2 <- salary$rk^2
+# Dichotomous vs. quantative interaction
+sx_yd <- salary$sx * salary$yd
+# Initial model
+salary_model <- lm(sl ~ sx + rk + rk2 + yr + dg + yd + sx_yd, data=salary)
+summary(salary_model)
+```
+
+
+```{r}
+# Version 2
+salary_model <- update(salary_model, .~. -sx)
+summary(salary_model)
+```
+
+
+```{r}
+# Version 3
+salary_model <- update(salary_model, .~. -rk2)
+summary(salary_model)
+```
+
+
+```{r}
+# Version 4
+salary_model <- update(salary_model, .~. -dg)
+summary(salary_model)
+```
+
+
+```{r}
+# Version 5
+salary_model <- update(salary_model, .~. -sx_yd)
+summary(salary_model)
+```
+
+
+```{r}
+# Version 6
+salary_model <- update(salary_model, .~. -yd)
+summary(salary_model)
+```
+
+
+
+```{r}
+plot(salary_model$fitted.values, salary_model$residuals, xlab="Fitted Values", ylab="Residuals", main="Residuals vs. Fitted")
+abline(h=0)
+```
+
+
+
+```{r}
+qqnorm(salary_model$residuals)
+qqline(salary_model$residuals)
+```
+

@@ -1,0 +1,104 @@
+---
+title: "LAW OF LARGE NUMBERS - Assignment 8"
+author: "Monu Chacko"
+date: "3/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### 11. A company buys 100 lightbulbs, each of which has an exponential lifetime of 1000 hours. What is the expected time for the first of these bulbs to burn out?
+
+$$E[X_i] = \frac{1}{\lambda_i} = 1000$$
+
+#### Expected lifetime of a bulb is 1000 hours.
+
+$$\lambda_i = \frac{1}{1000}$$
+
+$X_i$ is exponential so
+
+$$min\{X_1,X_2,...,X_{100}\} \sim exponential(\sum\limits_{i=1}^{100} \lambda_i)$$
+
+$$E[min X_i] = \frac{1}{\frac{1}{10}} = 10$$
+
+
+#### Expected time for the ﬁrst of these bulbs to burn out: 10 hours
+
+
+
+
+### 14. Assume that X1 and X2 are independent random variables, each having an exponential density with parameter $\lambda$. Show that $Z = X_1 − X_2$ has density
+
+$$f_Z(z)=(1/2)\lambda e^{−\lambda|z|}$$
+
+
+#### Probability Density Function
+
+$$f(x_1) = \lambda e^{-\lambda x_1}$$
+
+$$f(x_2) = \lambda e^{-\lambda x_2}$$
+
+
+#### Joint density
+
+$$\lambda^2 e^{-\lambda(x_1 + x_2)}$$
+
+Substitute to get joint density $Z$ and $X_2$ 
+$$\lambda^2 e^{-\lambda(z + 2x_2)}$$
+
+When z is positive:
+
+$$\int_{0}^{\infty} \lambda^2 e^{-\lambda(z + 2x_2)} dx = \frac{\lambda}{2} e^{-\lambda z}$$
+
+When z is negative:
+
+$$\int_{-z}^{\infty} \lambda^2 e^{-\lambda(z + 2x_2)} dx = \frac{\lambda}{2} e^{\lambda z}$$
+
+
+$$f_Z(z) = \frac{1}{2} \lambda e^{\lambda|z|}$$
+
+### 1. Let X be a continuous random variable with mean $\mu = 10$ and variance  $\sigma^2 = 100/3$. Using Chebyshev’s Inequality, find an upper bound for the following probabilities.
+
+
+```{r}
+chebyshev <- function(e, var){
+    pX = var / e^2
+    return(pX)
+}
+```
+
+(a) $P(|X−10| \geq 2)$
+
+```{r}
+var <- 100/3
+e <- 2
+p <- chebyshev(e, var)
+p
+```
+
+(b) $P(|X−10| \geq 5)$
+
+```{r}
+e <- 5
+p <- chebyshev(e, var)
+p
+```
+
+(c) $P(|X−10| \geq 9)$
+
+```{r}
+e <- 9
+p <- chebyshev(e, var)
+p
+```
+
+(e) $P(|X − 10| \geq 20)$
+
+```{r}
+e <- 20
+p <- chebyshev(e, var)
+p
+```
+

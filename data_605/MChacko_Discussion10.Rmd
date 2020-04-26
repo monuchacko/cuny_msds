@@ -1,0 +1,27 @@
+---
+title: "DATA 605 - Discussion 10"
+author: "Monu Chacko"
+date: "4/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### In American casinos, the roulette wheels have the integers between 1 and 36, together with 0 and 00. Half of the non-zero numbers are red, the other half are black, and 0 and 00 are green. A common bet in this game is to bet a dollar on red. If a red number comes up, the bettor gets her dollar back, and also gets another dollar. If a black or green number comes up, she loses her dollar. 
+
+### (a) Suppose that someone starts with 40 dollars, and continues to bet on red until either her fortune reaches 50 or 0. Find the probability that her fortune reaches 50 dollars.
+
+```{r}
+p <- 18/38
+p
+
+q <- 20/38
+q
+
+v <- q/p
+v
+
+(v^40-1)/(v^50-1)
+```
