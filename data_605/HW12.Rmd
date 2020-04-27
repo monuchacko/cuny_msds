@@ -23,17 +23,87 @@ The attached who.csv dataset contains real-world data from 2008.  The variables 
 - TotExp:  sum of personal and government expenditures.
 
 
+```{r}
+library(knitr)
+whodf <- read.csv(file="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_605/who.csv", header=TRUE, sep=",")
+
+kable(head(whodf), digits = 2, align = c(rep("l", 4), rep("c", 4), rep("r", 4)))
+```
+
+
 1. Provide a scatterplot of LifeExp~TotExp, and run simple linear regression.  Do not transform the variables.  Provide and interpret the F statistics, R^2, standard error,and p-values only.  Discuss whether the assumptions of simple linear regression met.2.Raise life expectancy to the 4.6 power (i.e., LifeExp^4.6).  
+
+```{r}
+plot(whodf$LifeExp ~ whodf$TotExp, main = "LifeExp vs TotExp", xlab = "Pers and gov expenditures", ylab = "Average life expectancy")
+abline(lm(whodf$LifeExp ~ whodf$TotExp), col="red") # regression line (y~x) 
+```
+
+```{r}
+# linear regression
+m1 <- lm(LifeExp ~ TotExp, data = whodf)
+summary(m1)
+```
+
+
+From the data above we can say that there is high likelihood that the model is explaining the data failrly well. Here F-Stat is 65.26 and p-value is close to 0.
+
+```{r}
+qqnorm(m1$residuals)
+qqline(m1$residuals)
+```
 
 
 2. Raise total expenditures to the 0.06 power (nearly a log transform, TotExp^.06). Plot LifeExp^4.6  as a function of TotExp^.06, and r re-run the simple regression model using the transformed variables.  Provide and interpret the F statistics, R^2, standard error, and p-values.   Which model is "better?"
 
+```{r}
+whodf2<-whodf
+whodf2$LifeExp<-whodf2$LifeExp^4.6
+whodf2$TotExp<-whodf2$TotExp^0.6
+
+kable(head(whodf2), digits = 2, align = c(rep("l", 4), rep("c", 4), rep("r", 4)))
+```
+
+```{r}
+plot(whodf2$LifeExp ~ whodf2$TotExp, main = "LifeExpTransformed vs TotExpTransformed", xlab = "Pers and gov expenditures", ylab = "Average life expectancy")
+abline(lm(whodf2$LifeExp ~ whodf2$TotExp), col="red") # regression line (y~x) 
+```
+
+
+```{r}
+m2 <- lm(LifeExp ~ TotExp, data = whodf2)
+summary(m2)
+```
+
 3. Using the results from 3, forecast life expectancy when TotExp^.06 =1.5.  Then forecast life expectancy when TotExp^.06=2.5.
+
+```{r}
+TExp <- 1.5
+LExp <- 238461*TExp + 211907647
+round(LExp ^ (1/4.6),1)
+
+TExp <- 2.5
+LExp <- 238461*TExp + 211907647
+round(LExp ^ (1/4.6),1)
+```
 
 
 4. Build the following multiple regression model and interpret the F Statistics, R^2, standard error, and p-values. How good is the model?
 
 LifeExp = b0+b1 x PropMd + b2 x TotExp  +b3 x PropMD x TotExp
 
+```{r}
+m3 <- lm(LifeExp ~ PropMD + TotExp + PropMD*TotExp, data = whodf)
+summary(m3)
+
+qqnorm(m3$residuals)
+qqline(m3$residuals)
+```
+
 5. Forecast LifeExp when PropMD=.03 and TotExp = 14. Does this forecast seem realistic? Why or why not?
 
+```{r}
+TExp <- 14
+PrMD <- 0.03
+LExp <- 6.277e+01 + 1.497e+03*PrMD + 7.233e-05*TExp -6.026e-03*PrMD*TExp
+round(LExp,1)
+```
