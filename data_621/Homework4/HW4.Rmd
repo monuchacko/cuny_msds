@@ -1,39 +1,477 @@
 ---
 title: "DATA 621 – Business Analytics and Data Mining"
-author: "Monu Chacko"
+author: "Abdelmalek Hajjam/ Monu Chacko"
 date: "4/26/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### In this homework assignment, you will explore, analyze and model a dataset containing approximately 8000 records representing  a  customer  at  an  auto  insurance  company. Each  record  has  two response variables.  The first responsevariable, TARGET_FLAG, is a 1 or a 0. A “1” means that the person was in a car crash. A zero means that the person was not in a car crash.The second responsevariable is TARGET_AMT. This value is zero if the person did not crash their car. But if they did crash their car, this number will be a value greater than zero.
+    
+#### In this homework assignment, you will explore, analyze and model a dataset containing approximately 8000 records representing  a  customer  at  an  auto  insurance  company. Each  record  has  two response variables.  The first responsevariable, TARGET_FLAG, is a 1 or a 0. A “1” means that the person was in a car crash. A zero means that the person was not in a car crash.The second responsevariable is TARGET_AMT. This value is zero if the person did not crash their car. But if they did crash their car, this number will be a value greater than zero.
+
+    
+#### Your objective is to build multiple linear regression and binary logistic regression models on the training data to predict the probability that a person will crash their car and also the amount of money it will cost if the person does crash their car. You can only use the variables given to you (or variables that you derive from the variables provided). Below is a short description of the variables of interest in the data set:
+
+     
 
 
 ```{r message=FALSE}
-library(e1071)
-library(dplyr)
-library(purrr)
-library(tidyr)
-library(ggplot2)
-library(corrplot)
-library(FactoMineR)
-library(VIF)
-library(knitr)
-library(kableExtra)
-library(Hmisc)
-library(pROC)
-library(binr)
+library(ggcorrplot)
+library(car)
 library(MASS)
+library(dplyr)
+library(ggplot2)
+library(caret)
+library(pROC)
 library(pscl)
-library(AER)
+library(psych)
+library(data.table) 
+```
+
+### DATA EXPLORATION
+
+```{r}
+# Read data
+train_df <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/Homework4/insurance_training_data.csv", stringsAsFactors = FALSE)
+
+dim(train_df)
+str(train_df)
+head(train_df)
 ```
 
 
 ```{r}
-# read data
-train = read.csv(file="data/wine-training-data.csv")
-dim(train)
+# Exclude the INDEX column
+tr <- train_df[-1]
+
+#  Convert to numeric
+tr$INCOME <- as.numeric(gsub('[$,]', '', tr$INCOME))
+tr$HOME_VAL <- as.numeric(gsub('[$,]', '', tr$HOME_VAL))
+tr$BLUEBOOK <- as.numeric(gsub('[$,]', '', tr$BLUEBOOK))
+tr$OLDCLAIM <- as.numeric(gsub('[$,]', '', tr$OLDCLAIM))
+
+# Remove characters that are not required
+tr$MSTATUS  <- gsub("z_", "", tr$MSTATUS)
+tr$SEX  <- gsub("z_", "", tr$SEX)
+tr$EDUCATION  <- gsub("z_", "", tr$EDUCATION)
+tr$JOB  <- gsub("z_", "", tr$JOB)
+tr$CAR_USE  <- gsub("z_", "", tr$CAR_USE)
+tr$CAR_TYPE  <- gsub("z_", "", tr$CAR_TYPE)
+tr$URBANICITY  <- gsub("z_", "", tr$URBANICITY)
+
+
+# Reorder columns -- predictor categorical, predictor numeric, target
+indx <- c(8, 10:13, 15, 18:19, 22, 25, 3:7, 9, 14, 16:17, 20:21, 23:24, 1:2)
+tr_ordered <- tr
+setcolorder(tr_ordered,indx)
 ```
+
+
+#### Examine the data
+
+```{r}
+table(tr$PARENT1)
+table(tr$MSTATUS)
+table(tr$SEX)
+table(tr$EDUCATION)
+table(tr$JOB)
+table(tr$CAR_USE)
+table(tr$CAR_TYPE)
+table(tr$RED_CAR)
+table(tr$REVOKED)
+table(tr$URBANICITY)
+```
+
+#### Summary of the data
+
+```{r}
+summary(tr)
+```
+
+
+```{r}
+boxplot((INCOME/1000)~AGE,data=tr, main="Income vs Age", xlab="Age", ylab="Income")
+```
+
+
+### DATA PREPARATION
+
+```{r}
+tr_prep <- tr_ordered
+```
+
+
+```{r}
+M <- sapply(tr_prep, function(x) sum(x=="") | sum(is.na(x))); names(M[(M>0)])
+```
+
+```{r}
+x <- c(12, 14, 15, 16, 23)
+par(mfrow=c(2,3))
+for (val in x) {
+  hist(tr_prep[,val],xlab=names(tr_prep[val]), main="")
+}
+par(mfrow=c(1,1))
+```
+
+
+
+```{r}
+#impute
+
+tr_prep = tr_prep %>% 
+  mutate(AGE = 
+           ifelse(is.na(AGE), 
+                  mean(AGE, na.rm=TRUE), AGE)) %>% 
+
+  mutate(YOJ = 
+           ifelse(is.na(YOJ), 
+                  mean(YOJ, na.rm=TRUE), YOJ)) %>% 
+
+  mutate(INCOME = 
+           ifelse(is.na(INCOME), 
+                  median(INCOME, na.rm=TRUE), INCOME)) %>% 
+
+  mutate(HOME_VAL = 
+           ifelse(is.na(HOME_VAL), 
+                  mean(HOME_VAL, na.rm=TRUE), HOME_VAL)) %>% 
+
+  mutate(CAR_AGE = 
+           ifelse(is.na(CAR_AGE), 
+                  mean(CAR_AGE, na.rm=TRUE), CAR_AGE)) %>% 
+
+  mutate(JOB = 
+           ifelse((JOB == "" & EDUCATION == 'PhD'),
+                  "Doctor", JOB)) %>% 
+
+  mutate(JOB = 
+           ifelse((JOB == "" & EDUCATION == 'Masters'),
+                  "Lawyer", JOB))
+```
+
+```{r}
+M <- sapply(tr_prep, function(x) sum(x=="") | sum(is.na(x))); names(M[(M>0)])
+```
+
+
+```{r}
+# Outlier Capping
+
+tr_prep2 <- tr_prep
+
+id <- c(11:23)
+for (val in id) {
+  qnt <- quantile(tr_prep2[,val], probs=c(.25, .75), na.rm = T)
+  caps <- quantile(tr_prep2[,val], probs=c(.05, .95), na.rm = T)
+  H <- 1.5 * IQR(tr_prep2[,val], na.rm = T)
+  tr_prep2[,val][tr_prep2[,val] < (qnt[1] - H)] <- caps[1]
+  tr_prep2[,val][tr_prep2[,val] > (qnt[2] + H)] <- caps[2]
+
+}
+```
+
+
+## BUILD MODELS
+
+```{r}
+nTrain <- createDataPartition(tr_prep2$TARGET_FLAG, p=0.8, list=FALSE)
+ntraining <- tr_prep2[nTrain,]
+ntesting <- tr_prep2[-nTrain,]
+
+set.seed(123)
+```
+
+
+
+```{r}
+# Logistic Regression build the model using training set
+full.model_FLAG <- glm(TARGET_FLAG ~.-TARGET_AMT, data = ntraining , family = binomial)
+summary(full.model_FLAG)
+```
+
+
+
+```{r}
+round(exp(cbind(Estimate=coef(full.model_FLAG))),2)
+```
+
+
+```{r}
+# evaluate the model by predicting using the testing set
+m1_prob <- predict(full.model_FLAG, ntesting, type = "response")
+m1_pclass <- ifelse(m1_prob >= 0.5, 1, 0)
+
+# create confusion matrix
+pclass <- factor(m1_pclass,levels = c(1,0))
+aclass <- factor(ntesting$TARGET_FLAG,levels = c(1,0))
+confusionMatrix(pclass, aclass);
+```
+
+
+```{r}
+# plot and show area under the curve
+plot(roc(ntesting$TARGET_FLAG, m1_prob),print.auc=TRUE)
+```
+
+
+```{r}
+# get McFadden
+m1_mcFadden <- pR2(full.model_FLAG); m1_mcFadden["McFadden"]
+```
+
+
+
+```{r}
+full.model.AMT <- lm(TARGET_AMT ~. -TARGET_FLAG,  data = tr_prep2)
+summary(full.model.AMT)
+```
+
+
+
+```{r}
+vif(full.model.AMT)
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+plot(full.model.AMT)
+```
+
+
+```{r}
+par(mfrow=c(1,1))
+```
+
+
+### 3.2 Stepwise variable selection
+
+
+```{r}
+# Logistic Regression build the model using training set
+step.model_FLAG <- full.model_FLAG %>% stepAIC(trace = FALSE)
+summary(step.model_FLAG)
+```
+
+
+```{r}
+round(exp(cbind(Estimate=coef(step.model_FLAG))),2)
+```
+
+
+```{r}
+# evaluate the model by predicting using the testing set
+m2_prob <- predict(step.model_FLAG, ntesting, type = "response")
+m2_pclass <- ifelse(m2_prob >= 0.5, 1, 0)
+
+# create confusion matrix
+pclass <- factor(m2_pclass,levels = c(1,0))
+aclass <- factor(ntesting$TARGET_FLAG,levels = c(1,0))
+confusionMatrix(pclass, aclass);
+
+```
+
+
+
+
+```{r}
+# plot and show area under the curve
+plot(roc(ntesting$TARGET_FLAG, m2_prob),print.auc=TRUE)
+```
+
+
+```{r}
+# get McFadden
+m2_mcFadden <- pR2(step.model_FLAG); m2_mcFadden["McFadden"]
+```
+
+
+
+```{r}
+# Linear Regression - TARGET_AMT
+step.model.AMT <- full.model.AMT %>% stepAIC(trace = FALSE)
+summary(step.model.AMT)
+```
+
+
+```{r}
+vif(step.model.AMT)
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+plot(step.model.AMT)
+```
+
+
+```{r}
+par(mfrow=c(1,1))
+```
+
+
+### 3.3 Significant value variable selection
+
+```{r}
+# Logistic Regression build the model using training set
+select.model_FLAG <- glm(TARGET_FLAG ~.
+                       -TARGET_AMT
+                       -EDUCATION
+                       -SEX
+                       -RED_CAR
+                       -KIDSDRIV
+                       -AGE
+                       -HOMEKIDS
+                       -YOJ
+                       -HOME_VAL
+                       -OLDCLAIM
+                       -BLUEBOOK 
+
+                         , data = ntraining , family = binomial)
+summary(select.model_FLAG)
+```
+
+
+```{r}
+round(exp(cbind(Estimate=coef(select.model_FLAG))),2)
+```
+
+
+```{r}
+# evaluate the model by predicting using the testing set
+m3_prob <- predict(select.model_FLAG, ntesting, type = "response")
+m3_pclass <- ifelse(m3_prob >= 0.5, 1, 0)
+
+# create confusion matrix
+pclass <- factor(m3_pclass,levels = c(1,0))
+aclass <- factor(ntesting$TARGET_FLAG,levels = c(1,0))
+confusionMatrix(pclass, aclass);
+```
+
+
+```{r}
+# plot and show area under the curve
+plot(roc(ntesting$TARGET_FLAG, m3_prob),print.auc=TRUE)
+```
+
+
+```{r}
+# get McFadden
+m3_mcFadden <- pR2(select.model_FLAG); m3_mcFadden["McFadden"]
+```
+
+
+```{r}
+# Linear Regression - TARGET_AMT
+select.model.AMT <- lm(TARGET_AMT ~. 
+                       -TARGET_FLAG
+                       -EDUCATION
+                       -SEX
+                       -RED_CAR
+                       -KIDSDRIV
+                       -AGE
+                       -HOMEKIDS
+                       -YOJ
+                       -HOME_VAL
+                       -OLDCLAIM
+                       -BLUEBOOK 
+                       ,  data = tr_prep2)
+summary(select.model.AMT)
+```
+
+```{r}
+vif(select.model.AMT)
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+plot(select.model.AMT)
+```
+
+
+```{r}
+par(mfrow=c(1,1))
+```
+
+
+### SELECT MODELS
+
+```{r}
+
+# Read the evaluation dataset
+ eval_df <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/Homework4/insurance-evaluation-data.csv", stringsAsFactors = FALSE)
+
+
+# Remove columns not selected in 2nd model
+#eval_df <- dplyr::select(eval_df, -YOJ, -MSTATUS, -RED_CAR)
+
+#  Convert to numeric
+eval_df$INCOME <- as.numeric(gsub('[$,]', '', eval_df$INCOME))
+eval_df$HOME_VAL <- as.numeric(gsub('[$,]', '', eval_df$HOME_VAL))
+eval_df$BLUEBOOK <- as.numeric(gsub('[$,]', '', eval_df$BLUEBOOK))
+eval_df$OLDCLAIM <- as.numeric(gsub('[$,]', '', eval_df$OLDCLAIM))
+
+# Remove irrelevant characters
+eval_df$MSTATUS  <- gsub("z_", "", eval_df$MSTATUS)
+eval_df$SEX  <- gsub("z_", "", eval_df$SEX)
+eval_df$EDUCATION  <- gsub("z_", "", eval_df$EDUCATION)
+eval_df$JOB  <- gsub("z_", "", eval_df$JOB)
+eval_df$CAR_USE  <- gsub("z_", "", eval_df$CAR_USE)
+eval_df$CAR_TYPE  <- gsub("z_", "", eval_df$CAR_TYPE)
+eval_df$URBANICITY  <- gsub("z_", "", eval_df$URBANICITY)
+
+#impute
+eval_df = eval_df %>% 
+  mutate(AGE = 
+           ifelse(is.na(AGE), 
+                  mean(AGE, na.rm=TRUE), AGE)) %>% 
+
+  mutate(YOJ = 
+           ifelse(is.na(YOJ), 
+                  mean(YOJ, na.rm=TRUE), YOJ)) %>% 
+
+  mutate(INCOME = 
+           ifelse(is.na(INCOME), 
+                  median(INCOME, na.rm=TRUE), INCOME)) %>% 
+
+  mutate(HOME_VAL = 
+           ifelse(is.na(HOME_VAL), 
+                  mean(HOME_VAL, na.rm=TRUE), HOME_VAL)) %>% 
+
+  mutate(CAR_AGE = 
+           ifelse(is.na(CAR_AGE), 
+                  mean(CAR_AGE, na.rm=TRUE), CAR_AGE)) %>% 
+
+  mutate(JOB = 
+           ifelse((JOB == "" & EDUCATION == 'PhD'),
+                  "Doctor", JOB)) %>% 
+
+  mutate(JOB = 
+           ifelse((JOB == "" & EDUCATION == 'Masters'),
+                  "Lawyer", JOB))
+
+
+ eval_prob <- predict(step.model_FLAG, eval_df, type = "response")
+ eval_pclass <- ifelse(eval_prob >= 0.5, 1, 0)
+ 
+ eval_amt <- ifelse(eval_pclass == 1, predict(step.model.AMT, eval_df, type = "response"), 0)
+ 
+ 
+ eval_df$TARGET_FLAG <- eval_pclass
+ eval_df$TARGET_AMT <- eval_amt
+  
+ head(eval_df)
+ 
+# Export
+#  write.csv(eval_df,file="Insurance_Results.csv")
+  
+```
+
+
+
