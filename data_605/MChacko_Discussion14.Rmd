@@ -1,0 +1,44 @@
+---
+title: "Discussion 14 (Data 605)"
+author: "Monu Chacko"
+date: "5/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Exercises 8.8 (6)
+
+### $$f(x) = tan^{-1}(x); c = 0$$
+
+### Key Idea:
+
+$$tan^{-1}(x) = \sum^\infty_{n = 0}(-1)^n\frac{x^{2n+1}}{2n+1}$$
+
+### Derivatives for the first few n's. Find the trend.
+
+$$\begin{align} f(x) &= tan^{-1}(x), &f(0) &= 0 \\ \\
+f'(x) &= \frac{1}{x^2+1}, &f'(0) &= 1 \\ \\
+f''(x) &= -\frac{2x}{(x^2+1)^2}, &f''(0) &= 0 \\ \\
+f'''(x) &= -\frac{2(-3x^2+1)}{(x^2+1)^3}, &f'''(0) &= -2 \\ \\
+f''''(x) &= \frac{24x(-x^2+1)}{(x^2+1)^4}, &f''''(0) &= 0 \\ \\
+f'''''(x) &= \frac{24(5x^4-10x^2+1)}{(x^2+1)^5}, &f'''''(0) &= 24 \\ \\
+f''''''(x) &= \frac{240x(-3x^4+10x^2-3)}{(x^2+1)^6}, &f'''''(0) &= 0 \\ \\
+f'''''''(x) &= \frac{720(7x^6-35x^4+21x^2-1)}{(x^2+1)^7}, &f''''''(0) &= -720 \\ \\
+\end{align}$$
+
+
+### Now substitute into Taylor's formula:
+
+$$ \begin{align}  tan^{-1}(x) &= \sum^\infty_{n = 0}\frac{f^n(0)}{n!}x^n  \\ \\ 
+&= \frac{0}{0!}x^0 +  \frac{1}{1!}x^1 +  \frac{0}{2!}x^2 -  \frac{2}{3!}x^3 +   \frac{0}{4!}x^4 + \frac{24}{5!}x^5 + \frac{0}{6!}x^6 -  \frac{720}{7!}x^7 + ...\\ \\
+&= 0 +  \frac{x^1}{1} + 0 -   \frac{x^3}{3} +  0 + \frac{x^5}{5}  + 0 - \frac{x^7}{7} + ... \\ \\ 
+&=  \frac{x^1}{1} - \frac{x^3}{3} + \frac{x^5}{5} - \frac{x^7}{7} \\ \\
+&= \sum_{n = 0}^{\infty}(-1)^n*\frac{x^{2n + 1}}{2n + 1} 
+\end{align} $$
+
+
+
+

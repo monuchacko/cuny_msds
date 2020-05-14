@@ -1,0 +1,27 @@
+---
+title: "Data 605 Discussion 15"
+author: "Monu Chacko"
+date: "5/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exercises 12.1.7: Give the domain and range of the multi-variable function.
+
+$$f(x,~y)= x^2+y^2 + 2$$
+
+- Domain is all real values of x and y
+- Range is all values greater and 2
+
+```{r}
+fun1 <- function(x,y) { x^2 +y^2 + 2 }
+
+x <- runif(100000,-1000,1000)
+y <- runif(100000,-1000,1000)
+result <- fun1(x,y)
+
+hist(result, breaks = 100)
+```

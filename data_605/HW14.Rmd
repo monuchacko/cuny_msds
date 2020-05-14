@@ -1,0 +1,107 @@
+---
+title: "ASSIGNMENT 14 - TAYLOR SERIES"
+author: "Monu Chacko"
+date: "5/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r warning=FALSE}
+library(pracma)
+```
+
+
+### Taylor Series expansions of popular functions.
+
+#### Question 1:
+
+$$f\left( x \right) = \frac { 1 }{ (1-x) }$$
+
+
+$$f\left( x \right) \quad =\quad \sum _{ n=0 }^{ \infty }{ \frac { { f }^{ (n) }(a) }{ n! } { (x-a) }^{ n } }$$
+
+$$f(a)\quad +{ \quad f }^{ (1) }(a)(x-a)\quad +\quad \frac { { f }^{ (2) } }{ 2! } (a)(x-a)\quad +\quad ...$$
+
+
+$f(a)\quad =\quad \frac { 1 }{ 1\quad -\quad a }$ $\quad\quad f(0) = 1$  
+
+${ f }^{ \prime }(a)\quad =\quad \frac { 1 }{ { (1-a) }^{ 2 } }$ $\quad\quad f^{(1)}(0) = 1$  
+
+${ f }^{ \prime \prime }(a)\quad =\quad \frac { 2 }{ { (1-a) }^{ 3 } }$ $\quad\quad f^{(2)}(0) = 2$  
+
+${ f }^{ \prime \prime \prime}(a)\quad =\quad \frac { 6 }{ { (1-a) }^{ 4 } }$ $\quad\quad f^{(3)}(0) = 6$  
+
+${ f }^{(4)}(a)\quad =\quad \frac { 24 }{ { (1-a) }^{ 5 } }$ $\quad\quad f^{(4)}(0) = 24$  
+
+
+Expressions in Taylor Series expansion:  
+
+$$= 1 + 1x + \frac{2}{2!}x^2 + \frac{6}{3!}x^3 + \frac{24}{4!}x^4 +...$$
+
+
+
+$$$1 + x + x^2 + x^3 + x^4 + ……$$
+
+
+```{r}
+func01 <- function(x) {1/(1-x)}
+taylor(func01, x0 = 0, n = 4)
+```
+
+
+
+
+#### Question 2:
+
+
+$$f(x) = e^x$$
+
+$f(a) \quad= \quad { e }^{ a }$ $\quad\quad f(0) = 1$  
+
+${ f }^{ \prime }(a)\quad =\quad { e }^{ a }$ $\quad\quad { f }^{ \prime }(0) = 1$  
+
+${ f }^{ \prime \prime }(a)\quad =\quad { e }^{ a }$ $\quad\quad { f }^{ \prime \prime }(0) = 1$  
+
+${ f }^{ \prime \prime \prime }(a)\quad =\quad { e }^{ a }$ $\quad\quad { f }^{ \prime \prime \prime }(0) = 1$  
+
+$f^{(4)}(a)\quad = \quad { e }^{ a }$ $\quad\quad f^{(4)}(0) = 1$  
+
+
+$$= 1 + x + \frac{x^2}{2} + \frac{x^3}{6} + \frac{x^4}{24} + ...$$
+
+
+```{r}
+func02 <- function(x) {exp(x)}
+taylor(func02, x0 = 0, n = 4)
+```
+
+
+
+#### Question 3:
+
+
+$$f(x) = ln(1 + x)$$
+
+$f(a) \quad= \quad ln(1+a)$ $\quad= \quad f(0) = 0$  
+
+${ f }^{ \prime }(a) \quad= \quad \frac{1}{1+a}$ $\quad= \quad { f }^{ \prime }(0) = 1$  
+
+${ f }^{ \prime \prime }(a) \quad= \quad \frac{-1}{(1+a)^2}$ $\quad= \quad { f }^{ \prime \prime }(0) = -1$  
+
+${ f }^{ \prime \prime \prime }(a) \quad= \quad \frac{2}{(1+a)^3}$ $\quad= \quad { f }^{ \prime \prime \prime } (0) = 2$  
+
+$f^{(4)}(a) \quad= \quad \frac{-6}{(1+a)^4}$ $\quad= \quad f^{(4)}(0) = -6$  
+
+
+$$=x - \frac{x^2}{2} + \frac{x^3}{3} - \frac{x^4}{4} +...$$
+
+```{r}
+func02 <- function(x) {log(1+x)}
+taylor(func02, x0 = 0, n = 4)
+```
+
+
+
