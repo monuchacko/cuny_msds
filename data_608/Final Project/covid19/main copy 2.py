@@ -6,7 +6,6 @@ import pandas
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import uuid
 
 cv_df_raw = pandas.read_csv("COVID19_Cases.csv", low_memory=False)
 
@@ -65,7 +64,8 @@ plt.ylabel('Cases per Population')
 plt.title('Total Case by Country per Population')
 plt.style.use("seaborn")
 # plt.grid(True)
-# plt.show()
+plt.show()
+
 
 cv_df_1_summary = cv_df_1_summary.sort_values("Cases_per_Population", ascending=False).head(10)
 
@@ -79,112 +79,11 @@ plt.title('Top 10 Countries (Population Ratio)')
 
 cv_df_tl = cv_df_raw.copy()
 cv_df_tl = cv_df_tl.drop(columns=["Difference", "Province_State", "Admin2", "iso2",	"iso3", "Combined_Key", "Prep_Flow_Runtime", "Lat", "Long", "FIPS", "People_Total_Tested_Count", "Population_Count", "People_Hospitalized_Cumulative_Count", "Data_Source"])
-cv_df_tl_us = cv_df_tl[(cv_df_tl["Case_Type"] == "Confirmed") & (cv_df_tl["Country_Region"] == "US")]
 
-cv_df_tl_us = cv_df_tl_us.sort_values("Date", ascending=True)
+# cv_df_tl = cv_df_tl[(cv_df_tl["Case_Type"] == "Confirmed")]
+# cv_df_tl = cv_df_tl.head(100)
 
-# cv_df_tl_d_us
-# cv_df_1_summary
-
-cv_df_tl_d_us = cv_df_tl_us.groupby(["Country_Region", "Date"])["Cases"].sum()
-cv_df_tl_d_us = cv_df_tl_d_us.reset_index()
-
-cv_df_tl_d_us["avgcases"] = cv_df_tl_d_us["Cases"].rolling(15).mean()
-
-plt.style.use("fivethirtyeight")
-fig1, ax1 = plt.subplots()
-ax1.plot_date(cv_df_tl_d_us["Date"], cv_df_tl_d_us["avgcases"], linestyle="solid")
-plt.title('COVID-19 US Data')
-plt.xticks(rotation=45, fontsize=6)
-plt.show()
-
-
-# ===============================
-cv_df_tl_spain = cv_df_tl[(cv_df_tl["Case_Type"] == "Confirmed") & (cv_df_tl["Country_Region"] == "Spain")]
-
-cv_df_tl_spain = cv_df_tl_spain.sort_values("Date", ascending=True)
-
-cv_df_tl_d_spain = cv_df_tl_spain.groupby(["Country_Region", "Date"])["Cases"].sum()
-cv_df_tl_d_spain = cv_df_tl_d_spain.reset_index()
-
-cv_df_tl_d_spain["avgcases"] = cv_df_tl_d_spain["Cases"].rolling(15).mean()
-
-plt.style.use("fivethirtyeight")
-fig1, ax1 = plt.subplots()
-ax1.plot_date(cv_df_tl_d_spain["Date"], cv_df_tl_d_spain["avgcases"], linestyle="solid")
-plt.title('COVID-19 Spain Data')
-plt.xticks(rotation=45, fontsize=6)
-plt.show()
-# ===============================
-
-# ===============================
-cv_df_tl_skorea = cv_df_tl[(cv_df_tl["Case_Type"] == "Confirmed") & (cv_df_tl["Country_Region"] == "Korea, South")]
-
-cv_df_tl_skorea = cv_df_tl_skorea.sort_values("Date", ascending=True)
-
-cv_df_tl_d_skorea = cv_df_tl_skorea.groupby(["Country_Region", "Date"])["Cases"].sum()
-cv_df_tl_d_skorea = cv_df_tl_d_skorea.reset_index()
-
-cv_df_tl_d_skorea["avgcases"] = cv_df_tl_d_skorea["Cases"].rolling(15).mean()
-
-plt.style.use("fivethirtyeight")
-fig1, ax1 = plt.subplots()
-ax1.plot_date(cv_df_tl_d_skorea["Date"], cv_df_tl_d_skorea["avgcases"], linestyle="solid")
-plt.title('COVID-19 South Korea Data')
-plt.xticks(rotation=45, fontsize=6)
-plt.show()
-# ===============================
-
-# ===============================
-cv_df_tl_china = cv_df_tl[(cv_df_tl["Case_Type"] == "Confirmed") & (cv_df_tl["Country_Region"] == "China")]
-
-cv_df_tl_china = cv_df_tl_china.sort_values("Date", ascending=True)
-
-cv_df_tl_d_china = cv_df_tl_china.groupby(["Country_Region", "Date"])["Cases"].sum()
-cv_df_tl_d_china = cv_df_tl_d_china.reset_index()
-
-cv_df_tl_d_china["avgcases"] = cv_df_tl_d_china["Cases"].rolling(15).mean()
-
-plt.style.use("fivethirtyeight")
-fig1, ax1 = plt.subplots()
-ax1.plot_date(cv_df_tl_d_china["Date"], cv_df_tl_d_china["avgcases"], linestyle="solid")
-plt.title('COVID-19 China Data')
-plt.xticks(rotation=45, fontsize=6)
-plt.show()
-# ===============================
-
-# Italy
-# Korea, South
-
-# cv_df_1_summary["uqid1"] = cv_df_1_summary["Country_Region"] + "_" + cv_df_1_summary["Date"].replace("/", "_")
-# cv_df_1_summary["mid"] = cv_df_1_summary.index
-
-# cv_df_1_summary["uqid"] = uuid.uuid1()
-# cv_df_1_summary = cv_df_1_summary.assign(uqid=uuid.uuid1())
-
-# print(cv_df_1_summary)
-
-# cv_df_1_summary_avg = cv_df_1_summary["Cases"].rolling(3).mean()
-# cv_df_1_summary_avg = cv_df_1_summary_avg.reset_index()
-# cv_df_1_summary_avg.rename(columns={"Cases": "Cases_avg1"})
-# print(cv_df_1_summary_avg)
-# print(pd.merge(cv_df_1_summary, cv_df_1_summary_avg))
-
-# rolling = cv_df_1_summary.rolling(window=3)
-# rolling_mean = rolling.mean()
-# cv_df_1_summary_avg = cv_df_1_summary_avg.rename(columns={"Cases": "Cases_Avg3"})
-# print(cv_df_1_summary_avg.head(1000))
-# print(cv_df_1_summary)
-
-# pd.merge(cv_df_1_summary, cv_df_1_summary_avg)
-# cv_df_1_summary.merge(cv_df_1_summary_avg["Cases_Avg3"])
-# print(cv_df_1_summary.head(1000))
-
-# fig1, ax1 = plt.subplots()
-# ax1.plot_date(cv_df_1_summary["Date"], cv_df_1_summary["avgcases"], linestyle="solid")
-# plt.style.use("classic")
-# plt.title('COVID-19 US Data')
-# plt.xticks(rotation=45, fontsize=6)
+# plt.plot_date(cv_df_tl["Date"], cv_df_tl["Cases"])
 # plt.show()
 
 # =========================================================================================================
