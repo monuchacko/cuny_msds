@@ -1,0 +1,27 @@
+---
+title: "DATA 605 Discussion 16"
+author: "Monu Chacko"
+date: "5/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Exercises 12.5 - Question 9 (Page 728)
+
+
+#### Question:  
+
+$$z = 5x + 2y, x = 2 cos t + 1, y = sin t - 3; t = π= 4$$
+
+
+
+#### Solution:  
+
+
+```{r}
+t <- pi/4
+-10*sin(t) + 2*cos(t)
+```

@@ -12,10 +12,22 @@ cv_df_raw = pandas.read_csv("COVID19_Cases.csv", low_memory=False)
 
 # =========================================================================================================
 
+# , "Population_Count", "Date"
+cv_df_raw = cv_df_raw.drop(columns=["Difference", "Province_State", "Admin2", "iso2",	"iso3", "Combined_Key", "Prep_Flow_Runtime", "Lat", "Long", "FIPS", "People_Total_Tested_Count", "People_Hospitalized_Cumulative_Count", "Data_Source"])
+cv_df_raw = cv_df_raw[(cv_df_raw["Case_Type"] == "Confirmed")]
+cv_df_raw.to_csv('cv_df_raw.csv', index=False)
+#cv_df_raw = pandas.read_csv("cv_df_raw.csv", low_memory=False)
+
+
+#cv_df_all_countries = pandas.read_csv("cv_df_all_countries.csv", low_memory=False)
+#cv_df_all_countries.to_csv('cv_df_all_countries.csv', index=False)
+
+# =========================================================================================================
+
 cv_df_all_countries = cv_df_raw.copy()
 # print(cv_df.columns)
 
-cv_df_all_countries = cv_df_all_countries.drop(columns=["Difference", "Province_State", "Admin2", "iso2",	"iso3", "Combined_Key", "Prep_Flow_Runtime", "Lat", "Long", "FIPS", "People_Total_Tested_Count", "Population_Count", "People_Hospitalized_Cumulative_Count", "Data_Source", "Date"])
+#cv_df_all_countries = cv_df_all_countries.drop(columns=["Difference", "Province_State", "Admin2", "iso2",	"iso3", "Combined_Key", "Prep_Flow_Runtime", "Lat", "Long", "FIPS", "People_Total_Tested_Count", "Population_Count", "People_Hospitalized_Cumulative_Count", "Data_Source", "Date"])
 # cv_confirmed = cv_df[(cv_df["Case_Type"] == "Confirmed") & (cv_df["Country_Region"] == "US")]
 cv_df_all_countries = cv_df_all_countries[(cv_df_all_countries["Case_Type"] == "Confirmed")]
 

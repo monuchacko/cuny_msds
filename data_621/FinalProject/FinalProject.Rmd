@@ -1,0 +1,295 @@
+---
+title: "DATA 621 Final"
+author: "Monu Chacko"
+date: "5/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## COVID-19 - Impact of response to actual cases
+### By 
+
+
+### Abstract
+Coronavirus (COVID-19) is the pandemic of our times. It spread mainly from person to person, mainly through respiratory droplets produced when an infected person coughs or sneezes. This is a new virus that has no vaccine or medicine. The only response is the invention by the states on the population. Government accross the world responsed to this pandemic is different way. In this study we will study the relationship between responses and its effect on the cases.  
+
+### Key Words
+
+Coronavirus, COVID-19, Pandemic
+
+
+### Introduction
+
+The response to COVID-19 has an impact on the number of cases in the absence of vaccines or medicine. Governments accross the world used various measures to solve this problem. We will study the type of responses and its impact on the number of cases. We will add new features to find its possible impact.
+
+The data for this project was taken from ******** . This project had its challenges because we are in the middle of this crisis and this situation is still emerging. There are not many datasets or historical data for this kind of virus. Since we are still in the middle of this pandemic we only can hope our conclusions are correct. For example what would be the conclusion if there are multiple waves. How would society view loss of economy vs health etc. This story is still being told. However we need this study to find solution to the problem we are still facing.  
+
+
+## Import Libraries
+
+```{r warning=FALSE, message=FALSE}
+library(tidyverse)
+library(moments)
+library(MASS)
+library(reshape2)
+```
+
+## Load data and cleanup
+
+```{r}
+# Load dataset
+dfcovid <- read.csv(file = 'COVID19_Cases.csv')
+dfcovidmd <- read.csv(file = 'cvd19metadata_1.csv')
+
+# Rename
+dfcovid <- dfcovid %>% rename("Case_Type" = "ï..Case_Type")
+
+# Column names
+# names(dfcovid)
+
+# Drop columns that are not required
+drp <- c("People_Total_Tested_Count","Difference", "Province_State Admin2", "iso2", "iso3", "FIPS", "Lat", "Long", "Province_State", "Admin2", "People_Hospitalized_Cumulative_Count", "Prep_Flow_Runtime", "Data_Source", "Combined_Key")
+
+# Drop
+dfcovid <- dfcovid[ , !(names(dfcovid) %in% drp)]
+
+# Filter - We are only interested in confirmed cases
+dfcovid <- dfcovid %>% filter(Case_Type == "Confirmed")
+
+as_tibble(dfcovid)
+```
+
+## Merge datasets
+
+```{r}
+dfcovid_mrg2 <- merge(dfcovid, dfcovidmd)
+dfcovid_mrg2$CasesPerPopulation <- (dfcovid_mrg2[,3] / dfcovid_mrg2[,12]) * 10000000000
+
+# head(dfcovid_mrg2$CasesPerPopulation)
+#head(dfcovid_mrg2)
+
+#as_tibble(dfcovid_mrg2)
+```
+
+```{r}
+#dfcovid_region_mrg2_grp_1 <- group_by(dfcovid_mrg2, Country_Region)
+
+#dfcovid_region_mrg2_grp_1
+```
+
+```{r}
+# Drop columns that are not required
+drp <- c("Case_Type","Date","GovtType", "GovtTypeDemocratic", "GovtTypeCentral", "Population")
+dfcovid_mrg3 <- dfcovid_mrg2[ , !(names(dfcovid_mrg2) %in% drp)]
+
+dfcovid_region_mrg2_grp <- group_by(dfcovid_mrg3, Country_Region)
+dfcovid_mrg3_1 <- dfcovid_mrg3 %>% group_by(Country_Region) %>% summarise_each(funs(mean(., na.rm = TRUE)))
+
+# df <- data.frame( ID=1:3,Date = c("2004-02-06" , "2006-03-14" , "2007-07-16") )
+ 
+#dfcovid_mrg2_1 <- dfcovid_mrg2 %>% group_by(Country_Region) %>% summarise_all(funs(mean))
+
+# by_species %>% summarise_each(funs(mean(., na.rm = TRUE)))
+
+#dfcovid_mrg3_1
+
+
+#head(dfcovid_mrg2)
+
+dfcovid_mrg4 <- dfcovid_mrg2[c("Country_Region", "GovtType")]
+
+dfcovid_mrg4 <- merge(dfcovid_mrg4, dfcovid_mrg3_1)
+
+#head(dfcovid_mrg4)
+
+#-----------------------
+head(dfcovid_mrg4, 10)
+
+plot(dfcovid_mrg4$CasesPerPopulation, dfcovid_mrg4$Lockdown)
+plot(dfcovid_mrg4$CasesPerPopulation, dfcovid_mrg4$Mask)
+plot(dfcovid_mrg4$CasesPerPopulation, dfcovid_mrg4$TotalPopulation)
+
+# pairs(dfcovid_mrg4)
+
+#-----------------------
+
+covidlm <- lm(CasesPerPopulation~Lockdown+Mask+GovtType, data=dfcovid_mrg4)
+
+#-----------------------
+
+summary(covidlm)
+# attributes(covidlm)
+#abline(covidlm, col=2, lwd=3)
+# Confidence Interval
+confint(covidlm)
+summary(covidlm)
+anova(covidlm)
+
+par(mfrow=c(2,2))
+plot(covidlm)
+
+
+#head(covidlm)
+covid_mrg4_cor <- cor(dfcovid_mrg4$Cases, dfcovid_mrg4$CasesPerPopulation)
+#corrplot::corrplot(covid_mrg4_cor)
+
+
+dfcovid_mrg4_ss <- subset(dfcovid_mrg4, select=c(Cases, CasesPerPopulation))
+#dfcovid_mrg4_ss
+dfcovid_mrg4_cor <- cor(dfcovid_mrg4_ss)
+#dfcovid_mrg4_cor
+corrplot::corrplot(dfcovid_mrg4_cor)
+
+#cor1 <- cor(dfcovid_mrg1_ss)
+
+#corrplot::corrplot(cor1)
+
+
+
+#c1 <- cor(dfcovid_mrg1$Country_Region_sum, dfcovid_mrg1$Population)
+
+#corrplot::corrplot(cor1)
+#corrplot::corrplot(cor1, method="pie")
+#corrplot::corrplot(cor1, method="color")
+#corrplot::corrplot(cor1, method="number")
+
+
+
+
+
+
+
+
+
+#summarise_all(dfcovid_region_mrg2_grp, Country_Region_sum = sum(as.numeric(Population_Count), na.rm = TRUE))
+
+dfcovid_region_mrg2_grp_s <- summarise(dfcovid_region_mrg2_grp, Country_Region_sum = sum(as.numeric(Population_Count), na.rm = TRUE))
+
+#dfcovid_region_mrg2_grp_s
+```
+
+
+```{r}
+dfcovid_region_grp <- group_by(dfcovid, Country_Region)
+dfcovid_region_grp
+
+dfcovid_region_grp_s <- summarise(dfcovid_region_grp, Country_Region_sum = sum(as.numeric(Population_Count), na.rm = TRUE))
+
+ggplot(data=dfcovid_region_grp_s, aes(y=Country_Region_sum,x=Country_Region))+geom_point()
+
+# head(dfcovid, 100)
+
+# head(dfcovid, 100)
+
+
+
+
+dfcovid1 <- group_by(dfcovid, Country_Region)
+
+dfcovid2 <- summarise(dfcovid1, Country_Region_sum = sum(as.numeric(Population_Count), na.rm = TRUE))
+
+#dfcovid2 <- dfcovid2 %>% filter(Country_Region_sum > 50000000)
+
+#ggplot(data=dfcovid2)
+ggplot(data=dfcovid2, aes(y=Country_Region_sum,x=Country_Region))+geom_point()
+
+as_tibble(dfcovid2)
+```
+
+
+```{r}
+dfcovidmd
+dfcovid_mrg1 <- merge(dfcovid2, dfcovidmd)
+```
+
+```{r}
+#dfcovid_mrg1_ss <- subset(dfcovid_mrg1, select=c(GovtType, Population))
+#dfcovid_mrg1_ss
+
+#cor1 <- cor(dfcovid_mrg1_ss)
+
+#corrplot::corrplot(cor1)
+#corrplot::corrplot(cor1, method="pie")
+#corrplot::corrplot(cor1, method="color")
+#corrplot::corrplot(cor1, method="number")
+
+#c(Country_Region_sum, GovtType, Population)
+
+#cor1 <- subset(cor1, select=c(Country_Region_sum, GovtType, Population))
+
+# Country_Region Country_Region_sum GovtType Population
+
+hist(dfcovid_mrg1$Country_Region_sum)
+
+plot(dfcovid_mrg1)
+
+plot(dfcovid_mrg1$Country_Region_sum, dfcovid_mrg1$Population)
+
+# Perarsons coorelation (https://www.youtube.com/watch?v=66z_MRwtFJM)
+c1 <- cor(dfcovid_mrg1$Country_Region_sum, dfcovid_mrg1$Population)
+#corrplot::corrplot(c1, method = "square", type="upper")
+
+# dfcovid_mrg1
+rm1 <- lm(dfcovid_mrg1$Country_Region_sum ~ dfcovid_mrg1$Population)
+
+# https://www.youtube.com/watch?v=66z_MRwtFJM
+summary(rm1)
+
+# attributes(rm1)
+
+abline(rm1, col=2, lwd=3)
+
+# Confidence Interval
+confint(rm1)
+
+summary(rm1)
+
+anova(rm1)
+
+# https://www.youtube.com/watch?v=eTZ4VUZHzxw
+
+par(mfrow=c(2,2))
+plot(rm1)
+
+# https://www.youtube.com/watch?v=TgVx9Rqsewo (Box-Cox 1)
+# https://www.youtube.com/watch?v=6O_9QUeyBVU (Box-Cox 2)
+skewness(rm1$resid)
+
+boxcox_rm1 <- boxcox(dfcovid_mrg1$Country_Region_sum ~ dfcovid_mrg1$Population)
+
+# Rearrange and put it side by side
+lmda <- boxcox_rm1$x
+lik <- boxcox_rm1$y
+bc <- cbind(lmda, lik)
+bc[order(-lik), ]
+
+# https://www.youtube.com/watch?v=q1RD5ECsSB0 (Multiple Linear Regression in R)
+
+```
+
+
+```{r}
+#cv_df_all_countries = cv_df_raw.copy()
+
+# Prepare data for analysis
+#cv_df_all_countries = cv_df_all_countries.drop(columns=["Difference", "Province_State", "Admin2", "iso2",	"iso3", "Combined_Key", "Prep_Flow_Runtime", "Lat", "Long", "FIPS", "People_Total_Tested_Count", "Population_Count", "People_Hospitalized_Cumulative_Count", "Data_Source", "Date"])
+#cv_df_all_countries = cv_df_all_countries[(cv_df_all_countries["Case_Type"] == "Confirmed")]
+#cv_df_all_countries_summary = cv_df_all_countries.groupby(["Country_Region"])["Cases"].sum().rename("Total_Cases").reset_index()
+
+# Filter to reduce noise
+#cv_df_all_countries_summary = cv_df_all_countries_summary[(cv_df_all_countries_summary["Total_Cases"] > 500000)]
+```
+
+
+
+
+
+
+
+
+Box-Cox: https://www.youtube.com/watch?v=TgVx9Rqsewo
+
+Population Density (https://data.worldbank.org/indicator/EN.POP.DNST)

@@ -7,6 +7,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 /env
+env
+data_608/Final Project/covid19/env/
 
 # C extensions
 *.so
