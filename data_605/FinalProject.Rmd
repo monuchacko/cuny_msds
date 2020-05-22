@@ -1,5 +1,5 @@
 ---
-title: "Finals - Computational Mathematics"
+title: "Final Project - Computational Mathematics"
 author: "Monu Chacko"
 date: "5/21/2020"
 output: 
@@ -11,7 +11,7 @@ output:
     highlight: tango
 ---
 
-
+YouTube: <a href="https://www.youtube.com/watch?v=g6ddpZHTp24" target="_blank">https://www.youtube.com/watch?v=g6ddpZHTp24</a>  
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -144,9 +144,7 @@ You are to register for Kaggle.com (free) and compete in the House Prices: Advan
 
 ```{r}
 # Data Load
-kdata = read.csv("train_house.csv", header = TRUE) %>% filter(GrLivArea < 4000)
-
-#kdata = read.csv(text = getURL("https://raw.githubusercontent.com/IsARam/DATA605/master/train%5B1%5D.csv?_sm_au_=iVV6f56RMnTkt5jMkRvMGK3JRp2ft"), header = TRUE) %>% # Outlier Removal filter(GrLivArea < 4000)
+kdata = read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_605/train_house.csv", header = TRUE) %>% filter(GrLivArea < 4000)
 
 # Smooth data replace N/A's
 data = function(df) {
@@ -255,6 +253,7 @@ cor.test(kdata$LotArea, kdata$SalePrice, conf.level = 0.8)
 cor.test(kdata$OverallQual, kdata$SalePrice, conf.level = 0.8)
 ```
 
+Important numbers here are df (degrees of freedom), p-value and Pearson correlation numbers. The p-values here are greater that 0.05 and might not have strong correlation.  
 
 
 ## Question 2  
@@ -264,6 +263,9 @@ cor.test(kdata$OverallQual, kdata$SalePrice, conf.level = 0.8)
 - Linear Algebra and Correlation.  Invert your correlation matrix from above. (This is known as the precision matrix and contains variance inflation factors on the diagonal.) Multiply the correlation matrix by the precision matrix, and then multiply the precision matrix by the correlation matrix. Conduct LU decomposition on the matrix.  
 
 ##### Precision Matrix
+
+The precision matrix of a random vector is the inverse of its covariance matrix.
+
 
 ```{r}
 precisionmatrix = solve(correlationmatrix)
@@ -416,9 +418,7 @@ abline(lm(Y ~ X4), col = "#c6e2ff", lwd = 3)
 ```
 
 ```{r}
-kdatatest = read.csv("test_house.csv", header = TRUE) %>% filter(GrLivArea < 4000)
-
-#kdatatest = read.csv(text = getURL("https://raw.githubusercontent.com/IsARam/DATA605/master/test%5B1%5D.csv?_sm_au_=iVV1fQtQ75TPVL5NkRvMGK3JRp2ft"), header = TRUE) %>% # Outlier Removal filter(GrLivArea < 4000)
+kdatatest = read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_605/test_house.csv", header = TRUE) %>% filter(GrLivArea < 4000)
 
 data = function(df) {
     df %>% # Replace N/A's
