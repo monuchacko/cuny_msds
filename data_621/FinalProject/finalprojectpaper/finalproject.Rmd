@@ -2,7 +2,9 @@
 title: "DATA 621 - Final Paper"
 author: "Abdelmalek Hajjam/ Monu Chacko"
 date: "5/22/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r options_pkgs, echo=F, warning=F, message=F, results=F}
@@ -115,8 +117,8 @@ naVars <- read.csv(paste0("https://raw.githubusercontent.com/kaiserxc/DATA621Fin
                           "master/report_files/table1_na_vars.csv"))
 naVars <- naVars[,2:4]
 colnames(naVars) <- c("Variable", "No of NAs", "Percent of Total Obs")
-pander(naVars, keep.trailing.zeros=TRUE, 
-       caption="Number of NA values in original data.",
+pander(head(naVars, 10), keep.trailing.zeros=TRUE, 
+       caption="Number of NA values in original data (10 records)",
        justify=c("left", "right", "right"))
 ```
 
@@ -148,9 +150,7 @@ pander(top_corr, keep.trailing.zeros=TRUE,
 tran_corr <- read.csv(paste0("https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/",
                             "master/report_files/table4_top_transform.csv"))
 colnames(tran_corr) <- c("Response Variable", "Predictor Transformation", "Correlation", "R^2")
-pander(tran_corr, keep.trailing.zeros=TRUE, 
-       caption="Predictor transformations most correlated with transformed response variable.",
-       justify=c("left", "left", "right", "right"))
+pander(head(tran_corr, 10), keep.trailing.zeros=TRUE, caption="Predictor transformations most correlated with transformed response variable (10 records)", justify=c("left", "left", "right", "right"))
 ```
 
 We examined whether our modeling would benefit from transforming any of the predictor variables. To do so, we have automated creation of several different versions of the predictor variables using `R`. We took natural logarithms, square roots and squares of the numerical variables, and then we calculated every possible pairwise interaction between these transformations, the original numerical variables and categorical variables. We then calculated all pairwise correlations between the interactions and the response variable `SalePrice`. The top correlations can be seen in table 6, which is sorted in descending order by R-squared. We observed that there are several correlation values higher than the highest correlation between the original predictors and the response, which is `OverallQual` at 0.79 (*see table 5*). The most promising transformations involved taking the square of `OverallQual` and multiplying it by the log-transformed or square-root-transformed area variables. We added the top five interactions to our training data set.
@@ -216,7 +216,8 @@ Figure 1 shows the model diagnostics. There is no discernible pattern among resi
 
 Data preparation and transformation, including response variable transformation, model building and re-building as well as model diagnostics resulted in a linear regression model to predict house sale prices.
 
-![Model diagnostics.](https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/master/report_files/fig4_diag.png)
+<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/fig4_diag.png" alt="" />
+
 
 # Experimentation and Results
 
@@ -279,7 +280,7 @@ Our research is based exclusively on linear regression. Other methods, such as S
 stat_tbl <- read.csv(paste0("https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/",
                             "master/report_files/table2_stats.csv"))
 colnames(stat_tbl) <- c("Variable", "Count", "Mean", "SD", "Median", "Min", "Max", "Kurtosis")
-pander(stat_tbl, caption="Descriptive statistics for numerical variables.",
+pander(head(stat_tbl, 10), caption="Descriptive statistics for numerical variables (10 records)",
        digits=4, emphasize.rownames=FALSE,
        justify=c("left", "right", "right", "right", "right", "right", "right", "right"))
 ```
@@ -287,14 +288,16 @@ pander(stat_tbl, caption="Descriptive statistics for numerical variables.",
 \newpage
 # Appendix A. Figures
 
+<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/missing_plot_img.png" alt="" />
 
-![Missing Data](https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/missing_plot_img.png)
 
 \begin{center}
 Figure 2. Missing values.
 \end{center}
 
-![](https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/master/report_files/fig2_imputation.png)
+<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/fig2_imputation.png" alt="" />
+
+
 \begin{center}
 Figure 3. Density plots of observed (blue) and imputed (red) values.
 \end{center}
@@ -345,14 +348,8 @@ Figure 6. Scatter plots of original and transformed variables.
 \newpage
 # Appendix C. `R` Code
 
-
-================================================================  
-
-
 ```{r Code, echo=T, eval=F}
 install_load <- function(pkg){
-  # Load packages & Install them if needed.
-  # CODE SOURCE: https://gist.github.com/stevenworthington/3178163
   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
   if (length(new.pkg)) install.packages(new.pkg, dependencies = TRUE)
   sapply(pkg, require, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE)
@@ -364,10 +361,8 @@ packages <- c("tidyverse","knitr",  "mice", "VIM", "RCurl", "knitcitations", "ja
 #install_load(packages)
 
 # Read data
-url_train <- paste0("https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/",
-                    "master/house-prices-advanced-regression-techniques/train.csv")
-url_test <-  paste0("https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/",
-                    "master/house-prices-advanced-regression-techniques/test.csv")
+url_train <- "https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/data/train.csv"
+url_test <-  "https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/data/test.csv"
 
 stand_read <- function(url){
   return(read.csv(text = getURL(url)))
@@ -421,8 +416,7 @@ naVarsx <- na_review(x %>% select(-SalePrice))
 naVarsx
 
 obtain_data <- function(df){
-  # like first_pass but with imputation that addresses 
-  # observations that have known NA's
+  # like first_pass but with imputation that addresses observations that have known NA's
   df %>%
     mutate(PoolQC = fct_explicit_na(PoolQC, na_level='NoP'),
            MiscFeature = fct_explicit_na(MiscFeature, na_level='NoM'),
@@ -619,7 +613,6 @@ predictors_for_imputation <-
   full_set_clean_kyle %>% 
   dplyr::select(-SalePrice)
 
-# https://www.rdocumentation.org/packages/VIM/versions/4.7.0/topics/aggr
 missing_plot <- VIM::aggr(predictors_for_imputation,
                       #numbers = T,
                       sortVars = T,
@@ -655,7 +648,6 @@ kable(missing_summary, digits = 3, row.names = T,
       caption = "Table 3.4 Missing Values by Variable")  
 
 if (!exists("predictors_imputed")){
-  #https://www.rdocumentation.org/packages/mice/versions/2.46.0/topics/mice
   mice_mod <- mice(predictors_for_imputation, m = 1, method = "cart", seed = 5) 
   predictors_imputed <- mice::complete(mice_mod)
 }
@@ -672,12 +664,6 @@ test_data_imputed <-
   full_set_imputed[nrow(train_data) + 1:nrow(test_data), ] %>% 
   dplyr::select(-SalePrice) 
 
-# Visualize the imputations
-# SOURCE: https://stackoverflow.com/questions/12056989/
-# density-plots-with-multiple-groups?utm_medium=organic&
-# utm_source=google_rich_qa&utm_campaign=google_rich_qa
-
-# Melt into long format
 # Add a variable for the plot legend
 mice_data <- mice::complete(mice_mod, "long", include = TRUE)
 mice_mod_viz <- 
@@ -698,9 +684,6 @@ mice_density_plot
 stripplot(mice_mod, pch = 20, cex = 1.2, 
           main = "Figure 3.3: Strip Plots of Observed & Imputed Values")
 
-# http://web.maths.unsw.edu.au/~dwarton/missingDataLab.html
-
-### Side-by-Side Boxplots of Categorical Variables
 # create data
 boxplot_data <- 
   train_data_imputed %>% 
@@ -715,10 +698,6 @@ ggplot(data = boxplot_data, aes(x = value, y = SalePrice)) +
   coord_flip() +
   labs(title = paste0("Figure 3.4: Side-by-Side Box Plots of the Categorical Variables ",
                       "versus the Response"))
-
-# Reference: https://stackoverflow.com/questions/14604439/
-# plot-multiple-boxplot-in-one-graph?utm_medium=organic&utm_source=
-# google_rich_qa&utm_campaign=google_rich_qa
 
 ## CORRELATIONS
 # correlation matrix
@@ -752,10 +731,6 @@ kable(head(cor_df, 10), digits = 2, row.names = T,
 kable(head(dplyr::filter(cor_df, Var1 == "SalePrice" | Var2 == "SalePrice"  ), 10), 
       digits = 2, row.names = T, caption = "Top Correlated Variable Pairs")
 
-# Reference: https://stackoverflow.com/questions/28035001/
-# transform-correlation-matrix-into-dataframe-with-records-for-each-row-column-pai
-
-### CORRELATIONS WITH RESPONSE
 pred_vars <- dplyr::select(train_data_numeric, -SalePrice)
 
 # categorical_dummy_vars
@@ -794,10 +769,6 @@ individual_vars <- cbind(categorical_dummy_vars,
                          log_vars, 
                          pred_vars) 
 
-# create interaction variables
-# https://stackoverflow.com/questions/2080774/
-# generating-interaction-variables-in-r-dataframes?
-# utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
 if (!exists("all_interactions")){
   all_interactions <- data.frame(t(apply(individual_vars, 1, combn, 2, prod)))
   colnames(all_interactions) <- combn(names(individual_vars), 2, paste, collapse=":")
@@ -829,8 +800,7 @@ kable(head(dplyr::filter(response_correlations, Var1 == "SalePrice_sqrt"), n_row
       digits = 3, 
       caption = "Table 3.5: Top Correlations with the Original Response Variable")
 
-# 1. Original Variables Imputed
-# divide into training & test
+# 1. Original Variables Imputed divide into training & test
 train_orig_vars_imputed <- full_set_imputed[1:nrow(train_data), ] 
 
 test_orig_vars_imputed <- 
@@ -877,26 +847,16 @@ train_BC_transformed <-
   mutate(SalePrice_BC = SalePrice^PT$lambda) %>% 
   dplyr::select(-SalePrice)
 
-# setwd("C:\\Users\\kyleg\\DATA621FinalProject\\data-imputed-transformed\\")
-# write.csv(train_orig_vars_imputed, "train_orig_vars_imputed.csv")
-# write.csv(train_predictors_transformed, "train_predictors_transformed.csv")
-# write.csv(train_BC_transformed, "train_BC_transformed.csv")
-# write.csv(test_orig_vars_imputed, "test_orig_vars_imputed.csv")
-# write.csv(test_predictors_transformed, "test_predictors_transformed.csv")
-
 
 # Read prepared data
-bcData = read.csv(paste0('https://raw.githubusercontent.com/kaiserxc/',
-                         'DATA621FinalProject/',
-                         'master/data-imputed-transformed/train_BC_transformed.csv'))
+bcData = read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/data/datatransform/train_BC_transformed.csv")
+
 bcData$X = NULL
-imputedData = read.csv(paste0('https://raw.githubusercontent.com/kaiserxc/',
-                              'DATA621FinalProject/master/data-imputed-transformed/',
-                              'train_orig_vars_imputed.csv'))
+imputedData = read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/data/datatransform/train_orig_vars_imputed.csv")
+
 imputedData$X = NULL
-transformedData = read.csv(paste0('https://raw.githubusercontent.com/kaiserxc/',
-                                  'DATA621FinalProject/master/data-imputed-transformed/',
-                                  'train_predictors_transformed.csv'))
+transformedData = read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/data/datatransform/train_predictors_transformed.csv")
+
 transformedData$X = NULL
 
 library(psych)
@@ -948,9 +908,8 @@ summary(m5imp)
 summary(m6TD)
 
 # Read test data
-transformedTest = read.csv(paste0('https://raw.githubusercontent.com/kaiserxc/',
-                                  'DATA621FinalProject/master/data-imputed-transformed/',
-                                  'test_predictors_transformed.csv'))
+transformedTest = read.csv(paste0("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/data/datatransform/test_predictors_transformed.csv")
+                           
 index <- transformedTest$X
 transformedTest$X <- NULL
 
@@ -968,7 +927,7 @@ model_fit <- train(log(SalePrice)~OverallCond+Condition2+
                    data=transformedData, method="lm", trControl = ctrl, tuneLength = 5)
 pred <- predict(model_fit, newdata=transformedTest)
 results <- cbind(index, exp(pred))
-write.csv(results, "c://temp//results_tune.csv", row.names = FALSE)
+#write.csv(results, "results_tune.csv", row.names = FALSE)
 
 summary(model_fit)
 
@@ -995,7 +954,7 @@ m6TD2 = lm(log(SalePrice)~OverallCond+ # Condition2+
 summary(m6TD2)
 pred <- predict(m6TD2, newdata=transformedTest)
 results <- cbind(index, exp(pred))
-write.csv(results, "c://temp//results_m5TD2.csv", row.names = FALSE)
+#write.csv(results, "results_m5TD2.csv", row.names = FALSE)
 
 AIC(m6TD2)
 
@@ -1024,9 +983,15 @@ table(transformedData2$MasVnrArea)
 
 ce <- as.data.frame(m6TD2$coefficients)
 colnames(ce) <- c("Coefficient")
-write.csv(round(ce, 6), "c://temp//embedded_table2_coef.csv", row.names = TRUE)
+
+#write.csv(round(ce, 6), "embedded_table2_coef.csv", row.names = TRUE)
 ```
 
 \newpage
 # References
 
+- Article: "A Regression Method for Real Estate Price Index Construction" By Martin J. Bailey,Richard F. Muth &Hugh O. Nourse. 
+
+- Journal Article: "The Dynamics of Real Estate Prices" By MIT Press
+
+- Article: "Understanding Recent Trends in House Prices and Home Ownership" By Robert J. Shiller
