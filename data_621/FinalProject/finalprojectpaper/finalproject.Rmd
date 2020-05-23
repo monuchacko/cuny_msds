@@ -314,7 +314,7 @@ Figure 5. Correlation heat map.
 Figure 6. Scatter plots of original and transformed variables.
 \end{center}
 
-![Strip Plots](stripplot_img.png)
+![Strip Plots](https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/stripplot_img.png)
 
 \begin{center}
 Figure 6. Scatter plots of original and transformed variables.
@@ -349,13 +349,6 @@ Figure 6. Scatter plots of original and transformed variables.
 ================================================================  
 
 
-
-
-
-
-
-
-
 ```{r Code, echo=T, eval=F}
 install_load <- function(pkg){
   # Load packages & Install them if needed.
@@ -366,10 +359,9 @@ install_load <- function(pkg){
 }
 
 # required packages
-packages <- c("tidyverse","knitr",  "mice", "VIM", "RCurl", "knitcitations", 
-              "janitor", "missForest", "DMwR", "splitstackshape", "car")
+packages <- c("tidyverse","knitr",  "mice", "VIM", "RCurl", "knitcitations", "janitor", "missForest", "DMwR", "splitstackshape", "car")
 
-install_load(packages)
+#install_load(packages)
 
 # Read data
 url_train <- paste0("https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/",
@@ -1037,3 +1029,4 @@ write.csv(round(ce, 6), "c://temp//embedded_table2_coef.csv", row.names = TRUE)
 
 \newpage
 # References
+

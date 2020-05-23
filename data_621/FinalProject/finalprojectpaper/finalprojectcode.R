@@ -381,6 +381,8 @@ cm <- cor(train_data_numeric, use = "pairwise.complete.obs")
 #plot
 corrplot::corrplot(cm, method = "square", type = "upper")
 
+corrplot::corrplot(cm, method = "circle", type = "upper")
+
 #find the top correlations
 correlation_df <- function(cm){
   #Creates a df of pairwise correlations
