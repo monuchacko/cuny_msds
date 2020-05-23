@@ -3,8 +3,8 @@ title: "DATA 621 - Final Paper"
 author: "Abdelmalek Hajjam/ Monu Chacko"
 date: "5/22/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r options_pkgs, echo=F, warning=F, message=F, results=F}
@@ -20,7 +20,6 @@ library(knitr)
 library(knitcitations)
 library(pander)
 ```
-
 
 <center>
 <img src="realestate_img1.png" alt="Real Estate" style="width: 250px;" />
@@ -216,7 +215,8 @@ Figure 1 shows the model diagnostics. There is no discernible pattern among resi
 
 Data preparation and transformation, including response variable transformation, model building and re-building as well as model diagnostics resulted in a linear regression model to predict house sale prices.
 
-<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/fig4_diag.png" alt="" />
+![fig 4](fig4_diag.png)
+
 
 
 # Experimentation and Results
@@ -288,36 +288,32 @@ pander(head(stat_tbl, 10), caption="Descriptive statistics for numerical variabl
 \newpage
 # Appendix A. Figures
 
-<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/missing_plot_img.png" alt="" />
-
-
+![Missing values](missing_plot_img.png)
 \begin{center}
 Figure 2. Missing values.
 \end{center}
 
-<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/fig2_imputation.png" alt="" />
+![Density plots](fig2_imputation.png)
 \begin{center}
 Figure 3. Density plots of observed (blue) and imputed (red) values.
 \end{center}
 
-<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/fig3_boxplots.png" alt="" />
+![Box plots of categorical variables](fig3_boxplots.png)
 \begin{center}
 Figure 4. Box plots of categorical variables against the response variable.
 \end{center}
 
-<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/fig5_correlation.png" alt="" />
+![Correlation heat map](fig5_correlation.png)
 \begin{center}
 Figure 5. Correlation heat map.
 \end{center}
 
-<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/Scatter_Trans_and_Imp.png" alt="" />
+![Scatter plots](Scatter_Trans_and_Imp.png)
 \begin{center}
 Figure 6. Scatter plots of original and transformed variables.
 \end{center}
 
-<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/stripplot_img.png" alt="" />
-
-
+![Scatter Plots](stripplot_img.png)
 \begin{center}
 Figure 6. Scatter plots of original and transformed variables.
 \end{center}
