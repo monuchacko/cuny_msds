@@ -288,9 +288,8 @@ pander(stat_tbl, caption="Descriptive statistics for numerical variables.",
 # Appendix A. Figures
 
 
-![Missing Data](missing_plot_img.png)
+![Missing Data](https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/missing_plot_img.png)
 
-![](https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/master/report_files/fig1_na_dist.png)
 \begin{center}
 Figure 2. Missing values.
 \end{center}
@@ -314,6 +313,13 @@ Figure 5. Correlation heat map.
 \begin{center}
 Figure 6. Scatter plots of original and transformed variables.
 \end{center}
+
+![Strip Plots](stripplot_img.png)
+
+\begin{center}
+Figure 6. Scatter plots of original and transformed variables.
+\end{center}
+
 
 
 ```{r Plots, ref.label=c("Figure1", "Figure2"), echo=F, fig.show="asis"}
