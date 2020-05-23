@@ -296,28 +296,27 @@ Figure 2. Missing values.
 \end{center}
 
 <img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/fig2_imputation.png" alt="" />
-
-
 \begin{center}
 Figure 3. Density plots of observed (blue) and imputed (red) values.
 \end{center}
 
-![](https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/master/report_files/fig3_boxplots.png)
+<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/fig3_boxplots.png" alt="" />
 \begin{center}
 Figure 4. Box plots of categorical variables against the response variable.
 \end{center}
 
-![](https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/master/report_files/fig5_correlation.png)
+<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/fig5_correlation.png" alt="" />
 \begin{center}
 Figure 5. Correlation heat map.
 \end{center}
 
-![](https://raw.githubusercontent.com/kaiserxc/DATA621FinalProject/master/images/Scatter_Trans_and_Imp.png)
+<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/Scatter_Trans_and_Imp.png" alt="" />
 \begin{center}
 Figure 6. Scatter plots of original and transformed variables.
 \end{center}
 
-![Strip Plots](https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/stripplot_img.png)
+<img src="https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_621/FinalProject/finalprojectpaper/stripplot_img.png" alt="" />
+
 
 \begin{center}
 Figure 6. Scatter plots of original and transformed variables.
