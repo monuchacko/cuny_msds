@@ -21,9 +21,7 @@ library(knitcitations)
 library(pander)
 ```
 
-<center>
-<img src="realestate_img1.png" alt="Real Estate" style="width: 250px;" />
-</center>
+![Real Estate](realestate_img1.png)
 
 > "The best investment on earth is earth." **-Louis Glickman**  
 
