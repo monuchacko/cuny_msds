@@ -1,0 +1,127 @@
+---
+title: "Data 622 HW 1"
+author: "Monu Chacko"
+date: "10/10/2020"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(kableExtra)
+library(ggplot2)
+library(e1071)
+library(MASS)
+library(caret)
+library(naivebayes) 
+library(C50)
+library(partykit)
+library(pROC)
+library(caTools)
+library(MLeval)
+require(caret)
+```
+
+# Question 1
+
+## Load data
+
+```{r}
+data <- read.csv("data622hw1.csv", header = TRUE)
+```
+
+## Examine the data
+
+```{r}
+data[] <- lapply(data, as.factor)
+head(data)
+summary(data)
+dim(data)
+str(data)
+```
+
+
+## Train
+
+```{r warning=FALSE}
+#  applying Cross Validation
+ctrl <- trainControl(method="boot", n=100, classProbs=T,  savePredictions = T)
+
+fit_glm <- train(label ~ .,data=data, method="glm",family="binomial", trControl=ctrl)
+fit_nb <- train(label ~ .,data=data, method="naive_bayes", trControl=ctrl)
+fit_knn <- train(label ~ .,data=data, method="knn", trControl=ctrl)
+```
+
+## Load data
+
+```{r}
+library(caret)
+set.seed(300)
+```
+
+```{r warning=FALSE, message=FALSE}
+res <- evalm(list(fit_glm,fit_nb,fit_knn), gnames=c('glm','nb', 'knn'), rlinethick=0.5, fsize=10, plots='r')
+```
+
+```{r}
+m_glm <- cbind(AUC=res$stdres$glm['AUC-ROC','Score'], Accuracy = mean(fit_glm$results[,'Accuracy']), FPR=res$stdres$glm['FPR','Score'], TPR = res$stdres$glm['TP','Score']/(res$stdres$glm['TP','Score']+res$stdres$glm['FN','Score']), TNR=res$stdres$glm['TN','Score']/(res$stdres$glm['TN','Score']+res$stdres$glm['FP','Score']), FNR=res$stdres$glm['FN','Score']/(res$stdres$glm['TP','Score']+res$stdres$glm['FN','Score']))
+
+m_nb <- cbind(AUC=res$stdres$nb['AUC-ROC','Score'],Accuracy = mean(fit_nb$results[,'Accuracy']), FPR=res$stdres$nb['FPR','Score'],TPR = res$stdres$nb['TP','Score']/(res$stdres$nb['TP','Score']+res$stdres$nb['FN','Score']), TNR=res$stdres$nb['TN','Score']/(res$stdres$nb['TN','Score']+res$stdres$nb['FP','Score']), FNR=res$stdres$nb['FN','Score']/(res$stdres$nb['TP','Score']+res$stdres$nb['FN','Score']))
+
+m_knn <- cbind(AUC=res$stdres$knn['AUC-ROC','Score'], Accuracy = mean(fit_knn$results[,'Accuracy']), FPR=res$stdres$knn['FPR','Score'],TPR = res$stdres$knn['TP','Score']/(res$stdres$knn['TP','Score']+res$stdres$knn['FN','Score']), TNR=res$stdres$knn['TN','Score']/(res$stdres$knn['TN','Score']+res$stdres$knn['FP','Score']), FNR=res$stdres$knn['FN','Score']/(res$stdres$knn['TP','Score']+res$stdres$knn['FN','Score']))
+```
+
+### GLM
+```{r}
+m_glm
+confusionMatrix(fit_glm)
+```
+
+### NB
+```{r}
+m_nb
+confusionMatrix(fit_nb)
+```
+
+### KNN
+```{r}
+m_knn
+confusionMatrix(fit_knn)
+```
+
+```{r}
+summary = rbind(m_glm, m_nb, m_knn)
+rownames(summary) <- c("LR", 'NB',"KNN")
+summary
+```
+
+### Conclusion
+
+From the above matrix we see that LR has a high True Positive Rate (TPR) and True negative Rate (TNR) and a smaller False Positive Rate (FPR) and False Negative Rate (FNR). NB and KNN on the other hand have interesting results. In the case of NB it has high TPR and a zero FNR but 60% FPR. KNN has 91% TNR and a lower TPR compared to LR. So I would think LR is a better model.
+
+## Visuals
+
+```{r}
+res$roc
+res$proc
+res$prg
+res$cc
+```
+
+
+# Question 2
+
+#### What aspects of the data and or aspects of the algorithms, explain these performance differences
+
+Linear Regression is a regression model, meaning, it’ll take features and predict a continuous output, eg : stock price,salary etc. Linear regression as the name says, finds a linear curve solution to every problem.
+
+LR is easy and simple to implement. It is fast in training and is good at space complex solution. LR however is applicable only if the solution is linear. In many real life scenarios, it may not be the case. The algorithm assumes the input residuals (error) to be normal distributed, but may not be satisfied always. It assumes input features to be mutually independent(no co-linearity).
+
+Naive bayes is a generative model whereas LR is a discriminative model. Naive bayes works well with small datasets, whereas LR+regularization can achieve similar performance. LR performs better than naive bayes upon colinearity, as naive bayes expects all features to be independent.
+
+KNN is a non-parametric model, where LR is a parametric model. It is comparatively slower than Logistic Regression. KNN supports non-linear solutions where LR supports only linear solutions. LR can derive confidence level (about its prediction), whereas KNN can only output the labels. KNN is slow in real time as it have to keep track of all training data and find the neighbor nodes, whereas LR can easily extract output from the tuned θ coefficients.
+
