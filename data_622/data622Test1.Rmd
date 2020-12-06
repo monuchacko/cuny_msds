@@ -1,0 +1,176 @@
+---
+title: "Data 622 Test 1"
+author: "Monu Chacko"
+date: "11/15/2020"
+output:
+  html_document:
+    toc: true
+    toc_float: yes
+    theme: united
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ipred)
+library(caret)
+
+library(rpart)       # for fitting decision trees
+
+library(bootstrap)
+
+library(e1071)
+library(tidyverse)
+library(cvAUC)
+library(pROC)
+```
+
+# (A) Run Bagging (ipred)
+
+## About ipred: Improved Predictors
+Improved predictive models by indirect classification and bagging for classification, regression and survival problems as well as resampling based estimators of prediction error. You can see details here: https://cran.r-project.org/web/packages/ipred/ipred.pdf
+
+## Data Preparation
+
+Here we are preparing the data by loading the data and examining the structure of the data set.
+
+```{r}
+data <- read.csv("data622hw1.csv", header = TRUE)
+```
+
+Examine the sample data, its structure and summary
+
+```{r}
+head(data)
+str(data)
+summary(data)
+```
+
+## Bagging
+
+Split train and test data. Train on 70% and test on 30%.
+
+```{r}
+set.seed(40)
+traindata.index <- createDataPartition(data$label, p = 0.7, list = FALSE)
+traindata <- data[traindata.index,]
+testdata  <- data[-traindata.index,]
+
+summary(traindata)
+summary(testdata)
+```
+
+
+```{r}
+# Bagging
+bgdatamodel <- bagging(label ~ ., data=traindata, nbagg = 100, coob = TRUE)
+bgdatamodel
+
+predictdatat <- predict(bgdatamodel, testdata)
+```
+
+### Model Metrics
+
+```{r}
+with(testdata, table(predictdatat, label))
+```
+
+```{r}
+funcStats <- function(tn, fn, fp, tp, auc) {
+
+  tpr <- tp / (tp + fn)
+  tnr <- tn / (tn + fp)
+  fnr <- 1 - tpr
+  fpr <- 1 - tnr
+  acc <- (tp + tn) / (tp + tn + fp + fn)
+
+  tblstats <- matrix(c(tpr,tnr,fnr,fpr, auc, acc),ncol=1, byrow=TRUE)
+  colnames(tblstats) <- c("Value")
+  rownames(tblstats) <- c("TP","TN","FN", "FP", "AUC", "ACC")
+  tblstats
+}
+```
+
+
+```{r}
+
+prddata <- table(predictdatat, testdata$label)
+prddata
+
+tn <- prddata[1,1]
+fn <- prddata[1,2]
+fp <- prddata[2,1]
+tp <- prddata[2,2]
+
+dtlbl <- ifelse(testdata$label == 'BLUE', 1, 0)
+
+# Area under the ROC curve (AUC) with the trapezoidal rule
+auc <- auc(roc(predictdatat, dtlbl))
+
+tblStats <- funcStats(tn, fn, fp, tp, auc)
+tblStats
+
+```
+
+
+
+# (B) Run LOOCV (jacknife)
+
+
+## About LOOCV
+
+Leave-one-out-cross-validation (LOOCV) leaves out only 1 data point, and does that for each data point in turn. Thus, LOOCV requires N model evaluations (N is the number of data points), which is costly for large N. The advantage is that the procedure delivers exactly the same results every time, because all possible options are being evaluated.
+
+```{r}
+rowcount <- nrow(traindata)
+print(rowcount)
+
+traindata$label <- ifelse(traindata$label == 'BLUE', 1, 0)
+```
+
+```{r}
+cvjdata  <- do.call('rbind',lapply(1:rowcount,FUN=function(idx, data=traindata) { 
+  m <- naiveBayes(label~., data = data[-idx,]) 
+  p <- predict(m, data[idx,-c(3)], type='raw') 
+  pc <- unlist(apply(round(p), 1, which.max))-1 
+  list("fold"=idx, "m"=m, "predicted"=pc, "actual" = data[idx,c(3)])
+  }
+))
+
+head(cvjdata)
+```
+
+
+```{r}
+cvjdata <- as.data.frame(cvjdata)
+
+loocv_tbl <- table(as.numeric(cvjdata$actual), as.numeric(cvjdata$predicted))
+
+(loocv_caret_cfm <- caret::confusionMatrix(loocv_tbl))
+```
+
+
+```{r}
+testdata$label <- ifelse(testdata$label == 'BLUE', 1, 0)
+
+cvjdata <- data.frame(cvjdata)
+
+df.perf <- as.data.frame(do.call('cbind',lapply(cvjdata$m, FUN=function(m,data=testdata)
+{
+  v <- predict(m,data[,-c(3)],type='raw')
+  lbllist <- unlist(apply(round(v), 1, which.max))-1
+})))
+
+### Aggregate
+np <- ncol(df.perf)
+
+predclass <- unlist(apply(df.perf,1,FUN=function(v){ ifelse(sum(v[2:length(v)])/np<0.5,0,1)}))
+
+loocvtbl <- table(testdata[,3], predclass)
+
+(loocv_cfm <- caret::confusionMatrix(loocvtbl))
+```
+
+# Conclusion
+
+The Bagging method produced accuracy of 0.80 and LOOCV produced accuracy of 0.50. Here both models performed differently with bagging scoring better. Bagging is a method to reduce overfitting. You train many models on resampled data and then take their average to get an averaged model. This model is less susceptible to overfitting than the individual models you've fit. LOOCV cross validation, on the other hand, is used to estimate the out of sample accuracy.
+
