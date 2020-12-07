@@ -1,0 +1,262 @@
+---
+title: "Visuals"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r set-2}
+
+#library(dplyr)
+library(caret)
+library(tidyverse)
+library(skimr)
+library(data.table)
+library(mltools)
+library(corrplot)
+library(ROCR)
+library(pROC)
+library(DMwR)
+library(Rtsne)
+library(glmnet)
+library(doParallel)
+library(gridExtra)
+
+
+#Fully cleaned and imputed dataset
+data <- read.csv("diabetic_cleanedANDprocessed.csv", header = TRUE, strip.white = TRUE) 
+data$readmitted <- as.factor(data$readmitted)
+dim(data)
+
+```
+
+## Graph Distributions
+
+```{r}
+ggplot(data=data, aes(x=time_in_hospital, 
+                     fill=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")))) + 
+  geom_density(alpha=0.5) + 
+  labs(x="Time in Hospital", y="Density", 
+       title="Distribution of Time in Hospital Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")), 
+                     y=time_in_hospital)) + 
+  geom_boxplot(fill="firebrick1", alpha=0.6) + 
+  labs(y="Time in Hospital", x="Readmission Status", 
+       title="Distribution of Time in Hospital Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=num_lab_procedures, 
+                     fill=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")))) + 
+  geom_density(alpha=0.5) + 
+  labs(x="# of Lab Proedures", y="Density", 
+       title="Distribution of # of Lab Procedures Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")), 
+                     y=num_lab_procedures)) + 
+  geom_boxplot(fill="firebrick1", alpha=0.6) + 
+  labs(y="# of Lab Procedures", x="Readmission Status", 
+       title="Distribution of # of Lab Procedures Grouped by Readmission Status", fill="Readmission Status")
+```
+
+
+```{r}
+ggplot(data=data, aes(x=num_procedures, 
+                     fill=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")))) + 
+  geom_density(alpha=0.5) + 
+  labs(x="# of Non-Lab Proedures", y="Density", 
+       title="Distribution of # of Non-Lab Procedures Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")), 
+                     y=num_procedures)) + 
+  geom_boxplot(fill="firebrick1", alpha=0.6) + 
+  labs(y="# of Non-Lab Procedures", x="Readmission Status", 
+       title="Distribution of # of Non-Lab Procedures Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=num_medications, 
+                     fill=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")))) + 
+  geom_density(alpha=0.5) + 
+  labs(x="# of Medications Administered", y="Density", 
+       title="Distribution of # of Medications Administered Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")), 
+                     y=num_medications)) + 
+  geom_boxplot(fill="firebrick1", alpha=0.6) + 
+  labs(y="# of Medications Administered", x="Readmission Status", 
+       title="Distribution of # Medications Administered Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=number_diagnoses, 
+                     fill=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")))) + 
+  geom_density(alpha=0.5) + 
+  labs(x="# of Diagnoses", y="Density", 
+       title="Distribution of # of Diagnoses Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")), 
+                     y=number_diagnoses)) + 
+  geom_boxplot(fill="firebrick1", alpha=0.6) + 
+  labs(y="# of Diagnoses", x="Readmission Status", 
+       title="Distribution of # of Diagnoses Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=age, 
+                     fill=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")))) + 
+  geom_density(alpha=0.5) + 
+  labs(x="End of Age Interval", y="Density", 
+       title="Distribution of End Age of Interval Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")), 
+                     y=age)) + 
+  geom_boxplot(fill="firebrick1", alpha=0.6) + 
+  labs(y="End of Age Interval", x="Readmission Status", 
+       title="Distribution of End Age of Interval Grouped by Readmission Status", fill="Readmission Status")
+```
+
+
+```{r}
+ggplot(data=data, aes(x=healthcare_utilization, 
+                     fill=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")))) + 
+  geom_density(alpha=0.5) + 
+  labs(x="Healtchare Utilization", y="Density", 
+       title="Distribution of Healthcare Utilization by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")), 
+                     y=healthcare_utilization)) + 
+  geom_boxplot(fill="firebrick1", alpha=0.6) + 
+  labs(y="Healthcare Utilization", x="Readmission Status", 
+       title="Distribution of Healtchare Utilization Grouped by Readmission Status", fill="Readmission Status")
+```
+
+
+```{r}
+ggplot(data=data, aes(x=num_other_diabetes_meds_up_stdy_dwn, 
+                     fill=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")))) + 
+  geom_density(alpha=0.5) + 
+  labs(x="# of Diabetes Medications Changed", y="Density", 
+       title="Distribution of # of Diabetes Medications Changed Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")), 
+                     y=num_other_diabetes_meds_up_stdy_dwn)) + 
+  geom_boxplot(fill="firebrick1", alpha=0.6) + 
+  labs(y="# of Diabetes Medications Changed", x="Readmission Status", 
+       title="Distribution of # of Diabetes Medications Changed Grouped by Readmission Status", fill="Readmission Status")
+```
+
+```{r}
+ggplot(data=data, aes(x=readmitted, 
+                     fill=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")))) + 
+  geom_density(alpha=0.5) + 
+  labs(x="readmitted", y="Density", 
+       title="Distribution of number of people readmitted vs not readmitted", fill="Readmission Status")
+```
+
+
+```{r}
+ggplot(data=data, aes(x=factor(readmitted, 
+                                 labels = c("No Readmission within 30 Days", "Readmission in < 30 Days")), 
+                     y=num_other_diabetes_meds_up_stdy_dwn)) + 
+  geom_boxplot(fill="firebrick1", alpha=0.6) + 
+  labs(y="# of Diabetes Medications Changed", x="Readmission Status", 
+       title="Distribution of # of Diabetes Medications Changed Grouped by Readmission Status", fill="Readmission Status")
+```
+
+
+
+```{r}
+library(ggplot2)
+library(corrplot)
+library(GGally)
+
+
+library(Hmisc)
+hist.data.frame(data)  #, colors=rainbow(ncol(data))
+```
+
+
+## PCA and t-SNE
+
+To get us started, we will try some dimensionality reduction techniques to see if there is any separation between our two classes. We start with principal component analysis (PCA) which uses an orthogonal transformation to convert the original variables into a set of linear combinations of the original variables, called **principal components**. PCA is commonly used as a tool in exploratory data analysis. 
+
+We also use the popular T-distributed Stochastic Neighbor Embedding (t-SNE) algorithm, which is a machine learning visualization tool. It is a non-linear dimensionality reduction technique that models each high-dimensional observation by a two-dimensional point in such a way that similar observations are modeled by nearby points with high probability.
+
+
+### Principle Component classes Separation
+
+```{r }
+pca_tsne_df <- data[,c(1:41)]
+# scale variables
+for(i in 1:ncol(pca_tsne_df)){
+  pca_tsne_df[[i]] <- ((pca_tsne_df[[i]] - mean(pca_tsne_df[[i]])) / sd(pca_tsne_df[[i]]))
+}
+pca_tsne_df <- t(pca_tsne_df)
+
+```
+
+```{r }
+
+#PCA
+PC <- prcomp(pca_tsne_df)
+
+outdf <- cbind(data, PC$rotation)
+outdf$readmitted <- as.factor(outdf$readmitted)
+ggplot(outdf, aes(x = PC1, y = PC2)) +
+  geom_point(aes(color = readmitted), alpha = 0.5) +
+  scale_color_manual(values = c("dodgerblue", "firebrick1")) +
+  labs(title = "Classes are not well-separated by principal components")
+```
+
+### t-SNE classes Separation
+
+```{r}
+# TSNE
+tsne_model_1 = Rtsne(t(as.matrix(pca_tsne_df)), check_duplicates=FALSE, pca=TRUE,perplexity = 10, theta=0.5, dims=2)
+## getting the two dimension matrix
+d_tsne_1 = as.data.frame(tsne_model_1$Y) 
+d_tsne_1$readmitted <- as.factor(data$readmitted)
+## plotting the results without clustering
+ggplot(d_tsne_1, aes(x=V1, y=V2)) +  
+  geom_point(aes(color = readmitted)) +
+  scale_color_manual(values = c("dodgerblue", "firebrick1")) +
+  labs(title = "Classes are not well-separated by t-SNE")
+```

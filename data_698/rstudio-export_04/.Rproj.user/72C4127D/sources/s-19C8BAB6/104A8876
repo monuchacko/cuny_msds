@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1606696018493.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "104A8876",
+    "lastKnownWriteTime" : 1606713351,
+    "last_content_update" : 1606713351040,
+    "path" : "C:/Users/moc9029/Downloads/rstudio-export_04/MLResearch.Rmd",
+    "project_path" : "MLResearch.Rmd",
+    "properties" : {
+        "cursorPosition" : "9,3",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

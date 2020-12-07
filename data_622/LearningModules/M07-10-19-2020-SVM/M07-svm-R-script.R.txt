@@ -1,0 +1,89 @@
+unixpath<-"/home/data/ML.Data/heart.csv"
+unixecolipath<-"/home/data/ML.Data/ecoli.csv"
+path<-"c://Users/rk215/Data/heart.csv"
+ecolipath<-"c://Users/rk215/Data/ecoli.csv"
+heart<-read.csv(path,header=TRUE,sep=',',stringsAsFactors=FALSE)
+ecoli<-read.csv(ecolipath,head=T,sep=',',stringsAsFactors=F)
+head(heart)
+tail(heart)
+names(heart)[[1]]<-'age'
+names(heart)
+library(plotly)
+library(e1071)
+library(caret)
+library(pROC)
+heart$target<-factor(heart$target)
+svm_model<-svm(target~.,data=heart, probability=TRUE)
+svm_model
+svm_predict<-predict(svm_model,heart[,-c(14)],probability=TRUE)
+probs<-attr(svm_predict,"prob")[,"1"]
+predclass<-ifelse(probs>0.5,1,0)
+table(heart$target==predclass)
+(cfmx<-caret::confusionMatrix(table(heart$target,predclass)))
+cfmx$byClass[['F1']]}
+cfmx$byClass[['Balanced Accuracy']]
+
+set.seed(43)
+tstidx<-sample(1:nrow(heart),0.30*nrow(heart),replace=F)
+trdata<-heart[-tstidx,]
+tsdata<-heart[tstidx,]
+
+#svm(target~.,data=heart, probability=TRUE)
+
+svm_train_model<-svm(target~.,data=trdata,probability=TRUE)
+svm_train_predict<-predict(svm_train_model,trdata[,-c(14)],probability=TRUE)
+train_probs<-attr(svm_train_predict,"prob")[,"1"]
+train_predclass<-ifelse(train_probs>0.5,1,0)
+tr_tbl<-table(trdata$target,train_predclass)
+(tr_cfmx<-caret::confusionMatrix(tr_tbl))
+
+cdf<-data.frame(all=cfmx$byClass,tr=tr_cfmx$byClass)
+cdf
+
+svm_tst_predict<-predict(svm_train_model,tsdata[,-c(14)],probability=TRUE)
+tst_probs<-attr(svm_tst_predict,"prob")[,"1"]
+tst_predclass<-ifelse(tst_probs>0.5,1,0)
+tst_tbl<-table(tsdata$target,tst_predclass)
+(tst_cfmx<-caret::confusionMatrix(tst_tbl))
+
+
+cdf<-cbind(cdf,ts=tst_cfmx$byClass)
+cdf
+
+Y<-heart[[14]]
+vif_col<-c(2,3,6,7,9,11,12,13,14)
+vif_heart<-heart[,vif_col]
+vif_trdata<-trdata[,vif_col]
+vif_tsdata<-tsdata[,vif_col]
+head(vif_heart)
+head(Y)
+
+svm_vif_tr_model<-svm(target~.,data=vif_trdata,probability=TRUE)
+svm_vif_tr_predict<-predict(svm_vif_tr_model,vif_trdata[,-c(14)],probability=TRUE)
+vif_train_probs<-attr(svm_vif_tr_predict,"prob")[,"1"]
+vif_train_predclass<-ifelse(vif_train_probs>0.5,1,0)
+vif_tr_tbl<-table(vif_trdata$target,vif_train_predclass)
+(vif_tr_cfmx<-caret::confusionMatrix(vif_tr_tbl))
+(cdf<-cbind(cdf,vif_tr=vif_tr_cfmx$byClass))
+
+svm_vif_tst_predict<-predict(svm_vif_tr_model,vif_tsdata[,-c(9)], probability=TRUE)
+svm_vif_tst_predict_probs=attr(svm_vif_tst_predict, "prob")[,"1"]
+svm_roc_obj<-roc(vif_tsdata[,c(9)],svm_vif_tst_predict_probs)
+svm_auc<-auc(svm_roc_obj)
+
+plot.new()
+plot.window(xlim=c(1,0), ylim=c(0,1), xaxs='i', yaxs='i')
+axis(1, las=1)
+axis(2, las=1)
+abline(1,-1, col="black", lwd=0.5)
+box()
+title(main="ROC", xlab="Specificity", ylab="Sensitivity")
+lines(svm_roc_obj, col="black", las=2)
+text(x=0.2,y=0.2,paste("SVM_AUC=",round(svm_auc,6),sep=''))
+
+load(url("https://web.stanford.edu/~hastie/ElemStatLearn/datasets/ESL.mixture.rda"))
+plot(ESL.mixture$x,col=ESL.mixture$y+3)
+data_svm<-data.frame(y=factor(ESL.mixture$y),ESL.mixture$x)
+
+ data.svm<-svm(factor(y)~.,data=data_svm,scale=FALSE,kernel="radial",cost=15)
+ plot(data.svm,data_svm)

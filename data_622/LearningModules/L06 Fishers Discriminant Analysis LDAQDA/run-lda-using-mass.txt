@@ -1,0 +1,13 @@
+require(MASS)
+names(iris)
+names(iris.lda)
+mass_lda<-MASS::lda(Species~Sepal.Length+Sepal.Width+Petal.Length+Petal.Width,data=iris.lda)
+mass_lda.predict<-predict(mass_lda,iris.lda[,1:4])
+summary(mass_lda.predict)
+str(mass_lda.predict)
+mass_lda.predict
+mass.lda.confmat <-  table(mass_lda.predict$class,iris.lda$Species)
+mass.lda.confmat
+print(paste("Accuracy is::",as.numeric(sum(diag(mass.lda.confmat))/sum(mass.lda.confmat)),sep= " "))
+print(paste("Error is::",1-as.numeric(sum(diag(mass.lda.confmat))/sum(mass.lda.confmat)),sep= " "))
+history(25)

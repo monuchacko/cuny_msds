@@ -1,0 +1,380 @@
+---
+title: "Data698 - Research"
+author: "Monu Chacko, Abdelmalek Hajjam, Md Forhad Akbar, Shovan Biswas"
+date: "10/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## reading the cleaned data
+
+```{r set-2}
+#Fully cleaned and imputed dataset
+data <- read.csv("diabetic_cleanedANDprocessed.csv", header = TRUE, strip.white = TRUE) 
+data$readmitted <- as.factor(data$readmitted)
+dim(data)
+table(data$readmitted)
+```
+##Imbalance data Problem
+
+Because we have an imbalanced Dataset with respect to the class. Accuracy therefore is not a robust measure of classifier performance in presence of a class imbalance.
+Accuracy is not the metric to use when working with an imbalanced dataset. It is misleading.
+There are metrics that have been designed to tell you a more truthful story when working with imbalanced classes, such as Precision, Recall and F Beta.
+in this case, we will use AUC (area under the curve) as our metric for this classfication problem.
+But before that, we will have to balance our training dataset so that the model will not be bias to the majority class.
+In our case, we will use the SMOTE function found in the DMwR package.
+
+
+## training and Test set up
+
+```{r }
+library(DMwR) # for SMOTE
+library(caret)
+library(mltools)
+set.seed(123)
+# Step 1: Get row numbers for the training data (80% train split, 20% testing split)
+trainRowNumbers <- createDataPartition(data$readmitted, p=0.8, list=FALSE)
+#training  dataset
+trainData <- data[trainRowNumbers,]
+#test dataset
+testData <- data[-trainRowNumbers,]
+
+# set the target variable as a factor
+trainData$readmitted <- as.factor(trainData$readmitted)
+testData$readmitted <- as.factor(testData$readmitted)
+
+table(data$readmitted)
+table(trainData$readmitted)
+table(testData$readmitted)
+
+#SMOTE - use smoting because our data is imbalanced. So SMOTE our training data
+trainData$readmitted <- as.factor(trainData$readmitted)
+trainData_SMOTE <- SMOTE(readmitted ~ ., trainData) 
+#write.csv(trainData_SMOTE, "dataset/trainSMOTE.csv", row.names = F)
+
+table(trainData_SMOTE$readmitted)
+
+```
+
+
+## Logistic Regression
+
+```{r }
+
+library(kableExtra)
+
+LR <- glm(readmitted ~ ., data = trainData_SMOTE, family = "binomial")
+
+LR_pred <- predict(LR, testData, type = 'response')
+LR_pred_labels <- ifelse(LR_pred > 0.5 , 1, 0) 
+cm_LR <-  table(LR_pred_labels, testData$readmitted)
+cm_LR
+
+acc_LR <- sum(diag(cm_LR)) / sum(cm_LR)
+print(paste("accuracy: ", acc_LR))
+tpr_LR <- cm_LR[1,1]/sum(cm_LR[1,1], cm_LR[2,1])
+fpr_LR <- cm_LR[1,2]/sum(cm_LR[1,2], cm_LR[2,2])
+tnr_LR <- 1 - fpr_LR
+fnr_LR <- 1 - tpr_LR
+
+library(ROCR)
+ROCRpred <- prediction(LR_pred, testData$readmitted)
+ROCRperf <- performance(ROCRpred, 'tpr', 'fpr')
+plot(ROCRperf, col="blue")
+ROCRperfauc <- performance(ROCRpred, 'auc')
+auc_LR <- ROCRperfauc@y.values[[1]]
+
+Generalizing_LRrow <- c("LR",round(auc_LR,2),round(acc_LR,2),round(tpr_LR,2),round(fpr_LR,2),round(tnr_LR,2),round(fnr_LR,2))
+kable(Generalizing_LRrow)
+#"accuracy:  0.763118653695945"
+```
+
+
+## Naive Bayes
+
+```{r message=F}
+ library(e1071)
+ NB <- naiveBayes(readmitted ~ ., data = trainData_SMOTE)
+
+NB_pred <- predict(NB, testData)
+NB_pred_raw <- predict(NB, testData, type = "raw")
+
+cm_NB <-  table(NB_pred, testData$readmitted)
+
+acc_NB <- sum(diag(cm_NB))/sum(cm_NB)
+print(paste("accuracy: ", acc_NB))
+tpr_NB <- cm_NB[1,1]/sum(cm_NB[1,1], cm_NB[2,1])
+fpr_NB <- cm_NB[1,2]/sum(cm_NB[1,2], cm_NB[2,2])
+tnr_NB <- 1 - fpr_NB
+fnr_NB <- 1 - tpr_NB
+
+library(pROC)
+roc_NB <- roc(testData$readmitted, as.numeric(NB_pred))
+auc_NB <- roc_NB$auc
+
+Generalizing_NBrow <- c("NB",round(auc_NB,2),round(acc_NB,2),round(tpr_NB,2),round(fpr_NB,2),round(tnr_NB,2),round(fnr_NB,2) )
+kable(Generalizing_NBrow)
+
+#"accuracy:  0.551516012213307"
+```
+
+
+## KNN
+
+```{r }
+# KNN - Learning (k=125)
+
+library(class)
+KNNFit <- knn3(readmitted ~., data = trainData_SMOTE, k=125)
+
+library(class)
+
+#apply the model to the test data
+KNN <- predict(KNNFit, newdata = testData, type = "class")
+
+#confusion matrix
+cm_KNN <-  table(KNN, testData$readmitted)
+cm_KNN
+
+acc_KNN <- sum(diag(cm_KNN))/sum(cm_KNN)
+print(paste("accuracy: ", acc_KNN))
+tpr_KNN <- cm_KNN[1,1]/sum(cm_KNN[1,1], cm_KNN[2,1])
+fpr_KNN <- cm_KNN[1,2]/sum(cm_KNN[1,2], cm_KNN[2,2])
+tnr_KNN <- 1 - fpr_KNN
+fnr_KNN <- 1 - tpr_KNN
+
+library(pROC)
+roc_KNN <- roc(testData$readmitted, as.numeric(KNN))
+auc_KNN <- roc_KNN$auc
+
+Generalizing_KNNrow_5 <- c("KNN (k=5)",round(auc_KNN,2),round(acc_KNN,2),round(tpr_KNN,2),round(fpr_KNN,2), round(tnr_KNN,2),round(fnr_KNN,2) )
+kable(Generalizing_KNNrow_5 )
+
+#"accuracy:  0.805155151601221"
+```
+
+## Decision Tree
+
+```{r}
+library(rpart)
+
+rpart_tree2 <- rpart(formula = readmitted ~ ., 
+                      method = 'class', data=trainData_SMOTE)
+summary(rpart_tree2)
+
+pred_tree <- predict(rpart_tree2, testData, type="class")
+
+cm_tree <- table(pred_tree, testData$readmitted)
+cm_tree
+result<-as.data.frame(table(predict(rpart_tree2, testData, type="class"), testData$readmitted))
+result
+CorrectlyPredicted <- result[1,3]+result[4,3]
+accuracy <-CorrectlyPredicted/nrow(testData)
+#accuracy
+print(paste("1.acuracy:",accuracy))
+senstivity_result<-result[4,3]/(result[2,3]+result[4,3])
+#senstivity_result
+print(paste("2.sensitivity:",senstivity_result))
+specificity_result<-result[1,3]/(result[3,3]+result[1,3])
+#specificity_result
+print(paste("3.specificity:",specificity_result))
+prop.table(table(testData$readmitted, pred_tree),1)
+
+#"1.acuracy: 0.856564652417809"
+#"2.sensitivity: 0.172680412371134"
+#"3.specificity: 0.918182521867018"
+``` 
+
+#Random forest
+
+
+```{r}
+# Random Forest
+
+library(randomForest)
+forest_model<-randomForest(formula=readmitted ~ .,
+                     data=trainData_SMOTE)
+print(forest_model)
+
+pred_forest <- predict(forest_model, testData, type = "response")
+cm_fm <- table(pred_forest, testData$readmitted)
+cm_fm
+
+result<-as.data.frame(table(pred_forest, testData$readmitted))
+result
+CorrectlyPredicted <- result[1,3]+result[4,3]
+accuracy <-CorrectlyPredicted/nrow(testData)
+#accuracy
+print(paste("1.acuracy:",accuracy))
+senstivity_result<-result[4,3]/(result[2,3]+result[4,3])
+#senstivity_result
+print(paste("2.sensitivity:",senstivity_result))
+specificity_result<-result[1,3]/(result[3,3]+result[1,3])
+#specificity_result
+print(paste("3.specificity:",specificity_result))
+prop.table(cm_fm,1)
+
+
+# 
+# prop.table(table(testData$readmitted, pred_forest),1)
+# 
+# confusionMatrix(pred_forest, as.factor(testData$readmitted))
+
+# "1.acuracy: 0.893559610878364"
+# "2.sensitivity: 0.226757369614512"
+# "3.specificity: 0.915115085764551"
+
+```
+
+## Neural Networks
+
+```{r}
+library(nnet)
+
+nnet_model <- nnet(formula = readmitted ~ ., 
+                   data=trainData_SMOTE, size = 10, maxit = 200)
+
+pred_nnet <- predict(nnet_model, testData, type = "class")
+cm_nn <- table(pred_nnet, testData$readmitted)
+cm_nn
+
+result<-as.data.frame(table(pred_nnet, testData$readmitted))
+result
+CorrectlyPredicted <- result[1,3]+result[4,3]
+accuracy <-CorrectlyPredicted/nrow(testData)
+#accuracy
+print(paste("1.acuracy:",accuracy))
+senstivity_result<-result[4,3]/(result[2,3]+result[4,3])
+#senstivity_result
+print(paste("2.sensitivity:",senstivity_result))
+specificity_result<-result[1,3]/(result[3,3]+result[1,3])
+#specificity_result
+print(paste("3.specificity:",specificity_result))
+prop.table(cm_fm,1)
+
+# "1.acuracy: 0.742668465525811"
+# "2.sensitivity: 0.138668295662798"
+# "3.specificity: 0.925617540938107"
+
+```
+
+## SVM
+
+```{r set-9}
+# Model 6: SVM
+model.svm <- svm(readmitted~., data = trainData_SMOTE, kernel = "linear",
+                 type = "C-classification", cross = 10, cost = 0.01, gamma = 1000)
+pred.svm <- predict(model.svm, testData, decision.values = F)
+
+cm_nn <- table(pred.svm, testData$readmitted)
+cm_nn
+
+result<-as.data.frame(cm_nn)
+result
+CorrectlyPredicted <- result[1,3]+result[4,3]
+accuracy <-CorrectlyPredicted/nrow(testData)
+#accuracy
+print(paste("1.acuracy:",accuracy))
+senstivity_result<-result[4,3]/(result[2,3]+result[4,3])
+#senstivity_result
+print(paste("2.sensitivity:",senstivity_result))
+specificity_result<-result[1,3]/(result[3,3]+result[1,3])
+#specificity_result
+print(paste("3.specificity:",specificity_result))
+
+mean(pred.svm == testData$readmitted) 
+
+"1.acuracy: 0.764964851239083"
+"2.sensitivity: 0.143997224149896"
+"3.specificity: 0.924738862601553"
+
+
+```
+
+
+## AutoML with h2o
+
+```{r }
+#run on laptop (local computer)  
+library(h2o)
+#intilize h20 and create a cluster
+h2o.init()
+
+clean_data <- as.h2o(data)
+
+y <- "readmitted"
+x <- setdiff(names(data), y)
+aml <- h2o.automl(
+  y = y, 
+  x = x, 
+  training_frame = clean_data,
+  max_runtime_secs = 600,
+  balance_classes = TRUE,
+ # max_models = 10,
+  seed = 123)
+```
+## AutoML 
+
+```{r }
+# library(h2o)
+# h2o.init()
+# 
+# smtData <- as.h2o(trainData_SMOTE)
+# 
+# y = "readmitted"
+# x <- setdiff(names(trainData_SMOTE), y)
+# 
+# # For binary classification, response should be a factor
+# trainData_SMOTE[, y] <- as.factor(trainData_SMOTE[, y])
+# testData[, y] <- as.factor(testData[, y])
+# 
+# #train <- as.h2o(trainData_SMOTE)
+# 
+# aml <- h2o.automl(
+#   x = x, y = y,
+#   training_frame = smtData,
+#   max_runtime_secs = 600,
+#   nfolds = 5,
+#  # max_models = 10,
+#   seed = 123)
+```
+
+
+```{r }
+lb <- aml@leaderboard
+print(lb)
+
+```
+
+## Ensemble Exploration
+
+To understand how the ensemble works, let's take a peek inside the Stacked Ensemble "All Models" model.  The "All Models" ensemble is an ensemble of all of the individual models in the AutoML run.  This is often the top performing model on the leaderboard.
+
+
+```{r}
+# Get model ids for all models in the AutoML Leaderboard
+model_ids <- as.data.frame(aml@leaderboard$model_id)[,1]
+model_ids
+# Get the "All Models" Stacked Ensemble model
+se <- h2o.getModel(grep("StackedEnsemble_AllModels", model_ids, value = TRUE)[1])
+se
+# Get the Stacked Ensemble metalearner model
+metalearner <- h2o.getModel(se@model$metalearner$name)
+metalearner
+```
+
+Examine the variable importance of the metalearner (combiner) algorithm in the ensemble.  This shows us how much each base learner is contributing to the ensemble. The AutoML Stacked Ensembles use the default metalearner algorithm (GLM with non-negative weights), so the variable importance of the metalearner is actually the standardized coefficient magnitudes of the GLM. 
+```{r}
+h2o.varimp(metalearner)
+```
+
+We can also plot the base learner contributions to the ensemble.
+```{r}
+h2o.varimp_plot(metalearner)
+```
+
+

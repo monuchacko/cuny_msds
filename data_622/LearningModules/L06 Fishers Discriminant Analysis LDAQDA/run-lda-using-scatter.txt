@@ -1,0 +1,37 @@
+head(iris)
+table(iris$Species)
+se<-iris[iris$Species=='setosa',]
+ve<-iris[iris$Species=='versicolor',]
+vi<-iris[iris$Species=='virginica',]
+se<-iris[iris$Species=='setosa',]
+semean<-apply(se[,1:4],2,mean)
+vimean<-apply(vi[,1:4],2,mean)
+vemean<-apply(ve[,1:4],2,mean)
+allclassmean<-apply(iris[,1:4],2,mean)
+(semean+vemean+vimean)/3 == allclassmean # confirm above numbers 
+S1<-cov(se[,1:4])
+S2<-cov(vi[,1:4])
+S3<-cov(ve[,1:4])
+SW<-S1+S2+S3
+N1<-nrow(se)
+N2<-nrow(vi)
+N3<-nrow(ve)
+SB1<-N1*(semean-allclassmean)*(semean-allclassmean)
+SB2<-N2*(vimean-allclassmean)*(vimean-allclassmean)
+SB3<-N3*(vemean-allclassmean)*(vemean-allclassmean)
+SB<-SB1+SB2+SB3
+invSW<-solve(SW)
+#invSWSB<-invSW%*%SB
+#DOES NOT WORK SWSBeigendecomp<-eigen(invSWSB)
+invSWSB<-invSW*SB
+SWSBeigendecomp<-eigen(invSWSB)
+lambdas<-SWSBeigendecomp$vectors[,which.max(SWSBeigendecomp$values)]
+as.matrix(iris[,1:4])%*% lambdas->iris.projections
+rounded.iris.projections<-round(iris.projections)
+iris.lda<-cbind(iris,classp=iris.projections,spectral=rounded.iris.projections)
+iris.lda$predicted <-ifelse(iris.lda$spectral < (1-4.76),'virginica',
+	ifelse(iris.lda$spectral>(1-3),'setosa','versicolor'))
+iris.lda.confMat<-table(iris.lda$predicted,iris.lda$Species)
+iris.lda.confMat
+print(paste("Accuracy is::",as.numeric(sum(diag(iris.lda.confMat))/sum(iris.lda.confMat)),sep= " "))
+print(paste("Error is::",1-as.numeric(sum(diag(iris.lda.confMat))/sum(iris.lda.confMat)),sep= " "))

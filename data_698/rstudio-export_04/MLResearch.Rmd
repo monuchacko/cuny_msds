@@ -1,0 +1,425 @@
+---
+title: "Scratch Research"
+author: "Abdelmalek Hajjam"
+date: "10/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## reading the cleaned data
+
+```{r message=FALSE}
+#Fully cleaned and imputed dataset
+data <- read.csv("diabetic_cleanedANDprocessed.csv", header = TRUE, strip.white = TRUE) 
+data$readmitted <- as.factor(data$readmitted)
+dim(data)
+table(data$readmitted)
+```
+##Imbalance data Problem
+
+Because we have an imbalanced Dataset with respect to the class. Accuracy therefore is not a robust measure of classifier performance in presence of a class imbalance.
+Accuracy is not the metric to use when working with an imbalanced dataset. It is misleading.
+There are metrics that have been designed to tell you a more truthful story when working with imbalanced classes, such as Precision, Recall and F Beta.
+in this case, we will use AUC (area under the curve) as our metric for this classfication problem.
+But before that, we will have to balance our training dataset so that the model will not be bias to the majority class.
+In our case, we will use the SMOTE function found in the DMwR package.
+
+
+## Training and Test data set up
+
+```{r message=FALSE}
+library(DMwR) # for SMOTE
+library(caret)
+library(mltools)
+set.seed(123)
+# Step 1: Get row numbers for the training data (80% train split, 20% testing split)
+trainRowNumbers <- createDataPartition(data$readmitted, p=0.8, list=FALSE)
+#training  dataset
+trainData <- data[trainRowNumbers,]
+#test dataset
+testData <- data[-trainRowNumbers,]
+
+# set the target variable as a factor
+trainData$readmitted <- as.factor(trainData$readmitted)
+testData$readmitted <- as.factor(testData$readmitted)
+
+table(data$readmitted)
+table(trainData$readmitted)
+table(testData$readmitted)
+
+#Because our dataset is imbalanced. we use smote to create a balanced training set
+trainData$readmitted <- as.factor(trainData$readmitted)
+trainData_SMOTE <- SMOTE(readmitted ~ ., trainData) 
+
+table(trainData_SMOTE$readmitted)
+
+```
+
+
+## Logistic Regression
+
+```{r message=FALSE}
+
+library(kableExtra)
+
+LR <- glm(readmitted ~ ., data = trainData_SMOTE, family = "binomial")
+
+LR_pred <- predict(LR, testData, type = 'response')
+LR_pred_labels <- ifelse(LR_pred > 0.5 , 1, 0) 
+cm_LR <-  table(LR_pred_labels, testData$readmitted)
+cm_LR
+
+acc_LR <- sum(diag(cm_LR)) / sum(cm_LR)
+print(paste("accuracy: ", acc_LR))
+tpr_LR <- cm_LR[1,1]/sum(cm_LR[1,1], cm_LR[2,1])
+fpr_LR <- cm_LR[1,2]/sum(cm_LR[1,2], cm_LR[2,2])
+tnr_LR <- 1 - fpr_LR
+fnr_LR <- 1 - tpr_LR
+
+library(ROCR)
+ROCRpred <- prediction(LR_pred, testData$readmitted)
+ROCRperf <- performance(ROCRpred, 'tpr', 'fpr')
+plot(ROCRperf, col="blue", main="ROC plot for LR")
+ROCRperfauc <- performance(ROCRpred, 'auc')
+auc_LR <- ROCRperfauc@y.values[[1]]
+
+Generalizing_LRrow <- c("LR",round(auc_LR,2),round(acc_LR,2),round(tpr_LR,2),round(fpr_LR,2),round(tnr_LR,2),round(fnr_LR,2))
+kable(Generalizing_LRrow)
+#"accuracy:  0.763118653695945"
+```
+
+
+## Naive Bayes
+
+```{r message=F}
+ library(e1071)
+ NB <- naiveBayes(readmitted ~ ., data = trainData_SMOTE)
+
+NB_pred <- predict(NB, testData)
+NB_pred_raw <- predict(NB, testData, type = "raw")
+
+#confusion matrix
+cm_NB <-  table(NB_pred, testData$readmitted)
+
+acc_NB <- sum(diag(cm_NB))/sum(cm_NB)
+print(paste("accuracy: ", acc_NB))
+tpr_NB <- cm_NB[1,1]/sum(cm_NB[1,1], cm_NB[2,1])
+fpr_NB <- cm_NB[1,2]/sum(cm_NB[1,2], cm_NB[2,2])
+tnr_NB <- 1 - fpr_NB
+fnr_NB <- 1 - tpr_NB
+
+library(pROC)
+roc_NB <- roc(testData$readmitted, as.numeric(NB_pred))
+auc_NB <- roc_NB$auc
+plot(roc_NB,col="blue",main="ROC plot for NB")
+
+Generalizing_NBrow <- c("NB",round(auc_NB,2),round(acc_NB,2),round(tpr_NB,2),round(fpr_NB,2),round(tnr_NB,2),round(fnr_NB,2) )
+kable(Generalizing_NBrow)
+
+#"accuracy:  0.551516012213307"
+```
+
+
+## KNN
+
+```{r message=F}
+# KNN - Learning (k=125)
+
+library(class)
+KNNFit <- knn3(readmitted ~., data = trainData_SMOTE, k=125)
+
+library(class)
+
+#apply the model to the test data
+KNN <- predict(KNNFit, newdata = testData, type = "class")
+
+#confusion matrix
+cm_KNN <-  table(KNN, testData$readmitted)
+cm_KNN
+
+acc_KNN <- sum(diag(cm_KNN))/sum(cm_KNN)
+print(paste("accuracy: ", acc_KNN))
+tpr_KNN <- cm_KNN[1,1]/sum(cm_KNN[1,1], cm_KNN[2,1])
+fpr_KNN <- cm_KNN[1,2]/sum(cm_KNN[1,2], cm_KNN[2,2])
+tnr_KNN <- 1 - fpr_KNN
+fnr_KNN <- 1 - tpr_KNN
+
+library(pROC)
+roc_KNN <- roc(testData$readmitted, as.numeric(KNN))
+auc_KNN <- roc_KNN$auc
+plot(roc_KNN, col="blue",main="ROC plot for KNN")
+
+Generalizing_KNNrow <- c("KNN",round(auc_KNN,2),round(acc_KNN,2),round(tpr_KNN,2),round(fpr_KNN,2), round(tnr_KNN,2),round(fnr_KNN,2) )
+kable(Generalizing_KNNrow )
+
+#"accuracy:  0.805155151601221"
+```
+
+
+## Decision Tree
+
+```{r message=F}
+library(rpart)
+
+rpart_tree2 <- rpart(formula = readmitted ~ ., 
+                      method = 'class', data=trainData_SMOTE)
+summary(rpart_tree2)
+
+pred_tree <- predict(rpart_tree2, testData, type="class")
+
+#confusion matrix
+cm_tree <- table(pred_tree, testData$readmitted)
+cm_tree
+
+acc_tree <- sum(diag(cm_tree))/sum(cm_tree)
+print(paste("accuracy: ", acc_tree))
+tpr_tree <- cm_tree[1,1]/sum(cm_tree[1,1], cm_tree[2,1])
+fpr_tree <- cm_tree[1,2]/sum(cm_tree[1,2], cm_tree[2,2])
+tnr_tree <- 1 - fpr_tree
+fnr_tree <- 1 - tpr_tree
+
+library(pROC)
+roc_tree <- roc(testData$readmitted, as.numeric(pred_tree))
+auc_tree <- roc_tree$auc
+plot(roc_tree, col="blue",main="ROC plot for Decision Tree")
+
+Generalizing_treerow <- c("DT",round(auc_tree,2),round(acc_tree,2),round(tpr_tree,2),round(fpr_tree,2),round(tnr_tree,2),round(fnr_tree,2) )
+kable(Generalizing_treerow)
+
+#"accuracy:  0.856564652417809"
+``` 
+
+
+#Random forest
+
+```{r message=F}
+# Random Forest
+
+library(randomForest)
+forest_model<-randomForest(formula=readmitted ~ .,
+                     data=trainData_SMOTE)
+print(forest_model)
+
+pred_forest <- predict(forest_model, testData, type = "response")
+
+#confusion matrix
+cm_RF <- table(pred_forest, testData$readmitted)
+cm_RF
+
+acc_RF <- sum(diag(cm_RF))/sum(cm_RF)
+print(paste("accuracy: ", acc_RF))
+tpr_RF <- cm_RF[1,1]/sum(cm_RF[1,1], cm_RF[2,1])
+fpr_RF <- cm_RF[1,2]/sum(cm_RF[1,2], cm_RF[2,2])
+tnr_RF <- 1 - fpr_RF
+fnr_RF <- 1 - tpr_RF
+
+library(pROC)
+roc_RF <- roc(testData$readmitted, as.numeric(pred_forest))
+auc_RF <- roc_RF$auc
+plot(roc_RF, col="blue",main="ROC plot for Random Forest")
+
+Generalizing_RFrow <- c("RF",round(auc_RF,2),round(acc_RF,2),round(tpr_RF,2),round(fpr_RF,2),round(tnr_RF,2),round(fnr_RF,2) )
+kable(Generalizing_RFrow)
+
+
+# "1.acuracy: 0.893559610878364"
+# "2.sensitivity: 0.226757369614512"
+# "3.specificity: 0.915115085764551"
+
+```
+
+## Neural Networks
+
+```{r message=F}
+library(nnet)
+
+nnet_model <- nnet(formula = readmitted ~ ., 
+                   data=trainData_SMOTE, size = 10, maxit = 200)
+
+pred_nnet <- predict(nnet_model, testData, type = "class")
+cm_nn <- table(pred_nnet, testData$readmitted)
+cm_nn
+
+acc_nn <- sum(diag(cm_nn))/sum(cm_nn)
+print(paste("accuracy: ", acc_nn))
+tpr_nn <- cm_nn[1,1]/sum(cm_nn[1,1], cm_nn[2,1])
+fpr_nn <- cm_nn[1,2]/sum(cm_nn[1,2], cm_nn[2,2])
+tnr_nn <- 1 - fpr_nn
+fnr_nn <- 1 - tpr_nn
+
+library(pROC)
+roc_nn <- roc(testData$readmitted, as.numeric(pred_nnet))
+auc_nn <- roc_nn$auc
+plot(roc_nn, col="blue",main="ROC plot for Neural Networks")
+
+Generalizing_nnrow <- c("NN",round(auc_nn,2),round(acc_nn,2),round(tpr_nn,2),round(fpr_nn,2),round(tnr_nn,2),round(fnr_nn,2) )
+kable(Generalizing_nnrow)
+
+# "1.acuracy: 0.742668465525811"
+# "2.sensitivity: 0.138668295662798"
+# "3.specificity: 0.925617540938107"
+
+```
+
+## SVM
+
+```{r set-9}
+# Model 6: SVM
+model.svm <- svm(readmitted~., data = trainData_SMOTE, kernel = "linear")
+#type = "C-classification", cross = 10, cost = 0.01, gamma = 1000
+
+pred.svm <- predict(model.svm, testData, decision.values = F)
+
+cm_svm <- table(pred.svm, testData$readmitted)
+cm_svm
+
+acc_svm <- sum(diag(cm_svm))/sum(cm_svm)
+print(paste("accuracy: ", acc_svm))
+tpr_svm <- cm_svm[1,1]/sum(cm_svm[1,1], cm_svm[2,1])
+fpr_svm <- cm_svm[1,2]/sum(cm_svm[1,2], cm_svm[2,2])
+tnr_svm <- 1 - fpr_svm
+fnr_svm <- 1 - tpr_svm
+
+library(pROC)
+roc_svm <- roc(testData$readmitted, as.numeric(pred.svm))
+auc_svm <- roc_svm$auc
+plot(roc_svm, col="blue",main="ROC plot for SVM")
+
+Generalizing_svmrow <- c("SVM",round(auc_svm,2),round(acc_svm,2),round(tpr_svm,2),round(fpr_svm,2),round(tnr_svm,2),round(fnr_svm,2) )
+kable(Generalizing_svmrow)
+ 
+
+"1.acuracy: 0.764964851239083"
+"2.sensitivity: 0.143997224149896"
+"3.specificity: 0.924738862601553"
+
+
+```
+
+## Learning and capacity
+```{r message=F}
+
+results1 <- data.frame(matrix(ncol = 6, nrow = 0))
+results1 <- rbind(results1,Generalizing_LRrow,Generalizing_NBrow,Generalizing_KNNrow,Generalizing_svmrow,Generalizing_treerow, Generalizing_RFrow,Generalizing_nnrow)
+#colnames(results1) <- c("ALGORITHM", "AUC","ACCURACY", "TPR", "FPR", "TNR", "FNR")
+colnames(results1) <- c("ALGORITHM", "AUC","ACCURACY", "TPR(Sensitivity)", "FPR(Specificity)", "TNR", "FNR")
+#results
+library(knitr)
+kable(results1) %>% kable_styling()
+```
+
+## AutoML with h2o
+
+```{r }
+# #run on laptop (local computer)  
+# library(h2o)
+# #intilize h20 and create a cluster
+# h2o.init()
+# 
+# clean_data <- as.h2o(data)
+# 
+# y <- "readmitted"
+# x <- setdiff(names(data), y)
+# aml <- h2o.automl(
+#   y = y, 
+#   x = x, 
+#   training_frame = clean_data,
+#   max_runtime_secs = 600,
+#   balance_classes = TRUE,
+#  # max_models = 10,
+#   seed = 123)
+```
+
+## AutoML Extra
+
+```{r }
+# library(h2o)
+# h2o.init()
+# 
+# smtData <- as.h2o(trainData_SMOTE)
+# 
+# y = "readmitted"
+# x <- setdiff(names(trainData_SMOTE), y)
+# 
+# # For binary classification, response should be a factor
+# trainData_SMOTE[, y] <- as.factor(trainData_SMOTE[, y])
+# testData[, y] <- as.factor(testData[, y])
+# 
+# #train <- as.h2o(trainData_SMOTE)
+# 
+# aml <- h2o.automl(
+#   x = x, y = y,
+#   training_frame = smtData,
+#   max_runtime_secs = 600,
+#   nfolds = 5,
+#  # max_models = 10,
+#   seed = 123)
+```
+
+
+```{r }
+# lb <- aml@leaderboard
+# print(lb)
+
+```
+
+## Ensemble Exploration
+
+To understand how the ensemble works, let's take a peek inside the Stacked Ensemble "All Models" model. The "All Models" ensemble is an ensemble of all of the individual models in the AutoML run.This is often the top performing model on the leaderboard.
+
+```{r}
+# # Get model ids for all models in the AutoML Leaderboard
+# model_ids <- as.data.frame(aml@leaderboard$model_id)[,1]
+# model_ids
+# # Get the "All Models" Stacked Ensemble model
+# se <- h2o.getModel(grep("StackedEnsemble_AllModels", model_ids, value = TRUE)[1])
+# se
+# # Get the Stacked Ensemble metalearner model
+# metalearner <- h2o.getModel(se@model$metalearner$name)
+# metalearner
+```
+
+Examine the variable importance of the metalearner (combiner) algorithm in the ensemble.  This shows us how much each base learner is contributing to the ensemble. The AutoML Stacked Ensembles use the default metalearner algorithm (GLM with non-negative weights), so the variable importance of the metalearner is actually the standardized coefficient magnitudes of the GLM. 
+```{r}
+# h2o.varimp(metalearner)
+```
+
+We can also plot the base learner contributions to the ensemble.
+```{r}
+# h2o.varimp_plot(metalearner)
+```
+
+```{r }
+# #al@leaderboard
+# #al@leader
+# 
+# typeof(aml@leader)
+# #assume we have some training data like test_data, then can predict against the best model like so:
+# pred <- h2o.predict(aml, as.h2o(testData))
+# pred
+# summary(aml)
+
+
+#plot(h2o.performance(aml))
+
+# cm_aml <- table(pred, testData$readmitted)
+# cm_aml
+# 
+# result<-as.data.frame(cm_aml)
+# result
+# CorrectlyPredicted <- result[1,3]+result[4,3]
+# accuracy <-CorrectlyPredicted/nrow(testData)
+# #accuracy
+# print(paste("1.acuracy:",accuracy))
+# senstivity_result<-result[4,3]/(result[2,3]+result[4,3])
+# #senstivity_result
+# print(paste("2.sensitivity:",senstivity_result))
+# specificity_result<-result[1,3]/(result[3,3]+result[1,3])
+# #specificity_result
+# print(paste("3.specificity:",specificity_result))
+```
+

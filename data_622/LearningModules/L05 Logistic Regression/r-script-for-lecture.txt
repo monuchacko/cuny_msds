@@ -1,0 +1,103 @@
+sigmoid <- function(x){ 1/(1+exp(-x))} # note is R is a vector processing 
+# so we can pass a vector to this function
+
+logisticdata<-read.csv("https://pingax.com/wp-content/uploads/2013/12/data.csv")
+plot(logisticdata$score.1,logisticdata$score.2,col=as.factor(logisticdata$label),
+xlab="Score-1",ylab="Score-2") # view the data 
+
+Let us prepare data for training and testing
+ccases1<-na.omit(logisticdata) #OR complete.cases , keep only complete observations
+ccases2<-logisticdata[complete.cases(logisticdata),]
+nrow(ccases1)
+allidx<-1:nrow(ccases1)
+set.seed(1313) # we are sampling for repeatability we set the seed
+trainidx<-sample(allidx,round(0.7*nrow(ccases1)),replace=F)
+traindata<-ccases1[trainidx,]
+testdata<-ccases1[-trainidx,]
+table(traindata$label)# check to make sure test and train are similarly distributed
+table(testdata$label)
+
+glm.model<-glm(label~.,data=traindata,family='binomial')
+summary(glm.model)
+coef(glm.model)
+betavec<-coef(glm.model)
+
+computed.train.probabilities<-sigmoid(as.matrix(data.frame(intercept=1,traindata$score.1,traindata$score.2)) %*% betavec)
+computed.test.probabilities<-sigmoid(as.matrix(data.frame(intercept=1,testdata$score.1,testdata$score.2)) %*% betavec)
+
+computed.test.labels<-ifelse(computed.test.probabilities>0.5,1,0)
+computed.train.labels<-ifelse(computed.train.probabilities>0.5,1,0)
+
+#predicted vs actual -- confusion matrix
+trConfMatrix<-table(computed.train.labels,traindata$label)
+trConfMatrix
+#ACCURACY -- Proportion of correct classification (TP+TN)/(TP+FP+TN+FN)
+sum(diag(trConfMatrix))/sum(trConfMatrix)
+#0.8714
+# here is another computation to determine mis-classification rate...
+table(computed.train.labels==traindata$label)
+
+tstConfMatrix<-table(computed.test.labels,testdata$label)
+tstConfMatrix
+#ACCURACY -- Proportion of correct classification (TP+TN)/(TP+FP+TN+FN)
+sum(diag(tstConfMatrix))/sum(tstConfMatrix)
+#0.8714
+# here is another computation to determine mis-classification rate...
+table(computed.test.labels==testdata$label)
+
+
+
+plot(1:70,computed.train.probabilities,col=ifelse(computed.train.probabilities>0.50,'black','yellow'),xlab="obs",ylab="probabilities")
+plot(1:30,computed.test.probabilities,col=ifelse
+(computed.test.probabilities>0.50,'black','yellow'),xlab="obs",ylab="probabilities")
+
+estimated.train.probabilities<-predict(glm.model,newdata=traindata[,c("score.1","score.2")],type='response')
+head(estimated.train.probabilities)
+estimated.train.labels<-ifelse(estimated.train.probabilities>0.5,1,0)
+estimated.test.probabilities<-predict(glm.model,newdata=testdata[,c("score.1","score.2")],type='response')
+estimated.test.labels<-ifelse(estimated.test.probabilities>0.5,1,0)
+table(estimated.test.labels==computed.test.labels)
+table(estimated.train.labels==computed.train.labels)
+table(estimated.train.labels==traindata$label)
+table(estimated.test.labels==testdata$label)
+
+if (!require(ROCR)) install.packages(c("ROCR"))
+glm_prediction<-prediction(estimated.test.probabilities,testdata$label)
+glm_perf<-performance(glm_prediction,measure="tpr",x.measure="fpr")
+glm_slot_fp<-slot(glm_prediction,"fp")
+glm_slot_tp<-slot(glm_prediction,"tp")
+glm_slot_tn<-slot(glm_prediction,"n.neg")
+glm_slot_fn<-slot(glm_prediction,"n.pos")
+glm_auc<-performance(glm_prediction,"auc")@y.values[[1]]
+
+ plot(unlist(glm_slot_fp)/unlist(glm_slot_tn),unlist(glm_slot_tp)/unlist(glm_slot_fn),main="ROCR Curve",xlab="FPR",ylab='TPR')
+
+estimated.test.labels<-ifelse(estimated.test.probabilities>0.5,1,0)
+
+confusionMatrix<-table(estimated.test.labels,testdata$label,dnn=c('Predicted','Actual'))
+#https://www.dataschool.io/simple-guide-to-confusion-matrix-terminology/
+
+table(testdata$label)
+
+#accurancy (TP+TN)/TOTAL
+sum(diag(confusionMatrix))/sum(confusionMatrix)
+
+#misclassification rate (FP+FN)/TOTAL
+(confusionMatrix[2,1]+confusionMatrix[1,2])/sum(confusionMatrix)
+
+#TPR TP/ACTUAL, aka Sensitivity or Recall
+sum(confusionMatrix[2,2])/sum(confusionMatrix[,2])
+
+#FPR FP/ACTUAL
+ sum(confusionMatrix[2,1])/sum(confusionMatrix[,2])
+
+#TNR TN/ACTUAL aka Specificity
+confusionMatrix[1,1]/sum(confusionMatrix[,1])
+
+# Precision TP/(TP+FP)
+confusionMatrix[2,2]/sum(confusionMatrix[2,])
+# Prevalence ACTUAL /TOTAL
+
+
+# NULL ERROR RATE
+ACTUAL NEGATIVE/TOTAL

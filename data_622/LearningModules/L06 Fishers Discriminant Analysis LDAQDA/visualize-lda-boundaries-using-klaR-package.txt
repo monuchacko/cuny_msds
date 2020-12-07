@@ -1,0 +1,3 @@
+require(klaR)
+ 
+partimat(Species~Sepal.Length+Sepal.Width+Petal.Length+Petal.Width,data=iris.lda,method="lda")

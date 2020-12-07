@@ -1,0 +1,248 @@
+---
+title: "CleanUp"
+author: "Monu Chacko, Abdelmalek Hajjam, Md Forhad Akbar, Shovan Biswas"
+date: "10/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, echo = FALSE, message = FALSE}
+
+library(caret)
+library(skimr)
+library(data.table)
+library(mltools)
+library(tidyverse)
+library(corrplot)
+library(ROCR)
+library(pROC)
+library(DMwR)
+library(Rtsne)
+library(glmnet)
+library(doParallel)
+library(gridExtra)
+theme_set(theme_bw())
+```
+## Reading Original mydata 
+
+```{r}
+# Reading in data
+mydata <- read.csv("diabetic_data.csv")
+# remove duplicates
+mydata <- mydata[!duplicated(mydata$patient_nbr), ]
+```
+
+## Preparing and processing
+```{r}
+mydata[mydata == "?"] <- NA
+```
+
+Dropping unnecessary/unvaluable variables or variables with too many missing values    
+```{r}
+drops <- c("encounter_id", "patient_nbr", "weight", "payer_code", 
+           "medical_specialty", "diabetesMed", "diag_2", "diag_3")
+mydata <- mydata[ , !(names(mydata) %in% drops)]
+```
+
+any patient who's discharge status is "expired" will be dropped.
+```{r}
+mydata <- filter(mydata, !(discharge_disposition_id %in% c(11, 19, 20, 21)))
+```
+
+Remove unknown gender
+```{r}
+mydata <- mydata %>% filter(gender != "Unknown/Invalid")
+mydata$gender <- droplevels(mydata$gender)
+```
+
+## Let's Encode
+```{r}
+#encoding gender Female=0, Male=1
+mydata$gender <- as.integer(mydata$gender) - 1
+```
+
+```{r}
+# Encoding ages - age will be the median of the 10 years age interval.
+mydata$age <- ifelse(mydata$age == "[0-10)", 5, 
+                  ifelse(mydata$age == "[10-20)", 15, 
+                         ifelse(mydata$age == "[20-30)", 25, 
+                                ifelse(mydata$age == "[30-40)", 35, 
+                                       ifelse(mydata$age == "[40-50)", 45, 
+                                              ifelse(mydata$age == "[50-60)", 55, 
+                                                     ifelse(mydata$age == "[60-70)", 65, 
+                                                            ifelse(mydata$age == "[70-80)", 75, 
+                                                                   ifelse(mydata$age == "[80-90)", 85, 95)))))))))
+                                                                    
+```
+
+```{r}
+#encoding Glucose - measurment = 0; Normal reading = 1; >200 & >300 (abnormal readings) = 2
+mydata$max_glu_serum <- ifelse(mydata$max_glu_serum == "None", 0, 
+                          ifelse(mydata$max_glu_serum == "Norm", 1, 2))
+```
+
+```{r}
+#encoding A1C test results - measurment = 0; Normal reading = 1; abnormal reading (>7 or >8) = 2
+mydata$A1Cresult <- ifelse(mydata$A1Cresult == "None", 0, 
+                         ifelse(mydata$A1Cresult == "Norm", 1, 
+                                ifelse(mydata$A1Cresult %in% c(">7", ">8"), 2, NA)))
+```
+
+```{r}
+#encoding insulin dosage - no insulin = 0; decrease in insulin = 1; steady insulin = 2; increase in insulin = 3
+mydata$insulin <- ifelse(mydata$insulin == "No", 0, ifelse(mydata$insulin == "Down", 1, ifelse(mydata$insulin == "Steady", 2, 3)))
+```
+
+```{r}
+#encoding Medication Change - no change in medication = 0; change in medication = 1
+mydata$change <- ifelse(mydata$change == "Ch", 1, 0)
+```
+
+```{r}
+#encoding race - Caucasian = 0; African American = 1; Other = 2
+mydata$race <- ifelse(mydata$race == "Caucasian", 0, ifelse(mydata$race == "AfricanAmerican", 1, 2))
+mydata$race[is.na(mydata$race)] <- 2
+```
+
+```{r}
+#encoding target variable "readmitted" - No Readmission within 30 days = 0; 1 for a Readmission in <30 days = 1
+mydata$readmitted <- ifelse((mydata$readmitted == "NO" | mydata$readmitted == ">30"), 0, 1)
+mydata %>% group_by(readmitted) %>% summarize(count=n())
+```
+
+## combining some features
+```{r}
+# Sum of number of outpatient, emergency and inpatient encounters 
+mydata$healthcare_utilization <- (mydata$number_outpatient + mydata$number_emergency + mydata$number_inpatient)
+```
+
+```{r}
+#sum of other non insulin medications
+mydata$metformin <- ifelse(mydata$metformin %in% c("Up", "Steady", "Down"),1,0)
+mydata$repaglinide <- ifelse(mydata$repaglinide %in% c("Up", "Steady", "Down"),1,0)
+mydata$nateglinide <- ifelse(mydata$nateglinide %in% c("Up", "Steady", "Down"),1,0)
+mydata$chlorpropamide <- ifelse(mydata$chlorpropamide %in% c("Up", "Steady", "Down"),1,0)
+mydata$glimepiride <- ifelse(mydata$glimepiride %in% c("Up", "Steady", "Down"),1,0)
+mydata$acetohexamide <- ifelse(mydata$acetohexamide %in% c("Up", "Steady", "Down"),1,0)
+mydata$glipizide <- ifelse(mydata$glipizide %in% c("Up", "Steady", "Down"),1,0)
+mydata$glyburide <- ifelse(mydata$glyburide %in% c("Up", "Steady", "Down"),1,0)
+mydata$tolbutamide <- ifelse(mydata$tolbutamide %in% c("Up", "Steady", "Down"),1,0)
+mydata$pioglitazone <- ifelse(mydata$pioglitazone %in% c("Up", "Steady", "Down"),1,0)
+mydata$rosiglitazone <- ifelse(mydata$rosiglitazone %in% c("Up", "Steady", "Down"),1,0)
+mydata$acarbose <- ifelse(mydata$acarbose %in% c("Up", "Steady", "Down"),1,0)
+mydata$miglitol <- ifelse(mydata$miglitol %in% c("Up", "Steady", "Down"),1,0)
+mydata$troglitazone <- ifelse(mydata$troglitazone %in% c("Up", "Steady", "Down"),1,0)
+mydata$tolazamide <- ifelse(mydata$tolazamide %in% c("Up", "Steady", "Down"),1,0)
+mydata$examide <- ifelse(mydata$examide %in% c("Up", "Steady", "Down"),1,0)
+mydata$citoglipton <- ifelse(mydata$citoglipton %in% c("Up", "Steady", "Down"),1,0)
+mydata$glyburide.metformin <- ifelse(mydata$glyburide.metformin %in% c("Up", "Steady", "Down"),1,0)
+mydata$glipizide.metformin <- ifelse(mydata$glipizide.metformin %in% c("Up", "Steady", "Down"),1,0)
+mydata$glimepiride.pioglitazone <- ifelse(mydata$glimepiride.pioglitazone %in% c("Up", "Steady", "Down"),1,0)
+mydata$metformin.rosiglitazone <- ifelse(mydata$metformin.rosiglitazone %in% c("Up", "Steady", "Down"),1,0)
+mydata$metformin.pioglitazone <- ifelse(mydata$metformin.pioglitazone %in% c("Up", "Steady", "Down"),1,0)
+mydata$num_other_diabetes_meds_up_stdy_dwn <- (mydata$metformin + mydata$repaglinide + mydata$nateglinide + mydata$chlorpropamide + mydata$glimepiride + mydata$acetohexamide + mydata$glipizide + mydata$glyburide + mydata$tolbutamide + mydata$pioglitazone + mydata$rosiglitazone + mydata$acarbose + mydata$miglitol + mydata$troglitazone + mydata$tolazamide + mydata$examide + mydata$citoglipton + mydata$glyburide.metformin + mydata$glipizide.metformin + mydata$glimepiride.pioglitazone + mydata$metformin.rosiglitazone + mydata$metformin.pioglitazone)
+drops2 <- c("metformin", "repaglinide", "nateglinide", "chlorpropamide", "glimepiride", "acetohexamide", "glipizide", 
+            "glyburide", "tolbutamide", "pioglitazone", "rosiglitazone", "acarbose", "miglitol", "troglitazone", 
+            "tolazamide", "examide", "citoglipton", "glyburide.metformin", "glipizide.metformin", "glimepiride.pioglitazone",
+            "metformin.rosiglitazone", "metformin.pioglitazone")
+mydata <- mydata[ , !(names(mydata) %in% drops2)]
+```
+
+## One Hot encoding
+```{r}
+#dummy variables for admission types
+mydata <- mutate(mydata, at_emergent = as.numeric(admission_type_id %in% c(1, 2, 7)), 
+              at_elective = as.numeric(admission_type_id == 3), 
+              at_other = as.numeric(admission_type_id %in% c(4, 5, 6, 8)))
+
+#dummy variables for discharge dispositions
+mydata <- mutate(mydata, dd_home = as.numeric(discharge_disposition_id %in% c(1, 6, 8)), 
+              dd_facility_transfer = as.numeric(discharge_disposition_id %in% c(2, 3, 4, 5, 10, 16, 17, 22, 23, 24, 30, 27, 28, 29, 13, 14)), 
+              dd_other = as.numeric(discharge_disposition_id %in% c(7, 18, 25, 26, 9, 12, 15))) 
+             
+#dummy variables for admission source
+mydata <- mutate(mydata, as_outpatient = as.numeric(admission_source_id %in% c(1, 2, 3)),
+              as_facility_transfer = as.numeric(admission_source_id %in% c(4, 5, 6, 10, 18, 19, 22, 25, 26)),
+              as_ed = as.numeric(admission_source_id %in% c(7)),
+              as_other = as.numeric(admission_source_id %in% c(8, 9, 15, 17, 20, 21, 11, 12, 13, 14, 23, 24)))
+              
+mydata <- within(mydata, rm(admission_type_id))
+mydata <- within(mydata, rm(discharge_disposition_id))
+mydata <- within(mydata, rm(admission_source_id))
+```
+
+```{r}
+#grouping the ICD codes into 20 different categories based on the Strack et al. 2014 research paper
+mydata$diag_1 <- as.character(mydata$diag_1)
+mydata$diag_1grp <- ifelse (mydata$diag_1 == "?", "Unknown", 
+          ifelse(grepl(mydata$diag_1, pattern = "[EV]") == T, "External", 
+            ifelse(floor(as.numeric(mydata$diag_1)) == 250, "Circulatory", 
+              ifelse(mydata$diag_1 %in% c(390:459, 785), "Diabetes", 
+                ifelse(mydata$diag_1 %in% c(460:519, 786), "Respiratory", 
+                  ifelse(mydata$diag_1 %in% c(520:579, 787), "Digestive", 
+                    ifelse(mydata$diag_1 %in% c(800:999), "Injury", 
+                      ifelse(mydata$diag_1 %in% c(710:739), "Musculoskeletal",
+                        ifelse(mydata$diag_1 %in% c(580:629, 788), "Genitourinary", 
+                         ifelse(mydata$diag_1 %in% c(140:239), "Neoplasm", 
+                           ifelse(mydata$diag_1 %in% c(780, 781, 784, 790:799, 740:759), "Other", # added congenital to other
+                             ifelse(mydata$diag_1 %in% c(240:249, 251:279), "Endocrine_Nutrition_Metabolic",  
+                               ifelse(mydata$diag_1 %in% c(680:709, 782), "Skin", 
+                                 ifelse(mydata$diag_1 %in% c(001:139), "Infectious",
+                                   ifelse(mydata$diag_1 %in% c(290:319), "Mental", 
+                                     ifelse(mydata$diag_1 %in% c(280:289), "Blood",
+                                       ifelse(mydata$diag_1 %in% c(320:359), "Nervous",
+                                         ifelse(mydata$diag_1 %in% c(630:679), "Pregnancy", 
+                                          ifelse(mydata$diag_1 %in% c(360:389), "Sense", "Unknown") 
+                                ))))))))))))))))))
+mydata$diag_1grp <- as.factor(mydata$diag_1grp)
+mydata <- one_hot(data.table(mydata))
+mydata <- as.data.frame(mydata) # convert back to data.frame format
+mydata <- within(mydata, rm(diag_1))
+mydata <- na.omit(mydata)
+```
+
+## Removing Highly Correlated Variables
+We will remove any highly correlated variables by investigating the correlation matrix
+```{r, fig.height=15, eval=F, echo=F}
+# moving readmitted to the last column value
+mydata <- mydata %>% select(-readmitted, readmitted) 
+cor_mat <- cor(mydata[, 1:42])
+plot.new()
+corrplot(cor_mat, type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45,mar=c(1,1,1,1))
+```
+
+```{r correlation matrix, fig.width=8, fig.height=10}
+mydata <- mydata %>% select(-readmitted, readmitted) # move readmitted to the last column value
+cor_mat <- cor(mydata[, 1:42])
+cor_mat[!lower.tri(cor_mat)] <- 0
+mydata <- mydata[,!apply(cor_mat,2,function(x) any(abs(x) > 0.6))]
+cor_mat2 <- cor(mydata[, 1:42])
+get_lower_tri<-function(cormat){
+    cormat[upper.tri(cormat)] <- NA
+    return(cormat)
+}
+cor_mat_melted <- melt(get_lower_tri(cor_mat2), na.rm = T)
+ggplot(data = cor_mat_melted, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = -45, vjust = 1, hjust = 0),
+        legend.position = c(0,1), legend.justification = c(0,1),
+        axis.title = element_blank(), plot.title = element_text(hjust = 0.5)) +
+  labs(title = "Correlation matrix") +
+  scale_y_discrete(position = "right")
+```
+
+## Obtain a cleaned dataset we can work with
+```{r}
+# write the cleaned mydata to a new file
+write.csv(mydata, file = "diabetic_cleanedANDprocessed.csv", row.names = F)
+```
+
+

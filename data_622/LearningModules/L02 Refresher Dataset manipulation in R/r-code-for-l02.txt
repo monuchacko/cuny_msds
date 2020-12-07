@@ -1,0 +1,87 @@
+require(ggplot2)
+
+dt<-read.csv("~/edas-2018/R-vs-Spark.txt",head=T,sep=',',stringsAsFactors=F) 
+dt
+
+
+ggplot(dt,aes(x=Class))+geom_bar()+coord_flip()
+==========
+
+eigen( t(Y)%*%Y)
+round(eigen( t(Y)%*%Y)$values)
+
+X<-matrix(c(1,-1,2,1,0,1,1,2,-1,1,1,0),nrow=4)
+X
+Y<-t(X)%*%X
+eigenY<-eigen(Y)
+round(eigenY$values)
+round(eigenY$vectors)
+
+X2<-as.matrix(c(1,-1,2))
+X2
+X2<-cbind(X2,c(1,0,1))
+X2
+X2<-cbind(X2,c(1,2,-1))
+X2
+X2<-cbind(X2,c(1,1,0))
+
+Y2<-t(X2)%*%X2
+round(eigen(Y2)$values)
+
+# cholesky chol,svd are other decomposition l.alg
+# functions
+mxex<-matrix(c(2,0,4,1,-1,0,0,1,-2),nrow=3)
+ mxex
+t(mxex)
+solve(t(mxex))
+
+#solve to invert a matrix
+ solve(t(mxex))%*%t(mxex) 
+
+solve(mxex)%*%(mxex)
+
+pairs(anscombe)
+head(mtcars)
+
+mtcars2<-mtcars[,c("cyl","mpg","disp")]
+pairs(mtcars2)
+
+dim(iris)
+iris[20:30,]
+iris[50:55,]
+
+table(iris$Species)
+tridx<-sample(nrow(iris),110,replace=F)
+tridx
+
+
+trainset<-iris[tridx,]
+testset<-iris[-tridx,]
+dim(testset)
+dim(trainset)
+head(trainset)
+
+tridx<-sample(nrow(iris),110,replace=F)
+tridx
+
+iris2<-sample(nrow(iris),nrow(iris),replace=F)
+iris2
+
+seq(1,nrow(iris),15)
+starts<-seq(1,nrow(iris),15)
+ends<-seq(15,nrow(iris),15)
+ends
+
+sample3<-iris[starts[3]:ends[3],]
+sample3
+
+iris2
+
+random_sample3<-iris2[starts[3]:ends[3]]
+iris_random_sample3<-iris[random_sample3,]
+iris_random_sample3
+
+fold_distribution<-unlist(lapply(1:10,FUN=function(x)table(iris[iris2[starts[x]:ends[x]],]$Species)))
+fold_distribution
+
+
