@@ -1,0 +1,96 @@
+---
+title: "Data 622 Finding the best Model"
+author: "Monu Chacko"
+date: "12/6/2020"
+output:
+  html_document:
+    toc: true
+    toc_float: yes
+    theme: united
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Part A
+
+```{r warning=FALSE, message=FALSE} 
+library(caret)
+library(pROC)
+library(tidyverse)
+```
+
+### STEP#0: 
+
+Pick any two classifiers of (SVM,Logistic,DecisionTree,NaiveBayes). Pick heart or ecolidataset. Heart is simpler and ecoli compounds the problem as it is NOT a balanced dataset. From a grading perspective both carry the same weight.
+
+### STEP#1 
+
+For each classifier, Set a seed (43)STEP#2 Do a 80/20 split and determine the Accuracy, AUC and as many metrics as returned by the Caret package (confusionMatrix) Call this the base_metric. Note down as best as you can development (engineering) cost as well as computing cost(elapsed time).Start with the original dataset and set a seed (43). Then run a cross validation of 5 and 10 of the model on the training set. Determine the same set of metrics and compare the cv_metrics with the base_metric. Note down as best as you can development (engineering) cost as well as computing cost(elapsed time).Start with the original dataset and set a seed (43) Then run a bootstrap of 200 resamples and compute the same set of metrics and for each of the two classifiers build a  three column table for each experiment (base, bootstrap, cross-validated). Note down as best as you can development (engineering) cost as well as computing cost(elapsed time).
+
+```{r}
+read.csv('https://raw.githubusercontent.com/mkivenson/Machine-Learning-Big-Data/master/heart.csv',head=T,sep=',',stringsAsFactors=F) -> heart
+
+heart$target <- as.factor(heart$target)
+heart$sex <- as.factor(heart$sex)
+heart$cp <- as.factor(heart$cp)
+heart$fbs <- as.factor(heart$fbs)
+heart$restecg <- as.factor(heart$restecg)
+heart$exang <- as.factor(heart$exang)
+heart$slope <- as.factor(heart$slope)
+heart$ca <- as.factor(heart$ca)
+heart$thal <- as.factor(heart$thal)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1) This is a time consuming project. So please start early.
+
+2) Try not to use hyper-parameters as much as possible.
+
+3) I am willing to revise the assignment until Oct 30th please review and propose any change
+
+-- spelling/grammarly etc...Happy to incorporate reasonable changes and add more color.
+
+4) Identify opportunities for parallelizing this task.
+
+5) Show case your engineering maturity so that your implementation can be reused with different datasets and
+
+varying number of learners.
+
+
+
+
+
+PART-A
+
+STEP#0: Pick any two classifiers of (SVM,Logistic,DecisionTree,NaiveBayes). Pick heart or ecolidataset. Heart is simpler and ecoli compounds the problem as it is NOT a balanced dataset. From a grading perspective both carry the same weight.
+
+STEP#1 For each classifier, Set a seed (43)STEP#2 Do a 80/20 split and determine the Accuracy, AUC and as many metrics as returned by the Caret package (confusionMatrix) Call this the base_metric. Note down as best as you can development (engineering) cost as well as computing cost(elapsed time).Start with the original dataset and set a seed (43). Then run a cross validation of 5 and 10 of the model on the training set. Determine the same set of metrics and compare the cv_metrics with the base_metric. Note down as best as you can development (engineering) cost as well as computing cost(elapsed time).Start with the original dataset and set a seed (43) Then run a bootstrap of 200 resamples and compute the same set of metrics and for each of the two classifiers build a  three column table for each experiment (base, bootstrap, cross-validated). Note down as best as you can development (engineering) cost as well as computing cost(elapsed time).
+
+
+
+
+PART B
+
+For the same dataset, set seed (43) split 80/20.
+
+Using randomForest grow three different forests varuing  the number of trees atleast three times. Start with seeding andfresh split for each forest. Note down as best as you can development (engineering) cost as well as computing cost(elapsed time) for each run. And compare these results with the experiment in Part A. Submit a pdf and executable script in python or R.
+
+PartC
+
+Include a summary of your findings. Which of the two methods bootstrap vs cv do you recommend to your customer? And why? Be elaborate. Including computing costs, engineering costs and model performance. Did you incorporate Pareto's maxim or the Razor and how did these two heuristics influence your decision?
