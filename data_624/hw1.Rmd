@@ -1,0 +1,237 @@
+---
+title: "DATA 624 Homework 1 - Time Series"
+author: "Monu Chacko"
+date: "2/14/2021"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+library(fpp)
+library(fpp2)
+library(ggplot2)
+library(kableExtra)
+```
+
+
+## Question 2.1
+
+Use the help function to explore what the series gold, woolyrnq and gas represent.
+
+- Use autoplot() to plot each of these in separate plots. 
+- What is the frequency of each series? Hint: apply the frequency() function. 
+- Use which.max() to spot the outlier in the gold series. Which observation was it?
+
+```{r}
+autoplot(gold) + labs(title="Price History of Gold", x="Days", y="Dollar Price")
+```
+
+```{r}
+autoplot(woolyrnq) + labs(title="Price History of Woolen", y="Tons")
+```
+
+```{r}
+autoplot(gas) + labs(title="Gas Production")
+```
+
+**Frequency (Gold)**
+
+```{r}
+frequency(gold)
+```
+
+**Frequency (Woolen)**
+
+```{r}
+frequency(woolyrnq)
+```
+
+**Frequency (Gas)**
+
+```{r}
+frequency(gas)
+```
+
+**Outlier in the gold series**
+
+```{r}
+o_g <- which.max(gold)
+paste0("The observation# ", o_g, " is an outlier")
+```
+
+```{r}
+paste0("Gold price was: ", gold[o_g])
+```
+
+## Question 2.2
+
+Download the file tute1.csv from the book website, open it in Excel (or some other spreadsheet application), and review its contents. You should find four columns of information. Columns B through D each contain a quarterly series, labelled Sales, AdBudget and GDP. Sales contains the quarterly sales for a small company over the period 1981-2005. AdBudget is the advertising budget and GDP is the gross domestic product. All series have been adjusted for inflation.
+
+a. You can read the data into R with the following script:
+
+```{r}
+tute1 <- read.csv("data/tute1.csv", header=TRUE)
+# View(tute1)
+```
+
+b. Convert the data to time series
+
+```{r}
+mytimeseries <- ts(tute1[,-1], start=1981, frequency=4)
+```
+
+(The [,-1] removes the first column which contains the quarters as we don’t need them now.)
+
+c. Construct time series plots of each of the three series
+
+```{r}
+autoplot(mytimeseries, facets=TRUE)
+```
+
+Check what happens when you don’t include facets=TRUE.
+
+```{r}
+autoplot(mytimeseries)
+```
+
+**The y axis of the time series plot is no more grouped by individual time series when facet =TRUE is removed.**
+
+## Question 2.3
+
+Download some monthly Australian retail data from the book website. These represent retail sales in various categories for different Australian states, and are stored in a MS-Excel file.
+
+a. You can read the data into R with the following script:
+
+```{r}
+retaildata <- readxl::read_excel("data/retail.xlsx", skip=1)
+```
+
+The second argument (skip=1) is required because the Excel sheet has two header rows.
+
+b. Select one of the time series as follows (but replace the column name with your own chosen column):
+
+```{r}
+myts <- ts(retaildata[,"A3349873A"],
+  frequency=12, start=c(1982,4))
+```
+
+c. Explore your chosen retail time series using the following functions:
+
+autoplot(), ggseasonplot(), ggsubseriesplot(), gglagplot(), ggAcf()
+
+Can you spot any seasonality, cyclicity and trend? What do you learn about the series?
+
+```{r}
+autoplot(myts) +
+  ggtitle('Retail Data') +
+  xlab('Year') +
+  ylab('Sales')
+```
+
+**There seems to be a pattern here. The overall trend is up year over year. The volatility seem to increase year over year. The sales seems seasonal i.e goes up in the end of the year and then comes down. This pattern appears to be happening every year. The sales seem to have coorelation to year end holidays**
+
+
+```{r}
+ggseasonplot(myts) +
+  ggtitle('Retail Data') +
+  xlab('Year') +
+  ylab('Sales')
+```
+
+**This chart confirms our belief of seasonality. The sales goes up in oct and starts to come down in the end of the year. There is a pattern here.**
+
+```{r}
+ggsubseriesplot(myts) +
+  ggtitle('Retail Data') +
+  xlab('Year') +
+  ylab('Sales')
+```
+
+**The sub series plot further confirms our findings. The peak occurs in Nov every year.**
+
+```{r}
+gglagplot(myts) +
+  ggtitle('Retail Data') +
+  xlab('Year') +
+  ylab('Sales')
+```
+
+**There is positive trend in the time series**
+
+```{r}
+ggAcf(myts) +
+  ggtitle('Retail Data') +
+  xlab('Year') +
+  ylab('Sales')
+```
+
+**The ACF chart shows us the trend. Every year there is a U shaped pattern.**
+
+## Question 2.6
+
+Use the following graphics functions: autoplot(), ggseasonplot(), ggsubseriesplot(), gglagplot(), ggAcf() and explore features from the following time series: hsales, usdeaths, bricksq, sunspotarea, gasoline.
+
+Can you spot any seasonality, cyclicity and trend?
+What do you learn about the series?
+
+```{r}
+analyzets = function(ts, plottitle) 
+{
+  print(autoplot(ts) + ggtitle(plottitle))
+  try(print(ggseasonplot(ts) + ggtitle(plottitle)))
+  try(print(ggsubseriesplot(ts) + ggtitle(plottitle)))
+  print(gglagplot(ts) + ggtitle(plottitle))
+  print(ggAcf(ts) + ggtitle(plottitle))
+}
+```
+
+```{r}
+analyzets(hsales, "hsales analysis")
+```
+
+**The data seems to peak in march. From the chart we can see seasonal pattern in the time series**
+
+```{r}
+analyzets(usdeaths, "usdeath analysis")
+```
+
+**We see a year over year pattern. The data seem to have a consistent pattern. There is a peak in June-July. The lags chart shows mixed bag of correlation. This chart shows seasonality presence in the time series**
+
+
+```{r}
+analyzets(bricksq, 'bricksq analysis')
+```
+
+**This series shows positive trend till 70's. There is a seasonal pattern here. We can see a swing quarter to quarter where it peaks in Q2 and Q3 while it dips in Q1 and Q4. Subseries plot also have similar pattern.**
+
+```{r}
+analyzets(sunspotarea, 'sunspotarea analysis')
+```
+
+**sunspotarea analysis shows both positive and negative correlation i.e lag 1 and 2 shows positive coorelation while lag 5 and 6 shows negative**
+
+
+```{r}
+gasoline = ts(gasoline, frequency = 52)
+analyzets(gasoline, 'gasoline analysis')
+```
+
+
+**Gasoline time series shows clear upward trend and seasonal pattern. The gasoline analysis shows a downward trend but going slidewise slowly. Could not find seasonality in the seasonal plot.**
+
+```{r}
+ggseasonplot(gasoline, polar=TRUE) +
+  ggtitle('Gasoline seasonal plot')
+```
+
+**There seems to be a upward trend towards the end of the spectrum with a dip in the beginning.**
+
