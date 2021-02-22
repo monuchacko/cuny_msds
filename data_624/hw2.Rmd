@@ -1,0 +1,167 @@
+---
+title: "DATA 624 Homework 2 - Forecaster Toolbox"
+author: "Monu Chacko"
+date: "2/21/2021"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r warning=FALSE, message=FALSE}
+library(fpp)
+library(fpp2)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(readxl)
+```
+
+## Question 3.1
+
+For the following series, find an appropriate Box-Cox transformation in order to stabilise the variance.
+
+- usnetelec
+- usgdp
+- mcopper
+- enplanements
+
+```{r}
+funcCmpr <- function(data, ylabtext, title, bcttitle){
+  print(head(data))
+  print(summary(data))
+  print(autoplot(data) + ylab(ylabtext) +  ggtitle(title))
+  lambda <- BoxCox.lambda(data)
+  print(paste0("Lambda: ", lambda))
+  print(autoplot(BoxCox(data,lambda)))
+  print(autoplot(BoxCox(data,lambda)) +  ggtitle(bcttitle))
+}
+```
+
+
+### usnetelec
+
+```{r}
+funcCmpr(usnetelec, "Annual US Electricity Generation (billion kWh)", "Annual US Net Electricity Generation", "Box Cox Transformation of Annual US Net Electricity Generation")
+```
+
+**The usnetelec plot shows an upward trend and no seasonality. It shows little variance as time progresses.**
+
+### usgdp
+
+```{r}
+funcCmpr(usgdp, "Quarterly US GDP", "Quarterly US GDP", "Box Cox Transformation of Quarterly US GDP")
+```
+
+**The usgdp plo shows an upward trend and no apparent seasonality. The BoxCox lambda function was used to choose a value for lambda to make the size of the seasonal variation constant. The value of lambda chosen is 0.36. The transformed data is more linear and has less variation than the original data.**
+
+### mcopper
+
+```{r}
+funcCmpr(mcopper, "Monthly Copper Prices", "Monthly Copper Prices", "Box Cox Transformation of Monthly Copper Prices")
+```
+
+**The mcopper plot shows an upward trend and cyclic behavior. There is less variation and shows a sharp increase in price around 2007.**
+
+### enplanements
+
+```{r}
+funcCmpr(enplanements, "Domestic Revenue Enplanements (millions)", "Monthly US Domestic Revenue from People Boarding Airplanes", "Box Cox Transformation of Monthly US Domestic Revenue from People Boarding Airplanes")
+```
+
+**The enplanements plot shows an upward trend and a seasonality of 1 year. There is less seasonal variation during som period than there is in the rest of the data set. The BoxCox.lambda function was used to choose a value for lambda to make the size of the seasonal variation constant.**
+
+
+## Question 3.2
+
+Why is a Box-Cox transformation unhelpful for the cangas data?
+
+
+```{r}
+funcCmpr(cangas, "Monthly Canadian Gas Production (billions of cubic meters)", "Canadian Gas Production", "Box Cox Transformation of Canadian Gas Production")
+```
+
+**The Box-Cox transformation cannot be used to make the seasonal variation uniform. This is evident in the cangas data. The middle region has a high variability than the lower and the upper regions. The variance is not stable.**
+
+
+## Question 3.3
+
+What Box-Cox transformation would you select for your retail data (from Exercise 3 in Section 2.10)?
+
+```{r}
+retaildata <- read_excel("data/retail.xlsx", skip = 1)
+
+myts <- ts(retaildata[, "A3349398A"], frequency = 12, start = c(1982, 4))
+head(myts)
+```
+
+```{r}
+funcCmpr(myts, "Retail Clothing Sales", "New South Wales - Clothing Sales", "Box Cox Transformation of Retail Clothing Sales in New South Wales")
+```
+
+**The retail data shows an upward trend. The variance increase with time. This model is great for forecasting. The transformed data has less seasonal variation throughout.**
+
+
+## Question 3.8
+
+For your retail time series (from Exercise 3 in Section 2.10):
+
+a. Split the data into two parts using
+
+```{r}
+myts.train <- window(myts, end=c(2010,12))
+myts.test <- window(myts, start=2011)
+```
+
+
+b. Check that your data have been split appropriately by producing the following plot.
+
+```{r}
+autoplot(myts) +
+  autolayer(myts.train, series="Training") +
+  autolayer(myts.test, series="Test")
+```
+
+c. Calculate forecasts using snaive applied to myts.train.
+
+```{r}
+fc <- snaive(myts.train)
+```
+
+
+d. Compare the accuracy of your forecasts against the actual values stored in myts.test.
+
+```{r}
+accuracy(fc,myts.test)
+```
+
+
+```{r}
+autoplot(myts) +
+  autolayer(myts.train, series="Training") +
+  autolayer(myts.test, series="Test") +
+  autolayer(fc, series="prediction")
+```
+
+**The mean error for the training set is 74 and the mean error for the test set is about 115. These values are close for the training and test set. The root mean square error (RMSE) is 88 and 128 and is close as well. The mean absolute error (MAE) is very similar for the training and testing set, and is about 75 and 115. The mean percentage error (MPE) is 6% for the training set and 4.5% for the testing set.** 
+
+e. Check the residuals.
+
+```{r}
+checkresiduals(fc)
+```
+
+
+Do the residuals appear to be uncorrelated and normally distributed?
+
+**The residuals are not centered around 0 and are not normally distributed. It appears to be correlated to each other.**
+
+f. How sensitive are the accuracy measures to the training/test split?
+
+**The errors in both test and train set are fairly similar to each other. The test set has slightly larger errors that the training set for the mean error, root mean square error, mean absolute error, mean absolute scaled error and auto correlation function. The test set has a lower error for the mean percentage error and the mean absolute percentage error.**
