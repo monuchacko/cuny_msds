@@ -1,0 +1,542 @@
+---
+title: "DATA 624 Homework 5"
+author: "Monu Chacko"
+date: "3/14/2021"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+library(fma)
+library(forecast)
+library(kableExtra)
+library(corrplot)
+library(fpp2)
+library(plotly)
+library(gridExtra)
+library(readxl)
+library(seasonal)
+library(ggplot2)
+```
+
+
+## Question 7.1
+
+Consider the pigs series — the number of pigs slaughtered in Victoria each month.
+
+1. Use the ses() function in R to find the optimal values of α and ι0, and generate forecasts for the next four months.
+
+```{r warning=FALSE, message=FALSE}
+pigs_data <- ses(pigs,h=4)
+
+## Simple exponential smoothing 
+pigs_data$model
+summary(pigs_data)
+```
+
+```{r warning=FALSE, message=FALSE}
+forecast(pigs_data)
+```
+
+2. Compute a 95% prediction interval for the first forecast using y^± 1.96 s where s is the standard deviation of the residuals.
+
+```{r warning=FALSE, message=FALSE}
+s <- sd(pigs_data$residuals)
+pigs_data_mean <- pigs_data$mean[1]
+lci <- round(pigs_data_mean - (1.96*s), 2)
+print(lci)
+
+uci <- round(pigs_data_mean + (1.96*s), 2)
+print(uci)
+```
+
+***Lower Confidence Interval: `r lci` and Upper Confidence Interval: `r uci`***
+
+#### Plot data with fitted values to forcast
+
+```{r warning=FALSE, message=FALSE}
+autoplot(pigs_data) + autolayer(pigs_data$fitted)
+```
+
+
+## Question 7.5
+
+Data set books contains the daily sales of paperback and hardcover books at the same store. The task is to forecast the next four days’ sales for paperback and hardcover books.
+
+```{r warning=FALSE, message=FALSE}
+data("books")
+summary(books)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+head(books)
+```
+
+Plot the series and discuss the main features of the data.
+
+```{r warning=FALSE, message=FALSE}
+autoplot(books) + ggtitle("Daily Book Sales") + xlab("Day") + ylab("Books Sales")
+```
+
+
+```{r warning=FALSE, message=FALSE}
+books[,"Paperback"]
+```
+
+```{r warning=FALSE, message=FALSE}
+autoplot(books[,"Paperback"]) + ggtitle("Plot of Paperback")
+```
+
+
+```{r warning=FALSE, message=FALSE}
+gglagplot(books[,"Paperback"])
+```
+
+
+```{r warning=FALSE, message=FALSE}
+Acf(books[,"Paperback"], lag.max=150)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+books[,"Hardcover"]
+```
+
+
+```{r warning=FALSE, message=FALSE}
+autoplot(books[,"Hardcover"]) + ggtitle("Hardcover Plot")
+```
+
+
+
+```{r warning=FALSE, message=FALSE}
+gglagplot(books[,"Hardcover"])
+```
+
+
+
+```{r warning=FALSE, message=FALSE}
+Acf(books[,"Hardcover"], lag.max=150)
+```
+
+Use the ses() function to forecast each series, and plot the forecasts.
+
+
+```{r warning=FALSE, message=FALSE}
+ses.paperback <- ses(books[, "Paperback"])
+ses.hardcover <- ses(books[, "Hardcover"])
+
+forecast(ses.paperback)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+autoplot(books[, "Paperback"], series = "Paperback") +
+  autolayer(ses.paperback, series = "Paperback") +
+  autolayer(books[, "Hardcover"], series = "Hardcover") +
+  autolayer(ses.hardcover, series = "Hardcover", PI = FALSE) +
+  ylab("Sales Amount") +
+  ggtitle("SES Books Sales")
+```
+
+Compute the RMSE values for the training data in each case.
+
+```{r warning=FALSE, message=FALSE}
+# RMSE for paperback
+ses.paperback.rmse <- sqrt(mean(ses.paperback$residuals^2))
+ses.paperback.rmse
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# RMSE for hardcover
+ses.hardcover.rmse <- sqrt(mean(ses.hardcover$residuals^2))
+ses.hardcover.rmse
+```
+
+
+```{r warning=FALSE, message=FALSE}
+accuracy(ses.paperback)
+accuracy(ses.hardcover)
+```
+
+***RMSE: Root-mean-squared-error of a fitted model - Calculates the root-mean-squared-error (RMSE) for objects of class nls, lm, glm, drc or any other models from which residuals can be extacted.***
+
+## Question 7.6
+
+We will continue with the daily sales of paperback and hardcover books in data set books.
+
+A. Apply Holt’s linear method to the paperback and hardback series and compute four-day forecasts in each case.
+
+
+```{r warning=FALSE, message=FALSE}
+fc_paperback <- ses(books[,1], h=4)
+fc_hardcover <- ses(books[,2], h=4)
+
+#forecast paperback
+forecast(fc_paperback)
+```
+
+```{r warning=FALSE, message=FALSE}
+# holt method
+holt_Paperback <- holt(books[, "Paperback"], h = 4)
+holt_Hardcover <- holt(books[, "Hardcover"], h = 4)
+
+#plot
+a<- autoplot(holt_Paperback) 
+
+b<- autoplot(holt_Hardcover)
+grid.arrange(a, b, nrow = 2)
+```
+
+B. Compare the RMSE measures of Holt’s method for the two series to those of simple exponential smoothing in the previous question. (Remember that Holt’s method is using one more parameter than SES.) Discuss the merits of the two forecasting methods for these data sets.
+
+Holt’s method, RMSE values Paperback
+
+```{r warning=FALSE, message=FALSE}
+# Holt’s method, RMSE values Paperback
+round(accuracy(holt_Paperback)[2], 2)
+```
+
+Holt’s method, RMSE values Hardcover
+
+```{r warning=FALSE, message=FALSE}
+# Holt’s method, RMSE values Hardcover
+round(accuracy(holt_Hardcover)[2], 2) 
+```
+
+C. Compare the forecasts for the two series using both methods. Which do you think is best?
+
+***After comparing both models, Holt looks like the better model. This is after taking the RMSE values in consideration.***
+
+D. Calculate a 95% prediction interval for the first forecast for each series, using the RMSE values and assuming normal errors. Compare your intervals with those produced using ses and holt.
+
+
+***Paperback***
+
+```{r warning=FALSE, message=FALSE}
+s <- sd(fc_paperback$residuals)
+mean_fc <- fc_paperback$mean[1]
+
+# SES, Lower Confidence Interval
+round(mean_fc - (1.96*s), 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# SES, Upper Confidence Interval
+round(mean_fc + (1.96*s), 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+#from model
+#SES, Lower Confidence Interval from formula
+round(forecast(fc_paperback)$lower[1, "95%"],2)
+```
+
+```{r warning=FALSE, message=FALSE}
+# SES, Upper Confidence Interval from formula
+round(forecast(fc_paperback)$upper[1, "95%"], 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+s <- sd(holt_Paperback$residuals)
+mean_fc <- holt_Paperback$mean[1]
+
+# Holt, Lower Confidence Interval
+round(mean_fc - (1.96*s), 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# Holt, Upper Confidence Interval
+round(mean_fc + (1.96*s), 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+#from model
+# Holt, Lower Confidence Interval from formula
+round(forecast(holt_Paperback)$lower[1, "95%"],2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# Holt, Upper Confidence Interval from formula
+round(forecast(holt_Paperback)$upper[1, "95%"], 2)
+```
+
+***After using both ses and holt methods, the Lower and Upper intervals in paperback looks similar***
+
+***Hardcover***
+
+```{r warning=FALSE, message=FALSE}
+s <- sd(fc_hardcover$residuals)
+mean_fc <- fc_hardcover$mean[1]
+
+# SES, Lower Confidence Interval
+round(mean_fc - (1.96*s), 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# SES, Upper Confidence Interval
+round(mean_fc + (1.96*s), 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+#from model
+# SES, Lower Confidence Interval from formula
+round(forecast(fc_hardcover)$lower[1, "95%"],2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# SES, Upper Confidence Interval from formula
+round(forecast(fc_hardcover)$upper[1, "95%"], 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+s <- sd(holt_Hardcover$residuals)
+mean_fc <- holt_Hardcover$mean[1]
+
+# Holt, Lower Confidence Interval
+round(mean_fc - (1.96*s), 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+#from model
+# Holt, Lower Confidence Interval from formula
+round(forecast(holt_Hardcover)$lower[1, "95%"],2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# Holt, Upper Confidence Interval from formula
+round(forecast(holt_Hardcover)$upper[1, "95%"], 2)
+```
+
+***There is a difference in the Lower Confidence Interval but looks similar for Upper Confidence Interval in Hardcover for both SES and Holt methods.***
+
+## Question 7.7
+
+For this exercise use data set eggs, the price of a dozen eggs in the United States from 1900–1993. Experiment with the various options in the holt() function to see how much the forecasts change with damped trend, or with a Box-Cox transformation. Try to develop an intuition of what each argument is doing to the forecasts.
+
+[Hint: use h=100 when calling holt() so you can clearly see the differences between the various options when plotting the forecasts.]
+
+
+```{r warning=FALSE, message=FALSE}
+fc1 <- holt(eggs, h=100)
+fc2 <- holt(eggs, damped=TRUE, h=100)
+fc3 <- holt(eggs, lambda="auto", h=100)
+fc4 <- holt(eggs, damped=TRUE, lambda="auto", h=100)
+
+a<- autoplot(fc1)
+b<- autoplot(fc2)
+c<- autoplot(fc3)
+d<- autoplot(fc4)
+
+grid.arrange(a,b,c,d, nrow = 2)
+```
+
+Which model gives the best RMSE?
+
+```{r warning=FALSE, message=FALSE}
+# RMSE - Holt
+round(accuracy(fc1)[2], 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# RMSE - Holt damped
+round(accuracy(fc2)[2], 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# RMSE - Holt box-cox
+round(accuracy(fc3)[2], 2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# RMSE - Holt damped box-cox
+round(accuracy(fc4)[2], 2)
+```
+
+
+***After analysing the above data, RSME looks similar. Holts with Box-Cox transformation looks good when it comes to low RMSE levels***  
+
+## Question 7.8
+
+Recall your retail time series data (from Exercise 3 in Section 2.10).
+
+```{r warning=FALSE, message=FALSE}
+
+
+retaildata <- read_excel("data/retail.xlsx", skip = 1)
+
+myts <- ts(retaildata[,"A3349335T"],
+  frequency=12, start=c(1982,4))
+autoplot(myts)
+```
+
+A. Why is multiplicative seasonality necessary for this series?
+
+***Seasonality variations are changing as the time increases. Multiplicative Seasonality would be necessary here***
+
+- The general definition of additive or multiplicative seasonality is: level + seasonal indices, or level x seasonal indices. Effectively, with multiplicative seasonality the width of the seasonal pattern is proportional to the level. For additive seasonality it is independent.
+https://otexts.com/fpp2/holt-winters.html
+
+B. Apply Holt-Winters’ multiplicative method to the data. Experiment with making the trend damped.
+
+
+```{r warning=FALSE, message=FALSE}
+fc_myts <- hw(myts, seasonal="multiplicative", h=100)
+fc_myts_d <- hw(myts, damped=TRUE, seasonal="multiplicative", h=100)
+
+a<- autoplot(fc_myts)
+
+b<- autoplot(fc_myts_d)
+
+grid.arrange(a,b, ncol = 2)
+```
+
+C. Compare the RMSE of the one-step forecasts from the two methods. Which do you prefer?
+
+```{r warning=FALSE, message=FALSE}
+# RMSE - Holt
+rh <- round(accuracy(fc_myts)[2], 2)
+rh
+```
+
+
+```{r warning=FALSE, message=FALSE}
+# RMSE - Holt damped
+rhd <- round(accuracy(fc_myts_d)[2], 2)
+rhd
+```
+
+***RMSE - Holt is `r rh` and RMSE - Holt damped is `r rhd`. Both looks similar with slight edge for Hold method ***
+
+D. Check that the residuals from the best method look like white noise.
+
+```{r warning=FALSE, message=FALSE}
+checkresiduals(fc_myts_d)
+```
+
+***There does not appear to have any white noise***
+
+***The residuals are the differences between the fitted model and the data. In a signal-plus-white noise model, if you have a good fit for the signal, the residuals should be white noise. Also ref: https://otexts.com/fpp2/residuals.html***
+
+
+E. Now find the test set RMSE, while training the model to the end of 2010. Can you beat the seasonal naïve approach from Exercise 8 in Section 3.7?
+
+```{r warning=FALSE, message=FALSE}
+myts_train <- window(myts, end = c(2010, 12))
+myts_test <- window(myts, start = 2011)
+
+myts_train_d <- hw(myts_train, damped = TRUE, seasonal = "multiplicative")
+```
+
+1. RMSE - Holt damped
+
+```{r warning=FALSE, message=FALSE}
+accuracy(myts_train_d, myts_test)[,2]
+```
+
+
+```{r warning=FALSE, message=FALSE}
+myts_train_sn <- snaive(myts_train, h=100)
+```
+
+2. RMSE - naïve approach
+
+```{r warning=FALSE, message=FALSE}
+accuracy(myts_train_sn,myts_test)[,2]
+```
+
+***Looking at the numbers above, the Holt-Winter’s Multiplicative Damped method outperformed seasonal naive forecast.***
+
+
+## Question 7.9
+
+For the same retail data, try an STL decomposition applied to the Box-Cox transformed series, followed by ETS on the seasonally adjusted data. How does that compare with your best previous forecasts on the test set?
+
+
+```{r warning=FALSE, message=FALSE}
+retaildata <- read_excel("data/retail.xlsx", skip = 1)
+retail_ts <- ts(retaildata[, "A3349873A"], frequency = 12, start = c(1982, 4))
+autoplot(retail_ts) + ylab("Retail Sales")
+
+# Window doesn't return a ts object so we need to redefine
+retail_train <- ts(as.vector(retail_ts), start=c(1982,4), end=c(2010,12), frequency = 12)
+# Get the optimal lambda
+lambda <- BoxCox.lambda(retail_train)
+# Preform a Box-Cox transformation
+bc_retail_train <- BoxCox(retail_train, lambda = lambda)
+# Preform the STL decomposition
+stl_retail_train <- mstl(bc_retail_train)
+## Create a seasonally adjusted series
+sa_stl_retail_train <- stl_retail_train[,1] - stl_retail_train[,3]
+# Reverse the Box-Cox transformation
+sa_retail_train <- InvBoxCox(sa_stl_retail_train, lambda = lambda)
+# Check the output
+autoplot(retail_train) + autolayer(sa_retail_train)
+```
+
+```{r warning=FALSE, message=FALSE}
+get_retail_test_rmse <- function(model){
+  accuracy(model, retail_test)[4]
+}
+
+retail_train <- window(retail_ts, end = c(2010, 12))
+retail_test <- window(retail_ts, start = 2011)
+
+Model <- c("Seasonal Naïve (Baseline)", 
+           "SES",
+           "Holt's Method",
+           "Damped Holt's Method",
+           "Holt-Winters Additive",
+           "Holt-Winters Multiplicative",
+           "Damped Holt-Winters Additive",
+           "Damped Holt-Winters Multiplicative")
+
+RMSE <- c(get_retail_test_rmse(snaive(retail_train)), 
+          get_retail_test_rmse(ses(retail_train)),
+          get_retail_test_rmse(holt(retail_train)),
+          get_retail_test_rmse(holt(retail_train, damped = TRUE)),
+          get_retail_test_rmse(hw(retail_train, seasonal = "additive")),
+          get_retail_test_rmse(hw(retail_train, seasonal = "multiplicative")),
+          get_retail_test_rmse(hw(retail_train, seasonal = "additive", damped = TRUE)),
+          get_retail_test_rmse(hw(retail_train, seasonal = "multiplicative", damped = TRUE)))
+
+rmse_df <- data.frame(Model, RMSE) 
+```
+
+```{r warning=FALSE, message=FALSE}
+ets_retail_train <- forecast(sa_retail_train)
+
+rmse_df %>%
+  mutate(Model = as.character(Model)) %>%
+  rbind(c("ETS on STL Seasonally-Adjusted data", get_retail_test_rmse(ets_retail_train))) %>%
+  kable() %>%
+  kable_styling()
+```
+
+***From the above chart we see ETS model did not perform better than the Naïve model***

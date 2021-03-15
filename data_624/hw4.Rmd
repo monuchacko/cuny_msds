@@ -1,0 +1,233 @@
+---
+title: "DATA 624 Homework 4"
+author: "Monu Chacko"
+date: "3/7/2021"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r warning=FALSE, message=FALSE}
+library(mlbench) 
+library(psych)
+library(e1071)
+library(ggplot2)
+library(knitr)
+library(mlbench)
+library(reshape2)
+library(corrplot)
+library(caret)
+library(DMwR)
+library(GGally)
+```
+
+
+## Problem 3.1
+
+The UC Irvine Machine Learning Repository6 contains a data set related to glass identification. The data consist of 214 glass samples labeled as one of seven class categories. There are nine predictors, including the refractive index and percentages of eight elements: Na, Mg, Al, Si, K, Ca, Ba, and Fe.
+
+### About the Dataset
+
+**About the dataset**
+
+This is a Glass Identification Data Set from UCI. It contains 10 attributes including id. The response is glass type(discrete 7 values)
+
+**Attribute Information:**
+
+1. Id number: 1 to 214
+2. RI: refractive index
+3. Na: Sodium (unit measurement: weight percent in corresponding oxide, as are attributes 4-10)
+4. Mg: Magnesium
+5. Al: Aluminum
+6. Si: Silicon
+7. K: Potassium
+8. Ca: Calcium
+9. Ba: Barium
+10. Fe: Iron
+11. Type of glass: (class attribute)
+-- 1 building_windows_float_processed
+-- 2 building_windows_non_float_processed
+-- 3 vehicle_windows_float_processed
+-- 4 vehicle_windows_non_float_processed (none in this database)
+-- 5 containers
+-- 6 tableware
+-- 7 headlamps
+
+### Examine Data
+
+```{r warning=FALSE, message=FALSE}
+data(Glass)
+kable(head(Glass))
+str(Glass)
+describe(Glass)
+```
+
+a. Using visualizations, explore the predictor variables to understand their distributions as well as the relationships between predictors.
+
+### Hostogram
+
+```{r warning=FALSE, message=FALSE}
+ggplot(melt(Glass, id.vars=c('Type')), aes(x=value)) + 
+  geom_histogram(colour = "gray", bins=50, alpha = 0.5, position = "identity") + 
+  ggtitle("Histogram") +
+  facet_wrap(~variable, scale="free") 
+```
+
+### Density
+
+```{r warning=FALSE, message=FALSE}
+ggplot(melt(Glass, id.vars=c('Type')), aes(x=value)) + 
+  geom_density(colour = "gray", alpha = 0.5, position = "identity") + 
+  ggtitle("Density Plot Companision") +
+  facet_wrap(~variable, scale="free") 
+```
+
+### Skewness
+
+```{r warning=FALSE, message=FALSE}
+skewRI <- skewness(Glass$RI)
+skewNa <- skewness(Glass$Na)
+skewMg <- skewness(Glass$Mg)
+skewAl <- skewness(Glass$Al)
+skewSi <- skewness(Glass$Si)
+skewK <- skewness(Glass$K)
+skewCa <- skewness(Glass$Ca)
+skewBa <- skewness(Glass$Ba)
+skewFe <- skewness(Glass$Fe)
+TypeValue <- c("RI", "Na", "Mg", "Al", "Si", "K", "Ca", "Ba", "Fe")
+Skewness <- c(skewRI, skewNa, skewMg, skewAl, skewSi, skewK, skewCa, skewBa, skewFe)
+ds1 <- data.frame(TypeValue, Skewness)
+kable(ds1)
+```
+
+### Pairs Plot
+
+```{r warning=FALSE, message=FALSE}
+pairs.panels(Glass[,-10])
+```
+
+b. Do there appear to be any outliers in the data? Are any predictors skewed?
+
+***From the visualizations and data above we can see the shape of data is different for each type. The density plot show us the skewness of these data. For example Na and Al seems to be normal but Ba, Fe, Ca etc are left heavy. The Skewness table shows the skew values***
+
+### Predictor Variable Outlier
+
+```{r warning=FALSE, message=FALSE}
+boxplot(Glass["RI"],plot=FALSE)$out
+boxplot(Glass["Na"],plot=FALSE)$out
+boxplot(Glass["Mg"],plot=FALSE)$out
+boxplot(Glass["Al"],plot=FALSE)$out
+boxplot(Glass["Si"],plot=FALSE)$out
+boxplot(Glass["K"],plot=FALSE)$out
+boxplot(Glass["Ca"],plot=FALSE)$out
+boxplot(Glass["Ba"],plot=FALSE)$out
+boxplot(Glass["Fe"],plot=FALSE)$out
+```
+
+
+c. Are there any relevant transformations of one or more predictors that might improve the classification model?
+
+### Transformation
+
+***To improve the model we can use transformation like Box-Cox for highly skewed variables and Normalizing the variables by centering and scaling. Along with these techniques we should take a look at the outliers and try to remove them***
+
+```{r warning=FALSE, message=FALSE}
+apply(Glass[,-10], 2, BoxCoxTrans)
+```
+
+
+
+## Problem 3.2
+
+The soybean data can also be found at the UC Irvine Machine Learning Repository. Data were collected to predict disease in 683 soybeans. The 35 predictors are mostly categorical and include information on the environmental conditions (e.g., temperature, precipitation) and plant conditions (e.g., left spots, mold growth). The outcome labels consist of 19 distinct classes.
+
+### Examine Data
+
+```{r warning=FALSE, message=FALSE}
+data(Soybean)
+```
+
+```{r warning=FALSE, message=FALSE}
+kable(head(Soybean, 10))
+```
+
+```{r warning=FALSE, message=FALSE}
+str(Soybean)
+```
+
+a. Investigate the frequency distributions for the categorical predictors. Are any of the distributions degenerate in the ways discussed earlier in this chapter?
+
+```{r warning=FALSE, message=FALSE}
+ggplot(melt(Soybean, id.vars=c('Class')), aes(x=value)) + 
+  geom_histogram(stat="count") + 
+  facet_wrap(~variable, scale="free")
+```
+
+***We can use the nearZeroVar function in the caret package to identify the predictors with degenerate distributions.***
+
+```{r warning=FALSE, message=FALSE}
+nzv.cols <- nearZeroVar(Soybean)
+nzv.out <- nearZeroVar(Soybean, saveMetrics=TRUE)[nzv.cols, ]
+nzv.prop.high <- apply(Soybean, 2, function(x) max(table(x)) / length(x))[nzv.cols]
+
+summary(Soybean[ , nzv.cols])
+```
+
+
+***Frequency Distribution***
+
+```{r warning=FALSE, message=FALSE}
+lapply(apply(Soybean[-1], 2, table), kable)
+```
+
+
+### Missing data problem
+
+b. Roughly 18% of the data are missing. Are there particular predictors that are more likely to be missing? Is the pattern of missing data related to the classes?
+
+***Missing Values %***
+
+```{r warning=FALSE, message=FALSE}
+1-(sum(complete.cases(Soybean))/nrow(Soybean))
+```
+
+***Complete cases proportion***
+
+```{r warning=FALSE, message=FALSE}
+1 - sum(complete.cases(Soybean)) / nrow(Soybean)
+```
+
+```{r warning=FALSE, message=FALSE}
+sum(is.na(Soybean)) / ncol(Soybean) / nrow(Soybean)
+```
+
+***Missing values per column***
+```{r warning=FALSE, message=FALSE}
+the.na.Soybean <- apply(Soybean, 2, function(x){sum(is.na(x))})
+the.na.Soybean
+```
+
+***From the above data we see missing data in nearly all data. We also see nearly 18% where missing data can be seen***
+
+   
+### Solution to Missing data problem
+   
+c. Develop a strategy for handling missing data, either by eliminating predictors or imputation.
+
+***There are many strategies that can be used to solve missing data problem. There are many data with NA values. For example phytophthora-rot data can be solved using knnImputation package. After that we look at how many NA's are still there and if it make sense to use dropna. We have to be careful here because it should not change the meaning of what we are trying to achieve.***
+
+```{r warning=FALSE, message=FALSE}
+kable(head(Soybean[Soybean$Class=='phytophthora-rot',],5))
+
+imputed_data <- knnImputation(Soybean,k=10)
+kable(head(imputed_data,5))
+```
+
+
