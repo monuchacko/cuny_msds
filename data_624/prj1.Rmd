@@ -1,0 +1,540 @@
+---
+title: "DATA 624 Project 1"
+author: "Monu Chacko"
+date: "4/8/2021"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r warning=FALSE, message=FALSE}
+library("readxl")
+library("dplyr")
+library("tidyr")
+library("plotly")
+library("forecast")
+library("fpp2")
+library("lubridate")
+library("knitr")
+```
+
+
+## Part A – ATM Forecast
+
+***Here we load the data and clean it up. This includes removing NA's, putting correct data formats etc.***
+
+```{r warning=FALSE, message=FALSE}
+atmdata <- read_xlsx("data/ATM624Data.xlsx")
+print(str(atmdata))
+
+atmdata$DATE = as.Date(atmdata$DATE, origin = "1899-12-30")
+atmdata = atmdata[!is.na(atmdata$ATM),]
+
+kable(head(atmdata))
+kable(summary(atmdata))
+```
+
+***We can compare the data using histogram. This will show us what time of data we are dealing with.***
+
+```{r warning=FALSE, message=FALSE}
+ggplot(atmdata) + geom_histogram(aes(x = Cash)) + 
+    facet_wrap(~ ATM, scales = "free") + 
+    labs(title = "Histogram of Cash by ATM")
+```
+
+***From the above histogram it is clear we have some issues with ATM 3 and 4. ATM 1 and 2 seem okay.***
+
+```{r warning=FALSE, message=FALSE}
+atm1 = atmdata %>% filter(ATM=="ATM1") %>% replace_na(list(Cash=0)) %>% select(-DATE,-ATM) %>%  ts(start=c(2009,as.numeric(format(as.Date("2009-05-01"), "%j"))), frequency = 365)
+kable(head(atm1))
+```
+
+
+```{r warning=FALSE, message=FALSE}
+atm2 = atmdata %>% filter(ATM=="ATM2") %>% replace_na(list(Cash=0)) %>% select(-DATE,-ATM) %>%  ts(start=c(2009,as.numeric(format(as.Date("2009-05-01"), "%j"))), frequency = 365)
+kable(head(atm2))
+```
+
+```{r warning=FALSE, message=FALSE}
+atm3 = atmdata %>% filter(ATM=="ATM3",Cash>0) %>% replace_na(list(Cash=0)) %>%select(-DATE,-ATM) %>%   ts(start=c(2010,as.numeric(format(as.Date("2010-04-28"), "%j"))),end=c(2010,as.numeric(format(as.Date("2010-04-30"), "%j"))) ,frequency = 365)
+kable(head(atm3))
+```
+
+```{r warning=FALSE, message=FALSE}
+atm4 = atmdata %>% filter(ATM=="ATM4") %>% replace_na(list(Cash=0)) %>%select(-DATE,-ATM) %>%  ts(start=c(2009,as.numeric(format(as.Date("2009-05-01"), "%j"))), frequency = 365)
+kable(head(atm4))
+```
+
+```{r warning=FALSE, message=FALSE}
+autoplot(atm1) +
+  labs(title = "Cash withdrawl ATM 1",
+       subtitle = "5/1/2009 - 4/30/2010",
+       x = "Date",y = "Cash")
+```
+
+```{r warning=FALSE, message=FALSE}
+print(atmdata)
+```
+
+```{r warning=FALSE, message=FALSE}
+autoplot(atm2) +
+  labs(title = "Cash withdrawl ATM 2", subtitle = "5/1/2009 - 4/30/2010",
+       x = "Date",y = "Cash")
+```
+
+```{r warning=FALSE, message=FALSE}
+autoplot(atm3) +
+  labs(title = "Cash withdrawl ATM3",
+       subtitle = "5/1/2009 - 4/30/2010",
+       x = "Date",y = "Cash") 
+```
+
+```{r warning=FALSE, message=FALSE}
+autoplot(atm4) +
+  labs(title = "Cash withdrawl ATM4",
+       subtitle = "5/1/2009 - 4/30/2010",
+       x = "Date",y = "Cash") 
+```
+
+***Comparing all 4 charts we can visually identify the underlying data. ATM 1 & 2 seems to have similar pattern. ATM 3 has some issues. Looks like there could be problems with the data like missing values etc. ATM 4 seems okay except for the spike. This datapoint has to be further investigated.***
+
+### ATM 1
+
+```{r warning=FALSE, message=FALSE}
+ATM1_Train = atmdata %>% filter(ATM=="ATM1")%>%replace_na(list(Cash=0)) %>% select(-DATE,-ATM) %>%  ts(start=c(2009,as.numeric(format(as.Date("2009-05-01"), "%j"))),end=c(2010,as.numeric(format(as.Date("2010-03-30"), "%j"))), frequency = 365)
+
+ATM1_Train
+```
+
+```{r warning=FALSE, message=FALSE}
+ATM1_Test = atmdata %>% filter(ATM=="ATM1")%>%replace_na(list(Cash=0)) %>%select(-DATE,-ATM) %>%  ts(start=c(2010,as.numeric(format(as.Date("2010-03-31"), "%j"))),end=c(2010,as.numeric(format(as.Date("2010-04-30"), "%j"))), frequency = 365)
+ATM1_Test
+```
+
+
+```{r warning=FALSE, message=FALSE}
+ggtsdisplay(atm1)
+```
+
+***Residuals are not normally distributed. The model did not pass the Ljung-Box test. We have to take a look at the intervals. It may not require a lambda value. The model chosen by the function is ETS(A,N,N)***
+
+
+```{r warning=FALSE, message=FALSE}
+Model1_ATM1 = ets(atm1,lambda=BoxCox.lambda(atm1))
+checkresiduals(Model1_ATM1)
+```
+
+
+***The AIC is 4800.063, AICc is 4800.129 and BIC is 4811.763. The RMSE is 37.23543***
+
+```{r warning=FALSE, message=FALSE}
+summary(Model1_ATM1)
+```
+
+***The ETS model fails to capture data trend***
+
+```{r warning=FALSE, message=FALSE}
+autoplot(forecast(Model1_ATM1, 31))
+```
+
+
+***Model 2 is a non-seasonal ARIMA(2,0,2) with 2 lag differences no ordinary AR lags and 2 Ma lags. The model fails the Ljung-Box test, and the ACF test indicates no white noise and residual are not normally distributed around zero.***
+
+```{r warning=FALSE, message=FALSE}
+Model2_ATM1 =auto.arima(atm1,lambda=BoxCox.lambda(atm1))
+checkresiduals(Model2_ATM1)
+```
+
+***From the summary we see AIC is 3665.1, AICc is 3665.34 and BIC is 3688.5. The Root Mean Squared Error (RMSE) is 36.0517 ***
+
+```{r warning=FALSE, message=FALSE}
+summary(Model2_ATM1)
+```
+
+```{r warning=FALSE, message=FALSE}
+autoplot(forecast(Model2_ATM1, 31))
+```
+
+***Seen how the two previous models failed we group the series based on weeks. This allowed us to apply a lambda value and convert to white noise.***
+
+```{r warning=FALSE, message=FALSE}
+ATM1_Weekly = ts(atm1, frequency = 7)
+
+ggtsdisplay(ATM1_Weekly)
+```
+
+
+***The model given is ARIMA(0,0,0)(2,0,0)[7] with non-zero mean with 2 seasonal diferencing. The Ljung-Box test fails and the residuals are not normally distributed, ACF showed improvement.***
+
+
+```{r warning=FALSE, message=FALSE}
+Model3_ATM1_Weekly = auto.arima(ATM1_Weekly,lambda=BoxCox.lambda(ATM1_Weekly))
+
+checkresiduals(Model3_ATM1_Weekly)
+```
+
+***As you see in the summary the AIC is 3665.1, AICc is 3665.34 and BIC is 3688.5. The RMSE is 36.0517***
+
+```{r warning=FALSE, message=FALSE}
+summary(Model3_ATM1_Weekly)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+autoplot(forecast(Model3_ATM1_Weekly, 31))
+```
+
+
+```{r warning=FALSE, message=FALSE}
+ATM1_Forecast = forecast(Model3_ATM1_Weekly, 31, level = 95)
+
+F_ATM1 =data_frame(DATE = rep(max(atmdata$DATE) + 1:31),
+           ATM = rep("ATM1"),
+           Cash = as.numeric( ATM1_Forecast$mean))  
+```
+
+
+### ATM 2
+
+***ARIMA(3,1,0)(2,0,0)[7] was applied 3 ordinary lags, 1 differenced and 2 seasonal lags. The model fails Ljung-Box test and residuals do not appear typically distributed.***
+
+```{r warning=FALSE, message=FALSE}
+ATM2_Weekly = ts(atm2, frequency = 7)
+
+ggtsdisplay(ATM2_Weekly)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+Model1_ATM2_Weekly =auto.arima(ATM2_Weekly,lambda=BoxCox.lambda(ATM2_Weekly))
+checkresiduals(Model1_ATM2_Weekly)
+```
+
+***Summary reveals the AIC is 2329.29, AICc is 2329.53 and BIC is 2352.57. The RMSE is 24.36601***
+
+```{r warning=FALSE, message=FALSE}
+summary(Model1_ATM2_Weekly)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+autoplot(forecast(Model1_ATM2_Weekly, 31, level = 95))
+```
+
+
+```{r warning=FALSE, message=FALSE}
+ATM2_Forecast = forecast(Model1_ATM2_Weekly, 31, level = 95)
+
+F_ATM2 =data_frame(DATE = rep(max(atmdata$DATE) + 1:31),
+           ATM = rep("ATM2"),
+           Cash = as.numeric( ATM2_Forecast$mean) )
+```
+
+### ATM 3
+
+***Model 3 was filtered with zero due to erroneous forecasting values.***
+
+```{r warning=FALSE, message=FALSE}
+ggtsdisplay(atm3)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+ATM3_Forecast_fit = meanf(atm3, 31, level = 95)
+autoplot(ATM3_Forecast_fit)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+checkresiduals(ATM3_Forecast_fit)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+summary(ATM3_Forecast_fit)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+F_ATM3 =data_frame(DATE = rep(max(atmdata$DATE) + 1:31),
+           ATM = rep("atm3"),
+           Cash = as.numeric( ATM3_Forecast_fit$mean))
+```
+
+### ATM 4
+
+***The model was ARIMA(0,0,0)(1,0,0)[7] with non-zero mean based on RMSE. Will use the second model.***
+
+```{r warning=FALSE, message=FALSE}
+ATM4_Weekly = ts(atm4, frequency = 7)
+ggtsdisplay(ATM4_Weekly)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+Model1_ATM4_Weekly =auto.arima(ATM4_Weekly,lambda=BoxCox.lambda(ATM4_Weekly))
+
+checkresiduals(Model1_ATM4_Weekly)
+```
+
+***Summary reveals the AIC is 979.18, AICc is 979.29 and BIC is 94.78. The RMSE is 678.9958***
+
+
+```{r warning=FALSE, message=FALSE}
+summary(Model1_ATM4_Weekly)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+autoplot(forecast(Model1_ATM4_Weekly, 31, level = 95))
+```
+
+
+```{r warning=FALSE, message=FALSE}
+ATM4_Forecast = forecast(Model1_ATM4_Weekly, 31, level = 95)
+```
+
+***Model 2 is an ETS(M,N,A) multiplicative errors and there is no trend and additive seasonality. The model fails Ljung-Box test, but appear to have residual around 0 somewhat normal.***
+
+
+```{r warning=FALSE, message=FALSE}
+Model2_ATM4_Weekly = ets(ATM4_Weekly)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+checkresiduals(Model2_ATM4_Weekly)
+```
+
+***Summary reveals the AIC is 6690.624, AICc is 6691.246 and BIC is 6729.623. The RMSE is 645.1182***
+
+```{r warning=FALSE, message=FALSE}
+summary(Model2_ATM4_Weekly)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+autoplot(forecast(Model2_ATM4_Weekly, 31, level = 95))
+```
+
+
+```{r warning=FALSE, message=FALSE}
+ATM4_Forecast_ets = forecast(Model2_ATM4_Weekly, 31, level = 95)
+
+F_ATM4 =data_frame(DATE = rep(max(atmdata$DATE) + 1:31),
+           ATM = rep("ATM4"),
+           Cash = as.numeric( ATM4_Forecast_ets$mean))
+
+ATM_Fs = rbind(F_ATM1,F_ATM2,F_ATM3,F_ATM4)
+write.csv(ATM_Fs,"Data/Forecast_ATM.csv")
+```
+
+
+## PART B - Customer Forecast
+
+***The NA values were replaced with the median value. Here ARIMA and ETS with BoxCox of 0.082 was used***
+
+```{r warning=FALSE, message=FALSE}
+powerdata <- read_xlsx("data/ResidentialCustomerForecastLoad-624.xlsx")
+sum(is.na(powerdata))
+```
+
+
+```{r warning=FALSE, message=FALSE}
+powerdata$KWH[is.na(powerdata$KWH)]= median(powerdata$KWH,na.rm = TRUE)
+Power_ts_All =ts(powerdata[,"KWH"],start = c(1998,1),frequency = 12)
+```
+
+***Split dataset into training and test set.***
+
+```{r warning=FALSE, message=FALSE}
+Power_ts_Train = ts(powerdata[,"KWH"],start = c(1998,1),end=c(2012,12),frequency = 12)
+Power_ts_Test = ts(powerdata[,"KWH"],start = c(2013,1),end=c(2013,12),frequency = 12)
+autoplot(Power_ts_All) + labs(title = "Monthly Power Usage Jan 1998 Dec 2013")
+```
+
+***We can see seasonality form the plot. However in 2010 there is a dip. Apart from that dip the trend was consistent***
+
+```{r warning=FALSE, message=FALSE}
+ggseasonplot(Power_ts_All)
+```
+
+
+***ggtsdisplay - Plots a time series along with its acf and either its pacf, lagged scatterplot or spectrum.***
+
+```{r warning=FALSE, message=FALSE}
+ggtsdisplay(Power_ts_Train)
+```
+
+***ARIMA(1,0,0)(2,0,0)[12] ordinary lag of 1 and 2 seasonal lags was used***
+
+```{r warning=FALSE, message=FALSE}
+Power_Model1 =auto.arima(Power_ts_Train,lambda=BoxCox.lambda(Power_ts_Train))
+```
+
+
+***The residual appears normal residuals mostly around 0, and Ljung-Box test had a p-value = 0.7106 which indicated white noise.***
+
+```{r warning=FALSE, message=FALSE}
+checkresiduals(Power_Model1)
+```
+
+***Summary reveals the AIC is 436.79, AICc is 437.13 and BIC is 452.75. The RMSE is 1088497***
+
+```{r warning=FALSE, message=FALSE}
+summary(Power_Model1)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+autoplot(forecast(Power_Model1, 12, level = 95))+autolayer(Power_ts_Test,series = "Test Data")
+```
+
+
+```{r warning=FALSE, message=FALSE}
+Power_Model1_Forecast = forecast(Power_Model1, 12, level = 95)
+```
+
+
+***Here we look for lower RMSE. In the test set we see a RMSE of 1126090***
+
+
+```{r warning=FALSE, message=FALSE}
+accuracy(Power_Model1_Forecast,Power_ts_Test)
+```
+
+***Model 2 is based on ets the model returned is ETS(A,N,A) with Additive errors no trend and additive seasonality. The Ljung-Box test has a p-value = 0.1249, ACF and residuals seem normally distributed.***
+
+```{r warning=FALSE, message=FALSE}
+Power_Model2 =ets(Power_ts_Train,lambda=BoxCox.lambda(Power_ts_Train))
+checkresiduals(Power_Model2)
+```
+
+
+***Summary shows the AIC is 824.2822, AICc is 827.2091 and BIC is 872.1766. The RMSE is 876009.5***
+
+
+```{r warning=FALSE, message=FALSE}
+summary(Power_Model2)
+```
+
+***Compare training and test model data ***
+
+
+```{r warning=FALSE, message=FALSE}
+autoplot(forecast(Power_Model2, 12, level = 95))+autolayer(Power_ts_Test,series = "Test Data")
+```
+
+
+```{r warning=FALSE, message=FALSE}
+Power_Model2_Forecast = forecast(Power_Model2, 12, level = 95)
+```
+
+***RMSE for the test data is 1115408.3***
+
+
+```{r warning=FALSE, message=FALSE}
+accuracy(Power_Model2_Forecast,Power_ts_Test)
+```
+
+***The first model has RMSE lower score and has better prediction. We are looking for lower scores. I will pick the first model.*** 
+
+
+```{r warning=FALSE, message=FALSE}
+powerdf = data.frame(Date = paste0(month.abb,"-2014"),
+           KWH = as.numeric(Power_Model1_Forecast$mean) )
+write.csv(powerdf,"/Data/Power_Forecast2014.csv")
+```
+
+## PART C - Waterflow
+
+```{r warning=FALSE, message=FALSE}
+w1 = read_excel("Data/Waterflow_Pipe1.xlsx",col_types =c("date", "numeric"))
+w2 = read_excel("Data/Waterflow_Pipe2.xlsx",col_types =c("date", "numeric"))
+colnames(w1)= c("date_time","WaterFlow")
+colnames(w2)= c("Date_Time","WaterFlow")
+
+Waterdf= w1 %>% mutate(Date_Time = lubridate::round_date(date_time,"hour") ) %>% select(Date_Time,WaterFlow) %>% bind_rows(w2) %>% group_by(Date_Time) %>% summarize(WaterFlowF = mean(WaterFlow, na.rm = T))
+```
+
+***Create time series with a frequency of 24 to simulate hourly other forms frequencies and times were tested. We will split the data into training and test sets. We will examine the complete time series data and proceed to view the ts display.***
+
+
+```{r warning=FALSE, message=FALSE}
+Water_ts = ts(Waterdf$WaterFlowF,frequency = 24)
+```
+
+```{r warning=FALSE, message=FALSE}
+autoplot(Water_ts)
+```
+
+***The ts ACF plot reveals that correlations are not random and that the time series is not white noise and can be used to forecast future values.***
+
+
+```{r warning=FALSE, message=FALSE}
+ggtsdisplay(Water_ts)
+```
+
+***The model we ran was ARIMA(0,1,1). The Arima model has been differenced once, and one past error has been used. We passed lambda -0.82 simulating an inverse. The residuals are close to zero with few outliers.***
+
+
+```{r warning=FALSE, message=FALSE}
+Water_Model1 =auto.arima(Water_ts,lambda=BoxCox.lambda(Water_ts),stepwise = FALSE)
+
+checkresiduals(Water_Model1)
+```
+
+***Summary shows the AIC is -3270.77, AICc is -3270.76 and BIC is -3260.96. The RMSE is 16.73475***
+
+
+```{r warning=FALSE, message=FALSE}
+summary(Water_Model1)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+Water_Model1_Forecast = forecast(Water_Model1, 168, level=95)
+
+autoplot(forecast(Water_Model1, 168, level = 95))
+```
+
+
+***Model two consist of an ets model. The Ljung-Box test identifies white noise residuals close to zero and some random autocorrelations. The model selected was ETS(A,N,N) with additive errors no seasonality and no trend. AICc 798.2221 is and RMSE is 16.76823.***
+
+
+```{r warning=FALSE, message=FALSE}
+Water_Model2 = ets(Water_ts,lambda=BoxCox.lambda(Water_ts))
+checkresiduals(Water_Model2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+summary(Water_Model2)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+autoplot(forecast(Water_Model2, 168, level = 95))
+```
+
+
+```{r warning=FALSE, message=FALSE}
+Water_Model2_Forecast = forecast(Water_Model2, 168, level=95)
+```
+
+
+***The first model has better RMSE and AICc and is a better choice.***
+
+```{r warning=FALSE, message=FALSE}
+Water_csv= data_frame(Date_Time = max(Waterdf$Date_Time) + lubridate::hours(1:168),
+           WaterFlowF = as.numeric( Water_Model1_Forecast$mean) )
+
+write.csv(Water_csv,"Data/Water_ForecastWeek.csv")
+```
