@@ -1,0 +1,358 @@
+---
+title: "DATA 624 Homework 8"
+author: "Monu Chacko"
+date: "4/24/2021"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+library(ggplot2)
+library(AppliedPredictiveModeling)
+library(magrittr)
+library(caret)
+library(tidyr)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+library(mlbench)
+library(kernlab)
+library(lattice)
+library(earth)
+library(doParallel)
+
+registerDoParallel(cores=4)
+transparentTheme(trans = .4)
+```
+
+***Nonlinear Regression Models***
+
+## Exercise 7.2
+
+Friedman (1991) introduced several benchmark data sets create by simulation. One of these simulations used the following nonlinear equation to create data:
+
+$$y=10sin(\pi { x }_{ 1 }{ x }_{ 2 })+20{ ({ x }_{ 3 }-0.5) }^{ 2 }+10{ x }_{ 4 }+5{ x }_{ 5 }+N{ (0,{ \sigma }^{ 2 }) }$$
+
+where the x values are random variables uniformly distributed between [0,1] (there are also 5 other non-informative variables also created in the simulation). The package mlbench contains a function called mlbench.friedman1 that simulates these data:
+ 
+```{r warning=FALSE, message=FALSE}
+set.seed(200)
+tr_data <- mlbench.friedman1(200, sd = 1)
+```
+
+***Organize data and view plot***
+
+```{r warning=FALSE, message=FALSE}
+tr_data$x <- data.frame(tr_data$x)
+```
+
+```{r warning=FALSE, message=FALSE}
+featurePlot(x = tr_data$x, y = tr_data$y, plot = "scatter",
+            type = c("p", "smooth"), span = .5,
+            layout = c(3, 1))
+```
+
+***Simulate test set to estimate performance***
+
+```{r warning=FALSE, message=FALSE}
+tst_data <- mlbench.friedman1(5000, sd = 1)
+tst_data$x <- data.frame(tst_data$x)
+```
+
+***The preProcess class can be used for many operations on predictors, including centering and scaling. The function preProcess estimates the required parameters for each operation and predict.preProcess is used to apply them to specific data sets. This function can also be interfaces when calling the train function.***
+
+
+```{r warning=FALSE, message=FALSE}
+knnModel <- train(x = tr_data$x,
+                  y = tr_data$y,
+                  method = "knn",
+                  preProcess = c("center", "scale"),
+                  tuneLength = 10)
+knnModel
+```
+
+***The function postResample can be used to estimate the root mean squared error (RMSE), simple R2, and the mean absolute error (MAE) for numeric outcomes.***
+
+```{r warning=FALSE, message=FALSE}
+knnPred <- predict(knnModel, newdata = tst_data$x)
+postResample(pred = knnPred, obs = tst_data$y)
+```
+
+Which models appear to give the best performance? Does MARS select the informative predictors (those named X1-X5)?
+
+
+### Neural Network
+
+```{r warning=FALSE, message=FALSE}
+## The predictors cutoff is 0.75
+findCorrelation(cor(tr_data$x), cutoff = .75)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+nnetGrid <- expand.grid(size = c(1:10),
+                        decay = c(0, 0.01, 0.1),
+                        bag = FALSE)
+ctrl <- trainControl(method = "cv")
+nnetTune <- train(tr_data$x, tr_data$y,
+                  method = "avNNet",
+                  tuneGrid = nnetGrid,
+                  trControl = ctrl,
+                  preProcess = c("center", "scale"),
+                  linout = TRUE,
+                  trace = FALSE,
+                  MaxNWts = 10 * (ncol(tr_data$x) + 1) + 10 + 1,
+                  maxit = 500
+                  )
+nnetTune
+```
+
+
+
+```{r warning=FALSE, message=FALSE}
+nnetPred <- predict(nnetTune, newdata = tst_data$x)
+postResample(pred = nnetPred, obs = tst_data$y)
+```
+
+### MARS
+
+***Multivariate Adaptive Regression Splines***
+
+```{r warning=FALSE, message=FALSE}
+marsGrid <- expand.grid(.degree = 1:2, .nprune = 2:38)
+marsTuned <- train(tr_data$x, tr_data$y,
+                   method = "earth",
+                   tuneGrid = marsGrid,
+                   trControl = ctrl)
+marsTuned
+```
+
+
+```{r warning=FALSE, message=FALSE}
+varImp(marsTuned)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+marsPred <- predict(marsTuned, newdata = tst_data$x)
+postResample(pred = marsPred, obs = tst_data$y)
+```
+
+### SVM
+
+***Support Vector Machines***
+
+```{r warning=FALSE, message=FALSE}
+svmRTuned <- train(tr_data$x, tr_data$y,
+                   method = "svmRadial",
+                   preProcess = c("center", "scale"),
+                   tuneLength = 15,
+                   trControl = ctrl)
+svmRTuned
+```
+
+
+```{r warning=FALSE, message=FALSE}
+svmRPred <- predict(svmRTuned, newdata = tst_data$x)
+postResample(pred = svmRPred, obs = tst_data$y)
+```
+
+### Summary
+
+MARS model appears to give the best performance as evident from RMSE value in the table below.
+
+```{r warning=FALSE, message=FALSE}
+rbind(
+  "mars" = postResample(pred = marsPred, obs = tst_data$y),
+  "svm" = postResample(pred = svmRPred, obs = tst_data$y),
+  "net" = postResample(pred = nnetPred, obs = tst_data$y),
+  "knn" = postResample(pred = knnPred, obs = tst_data$y)
+) %>%
+  kable() %>%
+    kable_styling()
+```
+
+The MARS model does select the informative predictors (those named X1-X5) as shown by the variable importance table (varImp) below.
+
+```{r warning=FALSE, message=FALSE}
+varImp(marsTuned)
+```
+
+## Exercise 7.5
+
+Exercise 6.3 describes data for a chemical manufacturing process. Use the same data imputation, data splitting, and pre-processing steps as before and train several nonlinear regression models.
+
+
+### Pre-Processing
+
+```{r warning=FALSE, message=FALSE}
+data("ChemicalManufacturingProcess")
+
+preP <- preProcess(ChemicalManufacturingProcess, 
+                   method = c("BoxCox", "knnImpute", "center", "scale"))
+df <- predict(preP, ChemicalManufacturingProcess)
+
+## Restore to original
+df$Yield = ChemicalManufacturingProcess$Yield
+
+## Split the data
+trainRows <- createDataPartition(df$Yield, p = .80, list = FALSE)
+df.train <- df[trainRows, ]
+df.test <- df[-trainRows, ]
+```
+
+***Nonlinear Regression Models Training***
+
+```{r warning=FALSE, message=FALSE}
+colYield <- which(colnames(df) == "Yield")
+trainX <- df.train[, -colYield]
+trainY <- df.train$Yield
+testX <- df.test[, -colYield]
+testY <- df.test$Yield
+```
+
+***KNN Model***
+
+```{r warning=FALSE, message=FALSE}
+knnModel <- train(x = trainX,
+                  y = trainY,
+                  method = "knn",
+                  preProcess = c("center", "scale"),
+                  tuneLength = 10)
+knnPred <- predict(knnModel, newdata = testX)
+```
+
+
+***Neural Networks Model***
+
+```{r warning=FALSE, message=FALSE}
+tooHigh <- findCorrelation(cor(trainX), cutoff = .75)
+trainXnnet <- trainX[, -tooHigh]
+testXnnet <- testX[, -tooHigh]
+nnetGrid <- expand.grid(size = c(1:10),
+                        decay = c(0, 0.01, 0.1),
+                        bag = FALSE)
+ctrl <- trainControl(method = "cv")
+nnetTune <- train(trainXnnet, trainY,
+                  method = "avNNet",
+                  tuneGrid = nnetGrid,
+                  trControl = ctrl,
+                  linout = TRUE,
+                  trace = FALSE,
+                  MaxNWts = 10 * (ncol(tr_data$x) + 1) + 10 + 1,
+                  maxit = 500
+                  )
+nnetPred <- predict(nnetTune, newdata = testXnnet)
+```
+
+***MARS Model***
+
+```{r warning=FALSE, message=FALSE}
+marsGrid <- expand.grid(.degree = 1:2, .nprune = 2:38)
+marsTuned <- train(trainX, trainY,
+                   method = "earth",
+                   tuneGrid = marsGrid,
+                   trControl = ctrl)
+marsPred <- predict(marsTuned, newdata = testX)
+```
+
+
+***SVM Model***
+
+```{r warning=FALSE, message=FALSE}
+svmRTuned <- train(trainX, trainY,
+                   method = "svmRadial",
+                   tuneLength = 15,
+                   trControl = ctrl)
+svmRPred <- predict(svmRTuned, newdata = testX)
+```
+
+
+### Part A
+
+***Train set performance***
+
+```{r warning=FALSE, message=FALSE}
+rbind(
+  "mars" = postResample(pred = predict(marsTuned), obs = trainY),
+  "svm" = postResample(pred = predict(svmRTuned), obs = trainY),
+  "net" = postResample(pred = predict(nnetTune), obs = trainY),
+  "knn" = postResample(pred = predict(knnModel), obs = trainY)
+) %>%
+  kable() %>%
+    kable_styling()
+```
+
+
+***Test set performance***
+
+```{r warning=FALSE, message=FALSE}
+rbind(
+  "mars" = postResample(pred = marsPred, obs = testY),
+  "svm" = postResample(pred = svmRPred, obs = testY),
+  "net" = postResample(pred = nnetPred, obs = testY),
+  "knn" = postResample(pred = knnPred, obs = testY)
+) %>%
+  kable() %>%
+    kable_styling()
+```
+
+***The RMSE value for SVM was the lowest i.e Train: 0.3102481 and Test: 1.169016. Looks like SVM is optimal***
+
+### Part B
+
+```{r warning=FALSE, message=FALSE}
+varImp(svmRTuned)
+```
+
+***The above list shows most important predictors at the top, for the optimal model (SVM). There are slightly more process variables dominating the list rather than biological ones.***
+
+***The below listings of top ten important predictors from the less optimal models against the SVM model, confirm that process variables dominate the list as being the most important. However, different models selected different process variables in the top ten list of importance.***
+
+```{r warning=FALSE, message=FALSE}
+varImp(marsTuned)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+varImp(nnetTune)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+varImp(knnModel)
+dotPlot(varImp(knnModel), top=20)
+```
+
+### Part C
+
+```{r warning=FALSE, message=FALSE}
+vip <- varImp(svmRTuned)$importance
+top10Vars <- head(rownames(vip)[order(-vip$Overall)], 10)
+as.data.frame(top10Vars)
+```
+
+```{r warning=FALSE, message=FALSE}
+plotX <- df[,top10Vars]
+plotY <- df[,colYield]
+
+colnames(plotX) <- gsub("(Process|Material)", "", colnames(plotX))
+
+featurePlot(x = plotX, y = plotY, plot = "scatter",
+            type = c("p", "smooth"), span = .5,
+            layout = c(3, 1))
+```
+
+***This shows the relationship between the topn 10 predictors and the response. SVM is the optimal model. The top predictors appears to have linear relationship with the response. As per our findings ManufacturingProcess13 has the most positive correlation. Some of the Manufacturing Process have negative impact (negative correlation) on Yield, while most of the Biological Maeterial maintain a positive and balanced correlation.***
+
+
+
