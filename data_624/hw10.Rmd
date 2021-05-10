@@ -1,5 +1,5 @@
 ---
-title: "HW10"
+title: "DATA 624 Homework 10 - Market Basket Analysis"
 author: "Monu Chacko"
 date: "5/9/2021"
 output:
@@ -21,49 +21,98 @@ That is exactly what the Groceries Data Set contains: a collection of receipts w
 
 Your assignment is to use R to mine the data for association rules. You should report support, confidence and lift and your top 10 rules by lift. 
 
-Extra credit: do a simple cluster analysis on the data as well.  Use whichever packages you like.  Due May 3 before midnight.
+Do a simple cluster analysis on the data as well.  Use whichever packages you like.
+
 
 ```{r warning=FALSE, message=FALSE}
+library(arules)
+library(RColorBrewer)
+library(kableExtra)
+```
 
+
+## Load Data
+
+***Let's load the data and examine it***
+
+```{r warning=FALSE, message=FALSE}
+data <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/GroceryDataSet.csv", header=FALSE)
+
+# View Summary
+summary(data) %>%
+  kable() %>%
+    kable_styling()
+```
+
+```{r warning=FALSE, message=FALSE}
+groceryDataset = read.transactions("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/GroceryDataSet.csv", sep = ',', rm.duplicates = TRUE)
+```
+
+## Analyse data
+
+```{r warning=FALSE, message=FALSE}
+# View summary
+summary(groceryDataset)
+```
+
+***As we see from the summary, 'whole milk' is the most frequent item with 2513 and then followed by 'other vegetables' with 1903. Lets see a visual using the item frequency plot.*** 
+
+
+```{r warning=FALSE, message=FALSE}
+itemFrequencyPlot(groceryDataset,topN=10, type="absolute", col=brewer.pal(8,'Pastel2'), main="Absolute Item Frequency Plot")
+```
+
+***We see a better visual using the frequency plot above. ItemFrequencyPlot was used to create an item Frequency Bar Plot to view the distribution of objects based on itemMatrix.***
+
+## Train/ Extract
+
+***Lets train the apriori to extract rules by defining the minimim support and confidence value. This is basically the likelihood of the product to be purchased.***
+
+```{r warning=FALSE, message=FALSE}
+min_suport <- 6 * 7/ nrow(groceryDataset)
+min_suport
+```
+
+***We find the confidence which is the likelihood of a product being purchased given another product is purchased.***
+
+***Confidence(p1 -> p2) = # of observation where p1 and p2 purchased/ # of observation where p1 purchased***
+
+```{r warning=FALSE, message=FALSE}
+# Training Apriori on the grocery dataset
+rules = apriori(data = groceryDataset, parameter = list(support = 0.004, confidence = 0.6))
+```
+
+***Inspect top 10 rules by lift. Lift indicates the significance of the rule.***
+
+```{r warning=FALSE, message=FALSE}
+inspect(sort(rules, by = 'lift')[1:10])
+```
+
+***We started with 0.6 confidence. Lets reduce the confidence to 0.4 and see if it is better.***
+
+```{r warning=FALSE, message=FALSE}
+# Training Apriori on the dataset
+rules = apriori(data = groceryDataset, parameter = list(support = 0.004, confidence = 0.4))
+```
+
+***Let see the performance after we changed the confidence to 0.4***
+
+```{r warning=FALSE, message=FALSE}
+# Visualising the results
+inspect(sort(rules, by = 'lift')[1:10])
+```
+
+***Although it looks better, there is more room for improvement. For example we see 'citrus fruit' in multiple rules. We can further change the minimum value to 0.2 and evaluate its performance.***
+
+```{r warning=FALSE, message=FALSE}
+# Training Apriori on the dataset
+rules = apriori(data = groceryDataset, parameter = list(support = 0.004, confidence = 0.2))
 ```
 
 
 ```{r warning=FALSE, message=FALSE}
-
+# Visualising the results
+inspect(sort(rules, by = 'lift')[1:10])
 ```
 
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
+***As we see we have better results and the association rules looks better.***
