@@ -49,7 +49,7 @@ The data set is a historic data containing predictors associated to the PH and i
 
 
 ```{r warning=FALSE, message=FALSE}
-student_evaluation_gh_file <- "https://github.com/hovig/Team5-Data624-Project2/raw/master/StudentEvaluation.xlsx"
+student_evaluation_gh_file <- "https://github.com/monuchacko/cuny_msds/blob/master/data_624/data/StudEval.xlsx?raw=true"
 student_data_gh_file <- "https://github.com/hovig/Team5-Data624-Project2/raw/master/StudentData.xlsx"
 se_temp_file <- tempfile(fileext = ".xlsx")
 sd_temp_file <- tempfile(fileext = ".xlsx")
