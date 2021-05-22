@@ -574,154 +574,162 @@ rpart.plot(rp_mod, uniform=TRUE)
 
 ## Test Model Stack
 
-
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
+***TODO:***
+Now that our models are optimized and understood, we will form the ensemble and test the results. We first look at their prediction correlations to confirm that the stack, intuitively, be effective. The lower the correlation between the models, the more effective the stack will be.
 ***TODO:***
 
+```{r warning=FALSE, message=FALSE}
+resamples <- resamples(mod_list)
+modelCor(resamples) %>% kable() %>% kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
 ***TODO:***
+Our model list has negative correlations, indicating that it will be effective.
+***TODO:***
+
+```{r warning=FALSE, message=FALSE}
+ensemble1 <- caretStack(
+  mod_list,
+  method="glmnet",
+  metric="RMSE",
+  trControl=trainControl(
+    method="cv",
+    number=5,
+    savePredictions="final"
+  )
+)
+ensemble1$ens_model$results %>% kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+***TODO:***
+We see a several percent improvement over the best single model.
+***TODO:***
+
+```{r warning=FALSE, message=FALSE}
+preds <- predict(ensemble1, x_test) 
+preds %>% postResample(y_test)
+```
+
+***TODO:***
+Predicted Vs Actual
+***TODO:***
+
+```{r warning=FALSE, message=FALSE}
+preds_df <- data.frame(predicted = preds, actual = y_test)
+ggplot(preds_df) + geom_point(aes(x = predicted, y = actual)) + geom_smooth(aes(x = predicted, y = actual))
+```
 
 
 ## Model Selection
 
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
+***TODO:***
+On the test set, the ensemble’s predictions are consistent throughout the range of PH. Consistent quality is, theoretically, a feature of ensemble models because the models are weighted such that predictions are maximized. If one model predicts better at lower PH, it will be upweighted over that range. There are several outliers, but when not all of the variance is explainable, this is unavoidable.
 ***TODO:***
 
-***TODO:***
+
+
 
 
 ## Predict on Eval Set
 
 
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
+***TODO:***
+With our hyperparameters of the individual models optimized, we want to provide each model the entire training set and build the meta-model based on these optimized single models.
 ***TODO:***
 
+
+```{r warning=FALSE, message=FALSE}
+xgb_grid <- expand.grid(eta = c(.01), nrounds = c(1000), max_depth = c(6), gamma = c(0), colsample_bytree = c(.8), min_child_weight = c(.8), subsample = c(.8))
+cub_grid <- expand.grid(.committees = c(5), .neighbors = c(7))
+mars_grid <- expand.grid(.degree = c(2), .nprune = 24)
+dart_grid <- expand.grid(eta = c(.01), nrounds = c(1000), gamma = c(.1), skip_drop = c(.6), rate_drop = c(.4), max_depth = c(6), colsample_bytree = c(.6), min_child_weight = c(.6), subsample = c(.6))
+rf_grid <- expand.grid(mtry = 25)
+
+tuning_list <-list(
+  caretModelSpec(method="xgbTree", tuneGrid = xgb_grid),
+  caretModelSpec(method="xgbDART", tuneGrid = dart_grid),
+  caretModelSpec(method="cubist", tuneGrid = cub_grid),
+  caretModelSpec(method="rf", tuneGrid = rf_grid, importance = TRUE),
+  caretModelSpec(method="bagEarth", tuneGrid = mars_grid)
+)
+
+
+
+my_control <- trainControl(method = 'cv',
+                           number = 5,
+                           savePredictions = 'final',
+                           index = createFolds(y, 5),
+                           allowParallel = TRUE) 
+
+mod_list <- caretList(
+  x = bev_train,
+  y = y,
+  preProcess = c('center', 'scale'),
+  trControl = my_control,
+  tuneList = tuning_list
+)
+final_ensemble <- caretStack(
+  mod_list,
+  method="glmnet",
+  metric="RMSE",
+  trControl=trainControl(
+    method="cv",
+    number=5,
+    savePredictions="final"
+  )
+)
+final_ensemble$ens_model$results %>% kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
+
+```
+
 ***TODO:***
+With more data available, the ensemble improve around 6%. Our model is considerably more predictive than a “baseline” single model.
+
+Ensemble Model Importances
+***TODO:***
+
+```{r warning=FALSE, message=FALSE}
+plot(varImp(final_ensemble$ens_model))
+```
+
+***TODO:***
+The MARS model is excluded, but all four tree models contribute the the final prediction
+
+Export Predictions
+***TODO:***
+
+```{r warning=FALSE, message=FALSE}
+predictions <- predict(final_ensemble, bev_eval)
+predictions %>% tibble::enframe(name = NULL) %>% datatable()
+```
+
+***TODO:***
+The MARS model is excluded, but all four tree models contribute the the final prediction
+
+Export Predictions
+***TODO:***
+
+```{r warning=FALSE, message=FALSE}
+predictions <- predict(final_ensemble, bev_eval)
+predictions %>% tibble::enframe(name = NULL) %>% datatable()
+```
 
 
 # Conclusion
 
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
 ***TODO:***
-
+After working on extracting the data from the given files, we processed data cleansing and handle the missing values along with the NAs. We trained and tested the data 75% to 25% respectively. Our models were able to produce for us predicted values for pH which are also saved in predictions.csv file separately. We notice that all the values predicted are greater than 7 and more specifically greater than 8. This scale translates into saying that the beverage made is alkaline. At the beginning of this study, we were not informed about the nature of the ABC Beverage company, meaning of what type of beverage manufacturer it was. But from our studies we can conclude that this company produces alkaline beverages like water, dairy, tea, fruit drinks, etc.
 ***TODO:***
 
 
 # References
 
 ***TODO:***
-
+Github : https://github.com/monuchacko/cuny_msds/blob/master/data_624/project2.Rmd
+RPUBS: 
+Prediction Results: 
+Forecasting: Principles and Practice - 2nd edition: https://otexts.com/fpp2/
+Applied Predictive Modeling: https://github.com/hovig/Team5-Data624-Project2/blob/master/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf
 ***TODO:***
 
 
