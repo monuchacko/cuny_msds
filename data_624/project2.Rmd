@@ -1,6 +1,6 @@
 ---
 title: "Project 2"
-author: "Monu Chacko"
+author: "Abdelmalek, Monu Chacko, Paul Perez"
 date: "5/22/2021"
 output:
   html_document:
@@ -49,22 +49,34 @@ The data set is a historic data containing predictors associated to the PH and i
 
 
 ```{r warning=FALSE, message=FALSE}
-library(readxl)
-
-student_evaluation_gh_file <- "https://github.com/monuchacko/cuny_msds/blob/master/data_624/data/StudEval.xlsx?raw=true"
-student_data_gh_file <- "https://github.com/monuchacko/cuny_msds/blob/master/data_624/data/StudData.xlsx?raw=true"
-#se_temp_file <- tempfile(fileext = ".xlsx")
-#sd_temp_file <- tempfile(fileext = ".xlsx")
-#se_data <- GET(student_evaluation_gh_file, authenticate(Sys.getenv("GITHUB_PAT"), ""), write_disk(path = se_temp_file))
-#df_data <- GET(student_data_gh_file, authenticate(Sys.getenv("GITHUB_PAT"), ""), write_disk(path = sd_temp_file))
-#se_data <- readxl::read_excel(se_temp_file)
-#sd_data <- readxl::read_excel(sd_temp_file)
-
-se_data <- read_excel("https://github.com/monuchacko/cuny_msds/blob/master/data_624/data/StudEval.xlsx")
-sd_data <- read_excel("https://github.com/monuchacko/cuny_msds/blob/master/data_624/data/StudData.xlsx")
+se_data <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudEval.csv")
+sd_data <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudData.csv")
 
 ```
 
+```{r warning=FALSE, message=FALSE}
+dim(sd_data)
+```
+
+```{r warning=FALSE, message=FALSE}
+colnames(sd_data)
+```
+
+```{r warning=FALSE, message=FALSE}
+str(sd_data)
+```
+
+```{r warning=FALSE, message=FALSE}
+dim(se_data)
+```
+
+```{r warning=FALSE, message=FALSE}
+colnames(se_data)
+```
+
+```{r warning=FALSE, message=FALSE}
+str(se_data)
+```
 
 # Data Ingestion
 
