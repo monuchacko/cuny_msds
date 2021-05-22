@@ -44,7 +44,25 @@ The data set is a historic data containing predictors associated to the PH and i
 ***TODO:***
 
 ```{r warning=FALSE, message=FALSE}
-
+library("readxl")
+library(httr)
+library(caret)
+library(tidyverse)
+library(kableExtra)
+library(caretEnsemble)
+library(mice)
+library(kableExtra)
+library(xgboost)
+library(dplyr)
+library(parallel)
+library(doParallel)
+library(ggplot2)
+library(Hmisc)
+library(psych)
+library(reshape2)
+library(gridExtra)
+library(rpart.plot)
+library(DT)
 ```
 
 
@@ -78,17 +96,100 @@ colnames(se_data)
 str(se_data)
 ```
 
-# Data Ingestion
 
-***TODO:***
 
-***TODO:***
+
+```{r warning=FALSE, message=FALSE}
+
+#***TODO:***
+
+#***TODO:***
+
+bev_raw <- read_csv('https://raw.githubusercontent.com/hovig/Team5-Data624-Project2/master/StudentData.csv') 
+head(bev_raw)
+```
 
 # Data Preparation and EDA (Exploratory Data Analysis)
 
 ***TODO:***
 
 ***TODO:***
+
+
+```{r warning=FALSE, message=FALSE}
+bev_raw %>%
+  ggplot(aes(PH, fill=PH > 9)) + 
+  geom_histogram(bins=30) +
+  theme_bw() +
+  theme(legend.position='center') +
+  labs(y='Count', title='PH Levels in Dataset')
+```
+
+
+
+```{r warning=FALSE, message=FALSE}
+bev_raw <- bev_raw %>% 
+  filter(!is.na(bev_raw$PH), bev_raw$PH < 9) 
+```
+
+```{r}
+dim(bev_raw)
+str(bev_raw)
+hist.data.frame(bev_raw)
+table(bev_raw$`Brand Code`)
+summary(bev_raw)
+describe(bev_raw %>% select(-`Brand Code`))
+```
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
 
 ## Zero variance
 
