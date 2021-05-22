@@ -118,7 +118,7 @@ str(se_data)
 
 #***TODO:***
 
-bev_raw <- read_csv('https://raw.githubusercontent.com/hovig/Team5-Data624-Project2/master/StudentData.csv') 
+bev_raw <- read_csv('https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudDataFile.csv') 
 head(bev_raw)
 ```
 
