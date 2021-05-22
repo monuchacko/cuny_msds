@@ -63,10 +63,49 @@ library(reshape2)
 library(gridExtra)
 library(rpart.plot)
 library(DT)
-#library(earth)
+library(earth)
 #library(MASS)
+#install.packages("TeachingDemos")
+#install.packages("plotmo")
+
+#Loading required package: lattice
+#Loading required package: ggplot2
+#Loading required package: class
+#Loaded mda 0.5-2
+
+#Loading required package: Formula
+#Loading required package: plotmo
+#Loading required package: plotrix
+#Loading required package: TeachingDemos
+
+#suppressWarnings(suppressMessages(library(data.table)))
+#suppressWarnings(suppressMessages(library(openxlsx)))
+#suppressWarnings(suppressMessages(library(psych)))
+#suppressWarnings(suppressMessages(library(knitr)))
+##suppressWarnings(suppressMessages(library(DataExplorer)))
+#suppressWarnings(suppressMessages(library(VIM)))
+#suppressWarnings(suppressMessages(library(corrplot)))
+#suppressWarnings(suppressMessages(library(caret)))
+#suppressWarnings(suppressMessages(library(PerformanceAnalytics)))
+```
 
 
+```{r install-packages-notes, warning=FALSE, message=FALSE, results='hide', echo=FALSE}
+#install.packages("TeachingDemos")
+#install.packages("plotmo")
+
+#Packages required for earth
+#Loading required package: lattice
+#Loading required package: ggplot2
+#Loading required package: class
+#Loaded mda 0.5-2
+
+#Loading required package: Formula
+#Loading required package: plotmo
+#Loading required package: plotrix
+#Loading required package: TeachingDemos
+
+# Other notes
 #suppressWarnings(suppressMessages(library(data.table)))
 #suppressWarnings(suppressMessages(library(openxlsx)))
 #suppressWarnings(suppressMessages(library(psych)))
@@ -392,68 +431,30 @@ predict(mod_list$cubist, x_test) %>%
 ## XGB Trees
 
 ```{r warning=FALSE, message=FALSE}
-
+show_results(mod_list$xgbTree)
 ```
 
 ```{r warning=FALSE, message=FALSE}
-
+predict(mod_list$xgbTree, x_test) %>%
+  postResample(y_test)
 ```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
 
 ## XGB Dart
 
 
 ```{r warning=FALSE, message=FALSE}
-
+show_results(mod_list$xgbDART)
 ```
 
 ```{r warning=FALSE, message=FALSE}
-
+predict(mod_list$xgbDART, x_test) %>%
+  postResample(y_test)
 ```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
 
 ***TODO:***
+Assessment
 
+While the XGBTee model offers the lowest RMSE, it still only explains about 50% of the variance in PH. There is plenty of room for the other models to offer value. We will use the hyperparameters yielding the best RMSE in our final ensemble that will be built later.
 ***TODO:***
 
 
@@ -497,12 +498,18 @@ predict(mod_list$cubist, x_test) %>%
 ## Variable Importances
 
 
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
+```{r car-imp-1, warning=FALSE, message=FALSE}
+p1 <- varImp(mod_list$cubist) %>%
+  plot(top = 10, main = 'Cubist')
+p2 <- varImp(mod_list$xgbTree) %>%
+  plot(top = 10, main = 'XGBTrees')
+p3 <- varImp(mod_list$xgbDART) %>%
+  plot(top = 10, main = 'XGBDart')
+p4 <- varImp(mod_list$bagEarth) %>%
+  plot(top = 10, main = 'MARS')
+p5 <- varImp(mod_list$rf) %>%
+  plot(top = 10, main = 'RF')
+grid.arrange(p1,p2,p3,p4,p5, nrow = 3, ncol = 2)
 ```
 
 ```{r warning=FALSE, message=FALSE}
@@ -527,16 +534,48 @@ predict(mod_list$cubist, x_test) %>%
 
 
 ***TODO:***
+Observations:
 
+The top predictor, MnFlow, is consistent throughout the set of models
+The XGBoost models are similar in variables, but less similar in their distributions of importance
+After the top 5, divergence increases
+Based on what we see, there are more factors contributing to PH with the ensemble than with a single model. We’ll confirm this by looking at the count by predictor among each top 10:
+
+Variable Counts among the Models
 ***TODO:***
 
+
+```{r warning=FALSE, message=FALSE}
+top_10 <- function(model) {
+  varImp(model)$importance %>%
+  rownames_to_column('var') %>%
+  arrange(desc(Overall)) %>%
+  head(10) %>%
+  select(var) 
+}
+
+rbind(top_10(mod_list$xgbDART), top_10(mod_list$xgbTree), top_10(mod_list$cubist), top_10(mod_list$bagEarth), top_10(mod_list$rf)) %>%
+  group_by(var) %>%
+  summarise(ModelCount = n()) %>%
+  arrange(desc(ModelCount)) %>%
+  kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+***TODO:***
+Best Single Tree
+
+Because 4 of the 5 models in the ensemble are tree-based, looking a single decision tree model will give us an idea of not just what predictors are important, but how they are being used to form predictions.
+***TODO:***
+
+```{r warning=FALSE, message=FALSE}
+rp_mod <- rpart::rpart(ph ~ ., data = data.frame(bev_train, ph = y), method = 'anova')
+rpart.plot(rp_mod, uniform=TRUE)
+```
 
 ## Test Model Stack
 
 
-```{r warning=FALSE, message=FALSE}
 
-```
 
 ```{r warning=FALSE, message=FALSE}
 
