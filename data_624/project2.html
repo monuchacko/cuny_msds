@@ -1995,8 +1995,15 @@ bev_imputed &lt;- predict(form, bev_imputed) %&gt;% data.frame() %&gt;% as.matri
 </div>
 <div id="model-building" class="section level1">
 <h1>Model Building</h1>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
+<p><strong><em>TODO:</em></strong> We will split the data into train/test sets before running cross validation. This will allow us to make sure that predictions are consistent at all levels of PH. <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>bev_eval &lt;- bev_imputed[2567:2833,]
+bev_train &lt;- bev_imputed[1:2566,]
+samples &lt;- createDataPartition(y, p = .75, list = F)
+x_train &lt;- bev_train[samples, ]
+x_test&lt;- bev_train[-samples, ]
+
+y_train &lt;- y[samples]
+y_test &lt;- y[-samples]</code></pre>
 <div id="test-train-split" class="section level2">
 <h2>Test Train Split</h2>
 <p><strong><em>TODO:</em></strong></p>
