@@ -141,105 +141,232 @@ summary(bev_raw)
 describe(bev_raw %>% select(-`Brand Code`))
 ```
 
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
 ## Zero variance
 
 ***TODO:***
-
+To filter for near-zero variance predictors, the caret package function nearZeroVar will return the column numbers of any predictors that fulfill the conditions outlined. A zero variance predictor will never be chosen for a split since it offers no possible predictive information.
 ***TODO:***
+
+```{r warning=FALSE, message=FALSE}
+df1 <- bev_raw %>% select(-`Brand Code`) %>% mutate_each(funs(as.numeric(.)))%>%complete.cases()%>%
+       as.data.frame()
+
+
+names(df1)[nearZeroVar(df1)]
+```
+
+
+```{r warning=FALSE, message=FALSE}
+nzv <- nearZeroVar(bev_raw,saveMetrics= TRUE)
+nzv[nzv$nzv,]
+```
 
 ## Box plot
 
 ***TODO:***
-
+Box plots for the variables reveal, that besides having the outliers in the variables, most of the variables are skewed. For example: Variables density, carb flow, filler speed and oxygen filler are skewed providing us an opportunity to further check their distribution.
 ***TODO:***
+
+
+
+```{r warning=FALSE, message=FALSE}
+df.m <- melt(bev_raw %>% select(-MFR, -`Filler Speed`, -`Carb Flow`,-`Bowl Setpoint`,`Carb Pressure1`,
+            `Hyd Pressure4`, `Air Pressurer`, `Carb Temp`, `Filler Level`, `Mnf Flow`), id.var = "Brand Code")
+p <-ggplot(data = df.m, aes(x=variable, y=value)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=8, outlier.size=4,aes(fill=variable)) +     
+  scale_y_continuous(name = "Predictors for PH", breaks = seq(0, 2, 0.5))  + 
+  coord_flip()
+p
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+
 
 ## Normality
 
 ***TODO:***
-
+Normality is one of the most widely used technique to understand the continuous predictors. In the below plot we can see normal distribution behavior of the given dataset for different features.
 ***TODO:***
+
+```{r warning=FALSE, message=FALSE}
+bev_raw%>%
+ select(-`Brand Code`) %>%   
+  select(2:20) %>%         
+  gather() %>%                            
+  ggplot(aes(value)) +                     
+    facet_wrap(~ key, scales = "free") +  
+    geom_density() 
+```
+
+
+
+```{r warning=FALSE, message=FALSE}
+bev_raw%>%
+ select(-`Brand Code`) %>%   
+  select(`Carb Flow`, Density, MFR, Balling, `Pressure Vacuum`, PH, `Oxygen Filler`, `Bowl Setpoint`, `Pressure Setpoint`, `Air Pressurer`, `Alch Rel`,`Carb Rel`,`Balling Lvl`)   %>%               
+  gather() %>%                             
+  ggplot(aes(value)) +                     
+    facet_wrap(~ key, scales = "free") +  
+    geom_density() 
+```
+
+
 
 # Data Preprocessing
 
+***TODO:***
+We perform 3 data preparation steps - Remove the near-zero variance variables we previously mentioned - Impute missing values with a Random Forest Regression with the MICE package - Create dummy variables for the categorical variable, brand
+
+Random Forest was chosen as the regression method in imputation because it requires very little tuning, allowing and there is no interface to tune the imputation model in MICE.
+***TODO:***
+
+
+```{r warning=FALSE, message=FALSE}
+cl <- makeCluster(detectCores())
+registerDoParallel(cl)
+set.seed(42)
+
+bev <- select(bev_raw, -PH) %>%
+  union_all(se_data) #since we're not using the labels (y values), combining the sets for data clearning is fine
+cols <- str_replace(colnames(bev), '\\s', '')
+colnames(bev) <- cols
+bev <- mutate(bev, BrandCode = ifelse(is.na(BrandCode), 'Unknown', BrandCode))
+y <- bev_raw$PH
+
+zero_vars <- nearZeroVar(bev[1:2566, ])
+bev_new <- bev[, -zero_vars]
+
+pred <- mice(data = bev_new, m = 3, method = 'rf', maxit = 3)
+bev_imputed <- complete(pred)
+
+form <- dummyVars(~ ., data = bev_imputed)
+bev_imputed <- predict(form, bev_imputed) %>% data.frame() %>% as.matrix()
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+```
+
+
 # Model Building
+
+***TODO:***
+
+***TODO:***
 
 ## Test Train Split
 
+***TODO:***
+
+***TODO:***
+
+
 ## Modeling Technique and Approach
+
+***TODO:***
+
+***TODO:***
+
 
 ## MARS
 
+***TODO:***
+
+***TODO:***
+
+
 ## RandomForest
+
+***TODO:***
+
+***TODO:***
+
 
 ## Cubist
 
+***TODO:***
+
+***TODO:***
+
+
 ## XGB Trees
+
+***TODO:***
+
+***TODO:***
+
 
 ## XGB Dart
 
+***TODO:***
+
+***TODO:***
+
+
 # Model Evaluation And Model Selection
+
+***TODO:***
+
+***TODO:***
+
 
 ## Variable Importances
 
+***TODO:***
+
+***TODO:***
+
+
 ## Test Model Stack
+
+***TODO:***
+
+***TODO:***
+
 
 ## Model Selection
 
+***TODO:***
+
+***TODO:***
+
+
 ## Predict on Eval Set
+
+***TODO:***
+
+***TODO:***
+
 
 # Conclusion
 
+***TODO:***
+
+***TODO:***
+
+
 # References
+
+***TODO:***
+
+***TODO:***
+
 
 
 
