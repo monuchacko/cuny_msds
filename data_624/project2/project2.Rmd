@@ -9,7 +9,7 @@ output:
       collapsed: false
       smooth_scroll: false
     number_section:  true
-    theme: cerulean
+    theme: flatly
     highlight:  tango
 editor_options: 
   chunk_output_type: inline    
@@ -80,8 +80,8 @@ library(urca)
 ## Load Data      
 
 ```{r, load-data, eval=TRUE, message=FALSE, warning=FALSE}
-student_data_tr <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudentData.csv", stringsAsFactors = FALSE)
-student_data_eval <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudentEvaluation.csv", stringsAsFactors = FALSE)
+student_data_tr <- read.csv("./data/StudentData.csv", stringsAsFactors = FALSE)
+student_data_eval <- read.csv("./data/StudentEvaluation.csv", stringsAsFactors = FALSE)
 ```
 
 # Explore Data     
@@ -877,7 +877,6 @@ head(final_predictions_df) %>%
   kable() %>%
     kable_styling()
 
-
 write_csv(final_predictions_df, "./data/FinalResult.csv")
 ```
 
@@ -889,7 +888,7 @@ We evaluated many linear, non-linear, tree based models using the historical dat
 # References
 
 - Github : https://github.com/monuchacko/cuny_msds/blob/master/data_624/project2/project2.Rmd
-- RPubs: https://rpubs.com/monuchacko/772822
+- RPubs: https://rpubs.com/monuchacko/773030
 - Prediction Results: https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/project2/data/FinalResult.csv
 - Forecasting: Principles and Practice - 2nd edition: https://otexts.com/fpp2/
 - Executive Report: https://github.com/monuchacko/cuny_msds/blob/master/data_624/project2/data/SummaryReport.pdf
