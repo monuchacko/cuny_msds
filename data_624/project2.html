@@ -1519,9 +1519,9 @@ div.tocify {
 
 <div id="project-problem-statement" class="section level1">
 <h1>Project Problem Statement</h1>
-<p><strong><em>TODO:</em></strong></p>
-<p>This is role playing. I am your new boss. I am in charge of production at ABC Beverage and you are a team of data scientists reporting to me. My leadership has told me that new regulations are requiring us to understand our manufacturing process, the predictive factors and be able to report to them our predictive model of PH. Please use the historical data set I am providing. Build and report the factors in BOTH a technical and non-technical report. I like to use Word and Excel. Please provide your non-technical report in a business friendly readable document and your predictions in an Excel readable format. The technical report should show clearly the models you tested and how you selected your final approach. Please submit both Rpubs links and .rmd files or other readable formats for technical and non-technical reports. Also submit the excel file showing the prediction of your models for pH.</p>
-<p><strong><em>TODO:</em></strong></p>
+<p>This is role playing. I am your new boss. I am in charge of production at ABC Beverage and you are a team of data scientists reporting to me. My leadership has told me that new regulations are requiring us to understand our manufacturing process, the predictive factors and be able to report to them our predictive model of PH.</p>
+<p>Please use the historical data set I am providing. Build and report the factors in BOTH a technical and non-technical report. I like to use Word and Excel. Please provide your non-technical report in a business friendly readable document and your predictions in an Excel readable format. The technical report should show clearly the models you tested and how you selected your final approach.</p>
+<p>Please submit both Rpubs links and .rmd files or other readable formats for technical and non-technical reports. Also submit the excel file showing the prediction of your models for pH.</p>
 </div>
 <div id="executive-summary" class="section level1">
 <h1>Executive Summary</h1>
@@ -1684,8 +1684,9 @@ sd_data &lt;- read.csv(&quot;https://raw.githubusercontent.com/monuchacko/cuny_m
 <pre class="r"><code>#***TODO:***
 
 #***TODO:***
+bev_raw &lt;- read_csv(&#39;https://raw.githubusercontent.com/hovig/Team5-Data624-Project2/master/StudentData.csv&#39;) 
 
-bev_raw &lt;- read_csv(&#39;https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudDataFile.csv&#39;) 
+#bev_raw &lt;- read_csv(&#39;https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudDataFile.csv&#39;) 
 head(bev_raw)</code></pre>
 <pre><code>## # A tibble: 6 x 33
 ##   `Brand Code` `Carb Volume` `Fill Ounces` `PC Volume` `Carb Pressure`
@@ -1708,8 +1709,6 @@ head(bev_raw)</code></pre>
 </div>
 <div id="data-preparation-and-eda-exploratory-data-analysis" class="section level1">
 <h1>Data Preparation and EDA (Exploratory Data Analysis)</h1>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
 <pre class="r"><code>bev_raw %&gt;%
   ggplot(aes(PH, fill=PH &gt; 9)) + 
   geom_histogram(bins=30) +
@@ -2031,10 +2030,10 @@ y_test &lt;- y[-samples]</code></pre>
 <p><strong><em>TODO:</em></strong> For state-of-the-art prediction quality, we will use a model stack. This will consist of tuning models separately and then combining the candidate models into a metamodel that will formulate predictions with a linear combination of our tuned models.</p>
 <p>From the perspective of understanding the manufacturing process, the model stack will also provide benefits. The stack is like a panel of experts, each looking at the data through slightly different lenses to form their diagnoses. By looking at the predictors each model uses, we can gather assemble a complete picture of the factors that affect our manufacturing process.</p>
 <p>Four of the five models will be tree-based ensembles because this model type can handle non-linear relationships, is robust to outliers and skewed distributions, and can model complex interactions. One non-tree modle is included for divsersity in the stack. <strong><em>TODO:</em></strong></p>
-<pre class="r"><code>xgb_grid &lt;- expand.grid(eta = c(.01), nrounds = c(10), max_depth = c(6), gamma = c(0), colsample_bytree = c(.8), min_child_weight = c(.8), subsample = c(.8))
+<pre class="r"><code>xgb_grid &lt;- expand.grid(eta = c(.01), nrounds = c(1000), max_depth = c(6), gamma = c(0), colsample_bytree = c(.8), min_child_weight = c(.8), subsample = c(.8))
 cub_grid &lt;- expand.grid(.committees = c(5), .neighbors = c(7))
 mars_grid &lt;- expand.grid(.degree = c(2), .nprune = 24)
-dart_grid &lt;- expand.grid(eta = c(.01), nrounds = c(10), gamma = c(.1), skip_drop = c(.6), rate_drop = c(.4), max_depth = c(6), colsample_bytree = c(.6), min_child_weight = c(.6), subsample = c(.6))
+dart_grid &lt;- expand.grid(eta = c(.01), nrounds = c(1000), gamma = c(.1), skip_drop = c(.6), rate_drop = c(.4), max_depth = c(6), colsample_bytree = c(.6), min_child_weight = c(.6), subsample = c(.6))
 rf_grid &lt;- expand.grid(mtry = 25)
 
 tuning_list &lt;-list(
@@ -2058,8 +2057,8 @@ mod_list &lt;- caretList(
   trControl = my_control,
   tuneList = tuning_list
 )</code></pre>
-<pre><code>## [18:08:17] WARNING: amalgamation/../src/objective/regression_obj.cu:171: reg:linear is now deprecated in favor of reg:squarederror.
-## [18:08:19] WARNING: amalgamation/../src/objective/regression_obj.cu:171: reg:linear is now deprecated in favor of reg:squarederror.</code></pre>
+<pre><code>## [20:42:56] WARNING: amalgamation/../src/objective/regression_obj.cu:171: reg:linear is now deprecated in favor of reg:squarederror.
+## [20:51:11] WARNING: amalgamation/../src/objective/regression_obj.cu:171: reg:linear is now deprecated in favor of reg:squarederror.</code></pre>
 <p><strong><em>TODO:</em></strong> The training grid is commented out because of the time required to run, but can be uncommented for reproducibility of our model optimization <strong><em>TODO:</em></strong></p>
 </div>
 <div id="mars" class="section level2">
@@ -2109,22 +2108,22 @@ MAESD
 24
 </td>
 <td style="text-align:right;">
-0.1294252
+0.1283328
 </td>
 <td style="text-align:right;">
-0.4368833
+0.4434771
 </td>
 <td style="text-align:right;">
-0.0962169
+0.0956492
 </td>
 <td style="text-align:right;">
-0.0022443
+0.0039555
 </td>
 <td style="text-align:right;">
-0.0103409
+0.0251835
 </td>
 <td style="text-align:right;">
-0.0010485
+0.0019369
 </td>
 </tr>
 </tbody>
@@ -2132,9 +2131,7 @@ MAESD
 <pre class="r"><code>predict(mod_list$bagEarth, x_test) %&gt;%
   postResample(y_test)</code></pre>
 <pre><code>##       RMSE   Rsquared        MAE 
-## 0.11416023 0.56415534 0.08587842</code></pre>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
+## 0.11671455 0.54254082 0.08719141</code></pre>
 </div>
 <div id="randomforest" class="section level2">
 <h2>RandomForest</h2>
@@ -2171,22 +2168,22 @@ MAESD
 25
 </td>
 <td style="text-align:right;">
-0.119488
+0.1197818
 </td>
 <td style="text-align:right;">
-0.5280265
+0.5263647
 </td>
 <td style="text-align:right;">
-0.0907598
+0.0909434
 </td>
 <td style="text-align:right;">
-0.0028569
+0.0028307
 </td>
 <td style="text-align:right;">
-0.0157974
+0.0143708
 </td>
 <td style="text-align:right;">
-0.0020861
+0.002082
 </td>
 </tr>
 </tbody>
@@ -2194,7 +2191,7 @@ MAESD
 <pre class="r"><code>predict(mod_list$rf, x_test) %&gt;%
   postResample(y_test)</code></pre>
 <pre><code>##       RMSE   Rsquared        MAE 
-## 0.09394974 0.71247223 0.06788280</code></pre>
+## 0.09326221 0.71766911 0.06762759</code></pre>
 </div>
 <div id="cubist" class="section level2">
 <h2>Cubist</h2>
@@ -2261,52 +2258,466 @@ MAESD
   postResample(y_test)</code></pre>
 <pre><code>##       RMSE   Rsquared        MAE 
 ## 0.09811402 0.67832507 0.07059597</code></pre>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
 </div>
 <div id="xgb-trees" class="section level2">
 <h2>XGB Trees</h2>
+<pre class="r"><code>show_results(mod_list$xgbTree)</code></pre>
+<table class="table table-striped" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+eta
+</th>
+<th style="text-align:right;">
+nrounds
+</th>
+<th style="text-align:right;">
+max_depth
+</th>
+<th style="text-align:right;">
+gamma
+</th>
+<th style="text-align:right;">
+colsample_bytree
+</th>
+<th style="text-align:right;">
+min_child_weight
+</th>
+<th style="text-align:right;">
+subsample
+</th>
+<th style="text-align:right;">
+RMSE
+</th>
+<th style="text-align:right;">
+Rsquared
+</th>
+<th style="text-align:right;">
+MAE
+</th>
+<th style="text-align:right;">
+RMSESD
+</th>
+<th style="text-align:right;">
+RsquaredSD
+</th>
+<th style="text-align:right;">
+MAESD
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+1000
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0.8
+</td>
+<td style="text-align:right;">
+0.8
+</td>
+<td style="text-align:right;">
+0.8
+</td>
+<td style="text-align:right;">
+0.1208593
+</td>
+<td style="text-align:right;">
+0.5077133
+</td>
+<td style="text-align:right;">
+0.091483
+</td>
+<td style="text-align:right;">
+0.0030579
+</td>
+<td style="text-align:right;">
+0.0208657
+</td>
+<td style="text-align:right;">
+0.0022489
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>predict(mod_list$xgbTree, x_test) %&gt;%
+  postResample(y_test)</code></pre>
+<pre><code>##       RMSE   Rsquared        MAE 
+## 0.09851401 0.67700461 0.07308563</code></pre>
 </div>
 <div id="xgb-dart" class="section level2">
 <h2>XGB Dart</h2>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
+<pre class="r"><code>show_results(mod_list$xgbDART)</code></pre>
+<table class="table table-striped" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+eta
+</th>
+<th style="text-align:right;">
+nrounds
+</th>
+<th style="text-align:right;">
+gamma
+</th>
+<th style="text-align:right;">
+skip_drop
+</th>
+<th style="text-align:right;">
+rate_drop
+</th>
+<th style="text-align:right;">
+max_depth
+</th>
+<th style="text-align:right;">
+colsample_bytree
+</th>
+<th style="text-align:right;">
+min_child_weight
+</th>
+<th style="text-align:right;">
+subsample
+</th>
+<th style="text-align:right;">
+RMSE
+</th>
+<th style="text-align:right;">
+Rsquared
+</th>
+<th style="text-align:right;">
+MAE
+</th>
+<th style="text-align:right;">
+RMSESD
+</th>
+<th style="text-align:right;">
+RsquaredSD
+</th>
+<th style="text-align:right;">
+MAESD
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+1000
+</td>
+<td style="text-align:right;">
+0.1
+</td>
+<td style="text-align:right;">
+0.6
+</td>
+<td style="text-align:right;">
+0.4
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+0.6
+</td>
+<td style="text-align:right;">
+0.6
+</td>
+<td style="text-align:right;">
+0.6
+</td>
+<td style="text-align:right;">
+0.1303227
+</td>
+<td style="text-align:right;">
+0.4571845
+</td>
+<td style="text-align:right;">
+0.103749
+</td>
+<td style="text-align:right;">
+0.0034207
+</td>
+<td style="text-align:right;">
+0.0272094
+</td>
+<td style="text-align:right;">
+0.0027237
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>predict(mod_list$xgbDART, x_test) %&gt;%
+  postResample(y_test)</code></pre>
+<pre><code>##       RMSE   Rsquared        MAE 
+## 0.11356718 0.59621852 0.08844986</code></pre>
+<p><strong><em>TODO:</em></strong> Assessment</p>
+<p>While the XGBTee model offers the lowest RMSE, it still only explains about 50% of the variance in PH. There is plenty of room for the other models to offer value. We will use the hyperparameters yielding the best RMSE in our final ensemble that will be built later. <strong><em>TODO:</em></strong></p>
 </div>
 </div>
 <div id="model-evaluation-and-model-selection" class="section level1">
 <h1>Model Evaluation And Model Selection</h1>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
 <div id="variable-importances" class="section level2">
 <h2>Variable Importances</h2>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
+<pre class="r"><code>#p1 &lt;- varImp(mod_list$cubist) %&gt;%
+#  plot(top = 10, main = &#39;Cubist&#39;)
+#p2 &lt;- varImp(mod_list$xgbTree) %&gt;%
+#  plot(top = 10, main = &#39;XGBTrees&#39;)
+#p3 &lt;- varImp(mod_list$xgbDART) %&gt;%
+#  plot(top = 10, main = &#39;XGBDart&#39;)
+#p4 &lt;- varImp(mod_list$bagEarth) %&gt;%
+#  plot(top = 10, main = &#39;MARS&#39;)
+#p5 &lt;- varImp(mod_list$rf) %&gt;%
+#  plot(top = 10, main = &#39;RF&#39;)
+#grid.arrange(p1,p2,p3,p4,p5, nrow = 3, ncol = 2)</code></pre>
+<p><strong><em>TODO:</em></strong> Observations:</p>
+<p>The top predictor, MnFlow, is consistent throughout the set of models The XGBoost models are similar in variables, but less similar in their distributions of importance After the top 5, divergence increases Based on what we see, there are more factors contributing to PH with the ensemble than with a single model. We’ll confirm this by looking at the count by predictor among each top 10:</p>
+<p>Variable Counts among the Models <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>#top_10 &lt;- function(model) {
+#  varImp(model)$importance %&gt;%
+#  rownames_to_column(&#39;var&#39;) %&gt;%
+#  arrange(desc(Overall)) %&gt;%
+#  head(10) %&gt;%
+#  select(var) 
+#}
+
+#rbind(top_10(mod_list$xgbDART), top_10(mod_list$xgbTree), top_10(mod_list$cubist), top_10(mod_list$bagEarth), top_10(mod_list$rf)) %&gt;%
+#  group_by(var) %&gt;%
+#  summarise(ModelCount = n()) %&gt;%
+#  arrange(desc(ModelCount)) %&gt;%
+#  kable () %&gt;% kable_styling(bootstrap_options = &quot;striped&quot;, full_width = F)</code></pre>
+<p><strong><em>TODO:</em></strong> Best Single Tree</p>
+<p>Because 4 of the 5 models in the ensemble are tree-based, looking a single decision tree model will give us an idea of not just what predictors are important, but how they are being used to form predictions. <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>#rp_mod &lt;- rpart::rpart(ph ~ ., data = data.frame(bev_train, ph = y), method = &#39;anova&#39;)
+#rpart.plot(rp_mod, uniform=TRUE)</code></pre>
 </div>
 <div id="test-model-stack" class="section level2">
 <h2>Test Model Stack</h2>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
+<p><strong><em>TODO:</em></strong> Now that our models are optimized and understood, we will form the ensemble and test the results. We first look at their prediction correlations to confirm that the stack, intuitively, be effective. The lower the correlation between the models, the more effective the stack will be. <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>resamples &lt;- resamples(mod_list)
+modelCor(resamples) %&gt;% kable() %&gt;% kable_styling(bootstrap_options = &quot;striped&quot;, full_width = F)</code></pre>
+<table class="table table-striped" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+xgbTree
+</th>
+<th style="text-align:right;">
+xgbDART
+</th>
+<th style="text-align:right;">
+cubist
+</th>
+<th style="text-align:right;">
+rf
+</th>
+<th style="text-align:right;">
+bagEarth
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+xgbTree
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+<td style="text-align:right;">
+0.7939705
+</td>
+<td style="text-align:right;">
+0.3191073
+</td>
+<td style="text-align:right;">
+0.6656808
+</td>
+<td style="text-align:right;">
+0.9631530
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+xgbDART
+</td>
+<td style="text-align:right;">
+0.7939705
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+<td style="text-align:right;">
+-0.0618015
+</td>
+<td style="text-align:right;">
+0.5534839
+</td>
+<td style="text-align:right;">
+0.8323682
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cubist
+</td>
+<td style="text-align:right;">
+0.3191073
+</td>
+<td style="text-align:right;">
+-0.0618015
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+<td style="text-align:right;">
+0.7658252
+</td>
+<td style="text-align:right;">
+0.3934673
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+rf
+</td>
+<td style="text-align:right;">
+0.6656808
+</td>
+<td style="text-align:right;">
+0.5534839
+</td>
+<td style="text-align:right;">
+0.7658252
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+<td style="text-align:right;">
+0.7482674
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bagEarth
+</td>
+<td style="text-align:right;">
+0.9631530
+</td>
+<td style="text-align:right;">
+0.8323682
+</td>
+<td style="text-align:right;">
+0.3934673
+</td>
+<td style="text-align:right;">
+0.7482674
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong><em>TODO:</em></strong> Our model list has negative correlations, indicating that it will be effective. <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>#ensemble1 &lt;- caretStack(
+#  mod_list,
+#  method=&quot;glmnet&quot;,
+#  metric=&quot;RMSE&quot;,
+#  trControl=trainControl(
+#    method=&quot;cv&quot;,
+#    number=5,
+#    savePredictions=&quot;final&quot;
+#  )
+#)
+#ensemble1$ens_model$results %&gt;% kable () %&gt;% kable_styling(bootstrap_options = &quot;striped&quot;, full_width = F)</code></pre>
+<p><strong><em>TODO:</em></strong> We see a several percent improvement over the best single model. <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>#preds &lt;- predict(ensemble1, x_test) 
+#preds %&gt;% postResample(y_test)</code></pre>
+<p><strong><em>TODO:</em></strong> Predicted Vs Actual <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>#preds_df &lt;- data.frame(predicted = preds, actual = y_test)
+#ggplot(preds_df) + geom_point(aes(x = predicted, y = actual)) + geom_smooth(aes(x = predicted, y = actual))</code></pre>
 </div>
 <div id="model-selection" class="section level2">
 <h2>Model Selection</h2>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
+<p><strong><em>TODO:</em></strong> On the test set, the ensemble’s predictions are consistent throughout the range of PH. Consistent quality is, theoretically, a feature of ensemble models because the models are weighted such that predictions are maximized. If one model predicts better at lower PH, it will be upweighted over that range. There are several outliers, but when not all of the variance is explainable, this is unavoidable. <strong><em>TODO:</em></strong></p>
 </div>
 <div id="predict-on-eval-set" class="section level2">
 <h2>Predict on Eval Set</h2>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
+<p><strong><em>TODO:</em></strong> With our hyperparameters of the individual models optimized, we want to provide each model the entire training set and build the meta-model based on these optimized single models. <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>#xgb_grid &lt;- expand.grid(eta = c(.01), nrounds = c(1000), max_depth = c(6), gamma = c(0), colsample_bytree = c(.8), min_child_weight = c(.8), subsample = c(.8))
+#cub_grid &lt;- expand.grid(.committees = c(5), .neighbors = c(7))
+#mars_grid &lt;- expand.grid(.degree = c(2), .nprune = 24)
+#dart_grid &lt;- expand.grid(eta = c(.01), nrounds = c(1000), gamma = c(.1), skip_drop = c(.6), rate_drop = c(.4), max_depth = c(6), colsample_bytree = c(.6), min_child_weight = c(.6), subsample = c(.6))
+#rf_grid &lt;- expand.grid(mtry = 25)
+
+#tuning_list &lt;-list(
+#  caretModelSpec(method=&quot;xgbTree&quot;, tuneGrid = xgb_grid),
+#  caretModelSpec(method=&quot;xgbDART&quot;, tuneGrid = dart_grid),
+#  caretModelSpec(method=&quot;cubist&quot;, tuneGrid = cub_grid),
+#  caretModelSpec(method=&quot;rf&quot;, tuneGrid = rf_grid, importance = TRUE),
+#  caretModelSpec(method=&quot;bagEarth&quot;, tuneGrid = mars_grid)
+#)
+
+
+
+#my_control &lt;- trainControl(method = &#39;cv&#39;,
+#                           number = 5,
+#                           savePredictions = &#39;final&#39;,
+#                           index = createFolds(y, 5),
+#                           allowParallel = TRUE) 
+
+#mod_list &lt;- caretList(
+#  x = bev_train,
+#  y = y,
+#  preProcess = c(&#39;center&#39;, &#39;scale&#39;),
+#  trControl = my_control,
+#  tuneList = tuning_list
+#)
+#final_ensemble &lt;- caretStack(
+#  mod_list,
+#  method=&quot;glmnet&quot;,
+#  metric=&quot;RMSE&quot;,
+#  trControl=trainControl(
+#    method=&quot;cv&quot;,
+#    number=5,
+#    savePredictions=&quot;final&quot;
+#  )
+#)
+#final_ensemble$ens_model$results %&gt;% kable () %&gt;% kable_styling(bootstrap_options = &quot;striped&quot;, full_width = F)</code></pre>
+<p><strong><em>TODO:</em></strong> With more data available, the ensemble improve around 6%. Our model is considerably more predictive than a “baseline” single model.</p>
+<p>Ensemble Model Importances <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>#plot(varImp(final_ensemble$ens_model))</code></pre>
+<p><strong><em>TODO:</em></strong> The MARS model is excluded, but all four tree models contribute the the final prediction</p>
+<p>Export Predictions <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>#predictions &lt;- predict(final_ensemble, bev_eval)
+#predictions %&gt;% tibble::enframe(name = NULL) %&gt;% datatable()</code></pre>
+<p><strong><em>TODO:</em></strong> The MARS model is excluded, but all four tree models contribute the the final prediction</p>
+<p>Export Predictions <strong><em>TODO:</em></strong></p>
+<pre class="r"><code>#predictions &lt;- predict(final_ensemble, bev_eval)
+#predictions %&gt;% tibble::enframe(name = NULL) %&gt;% datatable()</code></pre>
 </div>
 </div>
 <div id="conclusion" class="section level1">
 <h1>Conclusion</h1>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
+<p><strong><em>TODO:</em></strong> After working on extracting the data from the given files, we processed data cleansing and handle the missing values along with the NAs. We trained and tested the data 75% to 25% respectively. Our models were able to produce for us predicted values for pH which are also saved in predictions.csv file separately. We notice that all the values predicted are greater than 7 and more specifically greater than 8. This scale translates into saying that the beverage made is alkaline. At the beginning of this study, we were not informed about the nature of the ABC Beverage company, meaning of what type of beverage manufacturer it was. But from our studies we can conclude that this company produces alkaline beverages like water, dairy, tea, fruit drinks, etc. <strong><em>TODO:</em></strong></p>
 </div>
 <div id="references" class="section level1">
 <h1>References</h1>
-<p><strong><em>TODO:</em></strong></p>
-<p><strong><em>TODO:</em></strong></p>
+<p><strong><em>TODO:</em></strong> Github : <a href="https://github.com/monuchacko/cuny_msds/blob/master/data_624/project2.Rmd" class="uri">https://github.com/monuchacko/cuny_msds/blob/master/data_624/project2.Rmd</a> RPUBS: Prediction Results: Forecasting: Principles and Practice - 2nd edition: <a href="https://otexts.com/fpp2/" class="uri">https://otexts.com/fpp2/</a> Applied Predictive Modeling: <a href="https://github.com/hovig/Team5-Data624-Project2/blob/master/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf" class="uri">https://github.com/hovig/Team5-Data624-Project2/blob/master/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf</a> <strong><em>TODO:</em></strong></p>
 </div>
 
 

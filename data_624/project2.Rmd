@@ -8,19 +8,25 @@ output:
     toc_float:
       collapsed: false
       smooth_scroll: false
+    number_section:  true
+    theme: cerulean
+    highlight:  tango
+editor_options: 
+  chunk_output_type: inline    
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 ```
 
 # Project Problem Statement
 
-***TODO:***
+This is role playing.  I am your new boss.  I am in charge of production at ABC Beverage and you are a team of data scientists reporting to me.  My leadership has told me that new regulations are requiring us to understand our manufacturing process, the predictive factors and be able to report to them our predictive model of PH.
 
-This is role playing. I am your new boss. I am in charge of production at ABC Beverage and you are a team of data scientists reporting to me. My leadership has told me that new regulations are requiring us to understand our manufacturing process, the predictive factors and be able to report to them our predictive model of PH. Please use the historical data set I am providing. Build and report the factors in BOTH a technical and non-technical report. I like to use Word and Excel. Please provide your non-technical report in a business friendly readable document and your predictions in an Excel readable format. The technical report should show clearly the models you tested and how you selected your final approach. Please submit both Rpubs links and .rmd files or other readable formats for technical and non-technical reports. Also submit the excel file showing the prediction of your models for pH.
+Please use the historical data set I am providing.  Build and report the factors in BOTH a technical and non-technical report.  I like to use Word and Excel.  Please provide your non-technical report in a  business friendly readable document and your predictions in an Excel readable format.   The technical report should show clearly the models you tested and how you selected your final approach.
 
-***TODO:***
+Please submit both Rpubs links and .rmd files or other readable formats for technical and non-technical reports.  Also submit the excel file showing the prediction of your models for pH.
+
 
 # Executive Summary
 
@@ -156,17 +162,13 @@ str(se_data)
 #***TODO:***
 
 #***TODO:***
+bev_raw <- read_csv('https://raw.githubusercontent.com/hovig/Team5-Data624-Project2/master/StudentData.csv') 
 
-bev_raw <- read_csv('https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudDataFile.csv') 
+#bev_raw <- read_csv('https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudDataFile.csv') 
 head(bev_raw)
 ```
 
 # Data Preparation and EDA (Exploratory Data Analysis)
-
-***TODO:***
-
-***TODO:***
-
 
 ```{r warning=FALSE, message=FALSE}
 bev_raw %>%
@@ -333,10 +335,10 @@ Four of the five models will be tree-based ensembles because this model type can
 
 
 ```{r model-tech-app-1, warning=FALSE, message=FALSE}
-xgb_grid <- expand.grid(eta = c(.01), nrounds = c(10), max_depth = c(6), gamma = c(0), colsample_bytree = c(.8), min_child_weight = c(.8), subsample = c(.8))
+xgb_grid <- expand.grid(eta = c(.01), nrounds = c(1000), max_depth = c(6), gamma = c(0), colsample_bytree = c(.8), min_child_weight = c(.8), subsample = c(.8))
 cub_grid <- expand.grid(.committees = c(5), .neighbors = c(7))
 mars_grid <- expand.grid(.degree = c(2), .nprune = 24)
-dart_grid <- expand.grid(eta = c(.01), nrounds = c(10), gamma = c(.1), skip_drop = c(.6), rate_drop = c(.4), max_depth = c(6), colsample_bytree = c(.6), min_child_weight = c(.6), subsample = c(.6))
+dart_grid <- expand.grid(eta = c(.01), nrounds = c(1000), gamma = c(.1), skip_drop = c(.6), rate_drop = c(.4), max_depth = c(6), colsample_bytree = c(.6), min_child_weight = c(.6), subsample = c(.6))
 rf_grid <- expand.grid(mtry = 25)
 
 tuning_list <-list(
@@ -361,7 +363,7 @@ mod_list <- caretList(
   tuneList = tuning_list
 )
 ```
-
+wwwwwwwwwwwwwwwwwww
 ***TODO:***
 The training grid is commented out because of the time required to run, but can be uncommented for reproducibility of our model optimization
 ***TODO:***
@@ -390,11 +392,6 @@ predict(mod_list$bagEarth, x_test) %>%
 ```
 
 
-***TODO:***
-
-***TODO:***
-
-
 ## RandomForest
 
 
@@ -409,7 +406,6 @@ predict(mod_list$rf, x_test) %>%
 ```
 
 
-
 ## Cubist
 
 
@@ -422,10 +418,6 @@ show_results(mod_list$cubist)
 predict(mod_list$cubist, x_test) %>%
   postResample(y_test)
 ```
-
-***TODO:***
-
-***TODO:***
 
 
 ## XGB Trees
@@ -460,78 +452,22 @@ While the XGBTee model offers the lowest RMSE, it still only explains about 50% 
 
 # Model Evaluation And Model Selection
 
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-
-***TODO:***
-
-***TODO:***
-
-
 ## Variable Importances
 
 
 ```{r car-imp-1, warning=FALSE, message=FALSE}
-p1 <- varImp(mod_list$cubist) %>%
-  plot(top = 10, main = 'Cubist')
-p2 <- varImp(mod_list$xgbTree) %>%
-  plot(top = 10, main = 'XGBTrees')
-p3 <- varImp(mod_list$xgbDART) %>%
-  plot(top = 10, main = 'XGBDart')
-p4 <- varImp(mod_list$bagEarth) %>%
-  plot(top = 10, main = 'MARS')
-p5 <- varImp(mod_list$rf) %>%
-  plot(top = 10, main = 'RF')
-grid.arrange(p1,p2,p3,p4,p5, nrow = 3, ncol = 2)
+#p1 <- varImp(mod_list$cubist) %>%
+#  plot(top = 10, main = 'Cubist')
+#p2 <- varImp(mod_list$xgbTree) %>%
+#  plot(top = 10, main = 'XGBTrees')
+#p3 <- varImp(mod_list$xgbDART) %>%
+#  plot(top = 10, main = 'XGBDart')
+#p4 <- varImp(mod_list$bagEarth) %>%
+#  plot(top = 10, main = 'MARS')
+#p5 <- varImp(mod_list$rf) %>%
+#  plot(top = 10, main = 'RF')
+#grid.arrange(p1,p2,p3,p4,p5, nrow = 3, ncol = 2)
 ```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
-```{r warning=FALSE, message=FALSE}
-
-```
-
 
 ***TODO:***
 Observations:
@@ -546,19 +482,19 @@ Variable Counts among the Models
 
 
 ```{r warning=FALSE, message=FALSE}
-top_10 <- function(model) {
-  varImp(model)$importance %>%
-  rownames_to_column('var') %>%
-  arrange(desc(Overall)) %>%
-  head(10) %>%
-  select(var) 
-}
+#top_10 <- function(model) {
+#  varImp(model)$importance %>%
+#  rownames_to_column('var') %>%
+#  arrange(desc(Overall)) %>%
+#  head(10) %>%
+#  select(var) 
+#}
 
-rbind(top_10(mod_list$xgbDART), top_10(mod_list$xgbTree), top_10(mod_list$cubist), top_10(mod_list$bagEarth), top_10(mod_list$rf)) %>%
-  group_by(var) %>%
-  summarise(ModelCount = n()) %>%
-  arrange(desc(ModelCount)) %>%
-  kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
+#rbind(top_10(mod_list$xgbDART), top_10(mod_list$xgbTree), top_10(mod_list$cubist), top_10(mod_list$bagEarth), top_10(mod_list$rf)) %>%
+#  group_by(var) %>%
+#  summarise(ModelCount = n()) %>%
+#  arrange(desc(ModelCount)) %>%
+#  kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
 ```
 
 ***TODO:***
@@ -568,8 +504,8 @@ Because 4 of the 5 models in the ensemble are tree-based, looking a single decis
 ***TODO:***
 
 ```{r warning=FALSE, message=FALSE}
-rp_mod <- rpart::rpart(ph ~ ., data = data.frame(bev_train, ph = y), method = 'anova')
-rpart.plot(rp_mod, uniform=TRUE)
+#rp_mod <- rpart::rpart(ph ~ ., data = data.frame(bev_train, ph = y), method = 'anova')
+#rpart.plot(rp_mod, uniform=TRUE)
 ```
 
 ## Test Model Stack
@@ -588,17 +524,17 @@ Our model list has negative correlations, indicating that it will be effective.
 ***TODO:***
 
 ```{r warning=FALSE, message=FALSE}
-ensemble1 <- caretStack(
-  mod_list,
-  method="glmnet",
-  metric="RMSE",
-  trControl=trainControl(
-    method="cv",
-    number=5,
-    savePredictions="final"
-  )
-)
-ensemble1$ens_model$results %>% kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
+#ensemble1 <- caretStack(
+#  mod_list,
+#  method="glmnet",
+#  metric="RMSE",
+#  trControl=trainControl(
+#    method="cv",
+#    number=5,
+#    savePredictions="final"
+#  )
+#)
+#ensemble1$ens_model$results %>% kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
 ```
 
 ***TODO:***
@@ -606,8 +542,8 @@ We see a several percent improvement over the best single model.
 ***TODO:***
 
 ```{r warning=FALSE, message=FALSE}
-preds <- predict(ensemble1, x_test) 
-preds %>% postResample(y_test)
+#preds <- predict(ensemble1, x_test) 
+#preds %>% postResample(y_test)
 ```
 
 ***TODO:***
@@ -615,8 +551,8 @@ Predicted Vs Actual
 ***TODO:***
 
 ```{r warning=FALSE, message=FALSE}
-preds_df <- data.frame(predicted = preds, actual = y_test)
-ggplot(preds_df) + geom_point(aes(x = predicted, y = actual)) + geom_smooth(aes(x = predicted, y = actual))
+#preds_df <- data.frame(predicted = preds, actual = y_test)
+#ggplot(preds_df) + geom_point(aes(x = predicted, y = actual)) + geom_smooth(aes(x = predicted, y = actual))
 ```
 
 
@@ -639,46 +575,46 @@ With our hyperparameters of the individual models optimized, we want to provide 
 
 
 ```{r warning=FALSE, message=FALSE}
-xgb_grid <- expand.grid(eta = c(.01), nrounds = c(1000), max_depth = c(6), gamma = c(0), colsample_bytree = c(.8), min_child_weight = c(.8), subsample = c(.8))
-cub_grid <- expand.grid(.committees = c(5), .neighbors = c(7))
-mars_grid <- expand.grid(.degree = c(2), .nprune = 24)
-dart_grid <- expand.grid(eta = c(.01), nrounds = c(1000), gamma = c(.1), skip_drop = c(.6), rate_drop = c(.4), max_depth = c(6), colsample_bytree = c(.6), min_child_weight = c(.6), subsample = c(.6))
-rf_grid <- expand.grid(mtry = 25)
+#xgb_grid <- expand.grid(eta = c(.01), nrounds = c(1000), max_depth = c(6), gamma = c(0), colsample_bytree = c(.8), min_child_weight = c(.8), subsample = c(.8))
+#cub_grid <- expand.grid(.committees = c(5), .neighbors = c(7))
+#mars_grid <- expand.grid(.degree = c(2), .nprune = 24)
+#dart_grid <- expand.grid(eta = c(.01), nrounds = c(1000), gamma = c(.1), skip_drop = c(.6), rate_drop = c(.4), max_depth = c(6), colsample_bytree = c(.6), min_child_weight = c(.6), subsample = c(.6))
+#rf_grid <- expand.grid(mtry = 25)
 
-tuning_list <-list(
-  caretModelSpec(method="xgbTree", tuneGrid = xgb_grid),
-  caretModelSpec(method="xgbDART", tuneGrid = dart_grid),
-  caretModelSpec(method="cubist", tuneGrid = cub_grid),
-  caretModelSpec(method="rf", tuneGrid = rf_grid, importance = TRUE),
-  caretModelSpec(method="bagEarth", tuneGrid = mars_grid)
-)
+#tuning_list <-list(
+#  caretModelSpec(method="xgbTree", tuneGrid = xgb_grid),
+#  caretModelSpec(method="xgbDART", tuneGrid = dart_grid),
+#  caretModelSpec(method="cubist", tuneGrid = cub_grid),
+#  caretModelSpec(method="rf", tuneGrid = rf_grid, importance = TRUE),
+#  caretModelSpec(method="bagEarth", tuneGrid = mars_grid)
+#)
 
 
 
-my_control <- trainControl(method = 'cv',
-                           number = 5,
-                           savePredictions = 'final',
-                           index = createFolds(y, 5),
-                           allowParallel = TRUE) 
+#my_control <- trainControl(method = 'cv',
+#                           number = 5,
+#                           savePredictions = 'final',
+#                           index = createFolds(y, 5),
+#                           allowParallel = TRUE) 
 
-mod_list <- caretList(
-  x = bev_train,
-  y = y,
-  preProcess = c('center', 'scale'),
-  trControl = my_control,
-  tuneList = tuning_list
-)
-final_ensemble <- caretStack(
-  mod_list,
-  method="glmnet",
-  metric="RMSE",
-  trControl=trainControl(
-    method="cv",
-    number=5,
-    savePredictions="final"
-  )
-)
-final_ensemble$ens_model$results %>% kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
+#mod_list <- caretList(
+#  x = bev_train,
+#  y = y,
+#  preProcess = c('center', 'scale'),
+#  trControl = my_control,
+#  tuneList = tuning_list
+#)
+#final_ensemble <- caretStack(
+#  mod_list,
+#  method="glmnet",
+#  metric="RMSE",
+#  trControl=trainControl(
+#    method="cv",
+#    number=5,
+#    savePredictions="final"
+#  )
+#)
+#final_ensemble$ens_model$results %>% kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
 
 ```
 
@@ -689,7 +625,7 @@ Ensemble Model Importances
 ***TODO:***
 
 ```{r warning=FALSE, message=FALSE}
-plot(varImp(final_ensemble$ens_model))
+#plot(varImp(final_ensemble$ens_model))
 ```
 
 ***TODO:***
@@ -699,8 +635,8 @@ Export Predictions
 ***TODO:***
 
 ```{r warning=FALSE, message=FALSE}
-predictions <- predict(final_ensemble, bev_eval)
-predictions %>% tibble::enframe(name = NULL) %>% datatable()
+#predictions <- predict(final_ensemble, bev_eval)
+#predictions %>% tibble::enframe(name = NULL) %>% datatable()
 ```
 
 ***TODO:***
@@ -710,8 +646,8 @@ Export Predictions
 ***TODO:***
 
 ```{r warning=FALSE, message=FALSE}
-predictions <- predict(final_ensemble, bev_eval)
-predictions %>% tibble::enframe(name = NULL) %>% datatable()
+#predictions <- predict(final_ensemble, bev_eval)
+#predictions %>% tibble::enframe(name = NULL) %>% datatable()
 ```
 
 
