@@ -226,7 +226,7 @@ for(i in seq(from = 2, to = length(trainset_cap), by = 9)) {
 }
 ```
 
-Observing the above histograms, I decided the critical skewness, needing BoxCox transformation, to be 0.75 or higher. Based on this critical value, I am creating a vector transform_cols, which'll contain the column names of skewed columns.    
+Observing the above histograms, we decided the critical skewness, needing BoxCox transformation, to be 0.75 or higher. Based on this critical value, we are creating a vector transform_cols, which'll contain the column names of skewed columns.    
 
 The columns, whose skewness exceed the critical value of 0.75, are printed below.    
 
@@ -444,7 +444,7 @@ for(i in seq(from = 2, to = length(eval_cap), by = 9)) {
 
 We can ignore PH, which is target column, where zeros were forced in.      
 
-Observing the above histograms, I decided the critical skewness, needing BoxCox transformation, to be 0.75 or higher. Based on this critical value, I am creating a vector transform_cols2, which'll contain the column names of skewed columns.    
+Observing the above histograms, we decided the critical skewness, needing BoxCox transformation, to be 0.75 or higher. Based on this critical value, we are creating a vector transform_cols2, which'll contain the column names of skewed columns.    
 
 The columns, whose skewness exceed the critical value of 0.75, are printed below.    
 
@@ -679,7 +679,7 @@ The MARS R-Squared value is 0.506, meaning that the model explains 51% of variab
 
 ### SVM Model
 
-The next model we will tune and evaluate is SVM model - I will use pre-process to center and scale the data and will use tune length of 10. The benefist of SVM are that, since the squared residuals are not used, large outliers have a limited effect on the regression equation. Second, samples that the model fits well have no effect on the regression equation. 
+The next model we will tune and evaluate is SVM model - we will use pre-process to center and scale the data and will use tune length of 10. The benefist of SVM are that, since the squared residuals are not used, large outliers have a limited effect on the regression equation. Second, samples that the model fits well have no effect on the regression equation. 
 
 ```{r}
 set.seed(200)
@@ -881,6 +881,10 @@ head(final_predictions_df) %>%
 write_csv(final_predictions_df, "./data/FinalResult.csv")
 ```
 
+# Conclusion
+
+We evaluated many linear, non-linear, tree based models using the historical data and found Cubist to be most effective. This is our initial findings based on the data we had so far. In the process or creating the model we created a system to constantly evaluate and based on the latest data available. This will make this system fine tune and make more accurate recommendations in the future.
+
 
 # References
 
@@ -888,7 +892,7 @@ write_csv(final_predictions_df, "./data/FinalResult.csv")
 - RPubs: https://rpubs.com/monuchacko/772822
 - Prediction Results: https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/FinalResult.csv
 - Forecasting: Principles and Practice - 2nd edition: https://otexts.com/fpp2/
-- Executive Report: 
+- Executive Report: https://github.com/monuchacko/cuny_msds/blob/master/data_624/data/SummaryReport.pdf
 
 
 
