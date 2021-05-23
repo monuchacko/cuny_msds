@@ -49,605 +49,812 @@ The data set is a historic data containing predictors associated to the PH and i
 - The test data (StudentEvaluation.xlsx).
 ***TODO:***
 
-```{r install-packages, warning=FALSE, message=FALSE}
-library("readxl")
-library(httr)
+```{r install-packages, echo=FALSE, message=FALSE, warning=FALSE}
+library(Amelia)
+library(AppliedPredictiveModeling)
+library(car)
 library(caret)
-library(tidyverse)
-library(kableExtra)
-library(caretEnsemble)
-library(mice)
-library(kableExtra)
-library(xgboost)
+library(corrplot)
+library(data.table)
 library(dplyr)
-library(parallel)
-library(doParallel)
-library(ggplot2)
-library(Hmisc)
-library(psych)
-library(reshape2)
-library(gridExtra)
-library(rpart.plot)
 library(DT)
-library(earth)
-#library(MASS)
-#install.packages("TeachingDemos")
-#install.packages("plotmo")
-
-#Loading required package: lattice
-#Loading required package: ggplot2
-#Loading required package: class
-#Loaded mda 0.5-2
-
-#Loading required package: Formula
-#Loading required package: plotmo
-#Loading required package: plotrix
-#Loading required package: TeachingDemos
-
-#suppressWarnings(suppressMessages(library(data.table)))
-#suppressWarnings(suppressMessages(library(openxlsx)))
-#suppressWarnings(suppressMessages(library(psych)))
-#suppressWarnings(suppressMessages(library(knitr)))
-##suppressWarnings(suppressMessages(library(DataExplorer)))
-#suppressWarnings(suppressMessages(library(VIM)))
-#suppressWarnings(suppressMessages(library(corrplot)))
-#suppressWarnings(suppressMessages(library(caret)))
-#suppressWarnings(suppressMessages(library(PerformanceAnalytics)))
-```
-
-
-```{r install-packages-notes, warning=FALSE, message=FALSE, results='hide', echo=FALSE}
-#install.packages("TeachingDemos")
-#install.packages("plotmo")
-
-#Packages required for earth
-#Loading required package: lattice
-#Loading required package: ggplot2
-#Loading required package: class
-#Loaded mda 0.5-2
-
-#Loading required package: Formula
-#Loading required package: plotmo
-#Loading required package: plotrix
-#Loading required package: TeachingDemos
-
-# Other notes
-#suppressWarnings(suppressMessages(library(data.table)))
-#suppressWarnings(suppressMessages(library(openxlsx)))
-#suppressWarnings(suppressMessages(library(psych)))
-#suppressWarnings(suppressMessages(library(knitr)))
-##suppressWarnings(suppressMessages(library(DataExplorer)))
-#suppressWarnings(suppressMessages(library(VIM)))
-#suppressWarnings(suppressMessages(library(corrplot)))
-#suppressWarnings(suppressMessages(library(caret)))
-#suppressWarnings(suppressMessages(library(PerformanceAnalytics)))
-```
-
-
-```{r warning=FALSE, message=FALSE}
-se_data <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudEval.csv")
-sd_data <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudData.csv")
-
-```
-
-```{r warning=FALSE, message=FALSE}
-dim(sd_data)
-```
-
-```{r warning=FALSE, message=FALSE}
-colnames(sd_data)
-```
-
-```{r warning=FALSE, message=FALSE}
-str(sd_data)
-```
-
-```{r warning=FALSE, message=FALSE}
-dim(se_data)
-```
-
-```{r warning=FALSE, message=FALSE}
-colnames(se_data)
-```
-
-```{r warning=FALSE, message=FALSE}
-str(se_data)
-```
-
-
-
-
-```{r warning=FALSE, message=FALSE}
-
-#***TODO:***
-
-#***TODO:***
-bev_raw <- read_csv('https://raw.githubusercontent.com/hovig/Team5-Data624-Project2/master/StudentData.csv') 
-
-#bev_raw <- read_csv('https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudDataFile.csv') 
-head(bev_raw)
-```
-
-# Data Preparation and EDA (Exploratory Data Analysis)
-
-```{r warning=FALSE, message=FALSE}
-bev_raw %>%
-  ggplot(aes(PH, fill=PH > 9)) + 
-  geom_histogram(bins=30) +
-  theme_bw() +
-  theme(legend.position='center') +
-  labs(y='Count', title='PH Levels in Dataset')
+library(e1071)
+library(forecast)
+library(fpp2)
+library(ggplot2)
+library(glmnet)
+library(gridExtra)
+library(kableExtra)
+library(knitr)
+library(lubridate)
+library(MASS)
+library(mice)
+library(pROC)
+library(psych)
+library(RANN)
+library(readxl)
+library(reshape2)
+library(stringr)
+library(tidyverse)
+library(tseries)
+library(urca)
 ```
 
 
 
 ```{r warning=FALSE, message=FALSE}
-bev_raw <- bev_raw %>% 
-  filter(!is.na(bev_raw$PH), bev_raw$PH < 9) 
-```
-
-```{r}
-dim(bev_raw)
-str(bev_raw)
-hist.data.frame(bev_raw)
-table(bev_raw$`Brand Code`)
-summary(bev_raw)
-describe(bev_raw %>% select(-`Brand Code`))
-```
-
-## Zero variance
-
-***TODO:***
-To filter for near-zero variance predictors, the caret package function nearZeroVar will return the column numbers of any predictors that fulfill the conditions outlined. A zero variance predictor will never be chosen for a split since it offers no possible predictive information.
-***TODO:***
-
-```{r warning=FALSE, message=FALSE}
-df1 <- bev_raw %>% select(-`Brand Code`) %>% mutate_each(funs(as.numeric(.)))%>%complete.cases()%>%
-       as.data.frame()
-
-
-names(df1)[nearZeroVar(df1)]
-```
-
-
-```{r warning=FALSE, message=FALSE}
-nzv <- nearZeroVar(bev_raw,saveMetrics= TRUE)
-nzv[nzv$nzv,]
-```
-
-## Box plot
-
-***TODO:***
-Box plots for the variables reveal, that besides having the outliers in the variables, most of the variables are skewed. For example: Variables density, carb flow, filler speed and oxygen filler are skewed providing us an opportunity to further check their distribution.
-***TODO:***
-
-
-
-```{r warning=FALSE, message=FALSE}
-df.m <- melt(bev_raw %>% select(-MFR, -`Filler Speed`, -`Carb Flow`,-`Bowl Setpoint`,`Carb Pressure1`,
-            `Hyd Pressure4`, `Air Pressurer`, `Carb Temp`, `Filler Level`, `Mnf Flow`), id.var = "Brand Code")
-p <-ggplot(data = df.m, aes(x=variable, y=value)) + 
-  geom_boxplot(outlier.colour="red", outlier.shape=8, outlier.size=4,aes(fill=variable)) +     
-  scale_y_continuous(name = "Predictors for PH", breaks = seq(0, 2, 0.5))  + 
-  coord_flip()
-p
-```
-
-
-```{r warning=FALSE, message=FALSE}
+#se_data <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudEval.csv")
+#sd_data <- read.csv("https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/StudData.csv")
 
 ```
 
 
 
+## Reading datasets.      
 
-## Normality
-
-***TODO:***
-Normality is one of the most widely used technique to understand the continuous predictors. In the below plot we can see normal distribution behavior of the given dataset for different features.
-***TODO:***
-
-```{r warning=FALSE, message=FALSE}
-bev_raw%>%
- select(-`Brand Code`) %>%   
-  select(2:20) %>%         
-  gather() %>%                            
-  ggplot(aes(value)) +                     
-    facet_wrap(~ key, scales = "free") +  
-    geom_density() 
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_train_data <- read.csv("./Data/StudentData.csv", stringsAsFactors = FALSE)
+Ins_eval_data <- read.csv("./Data/StudentEvaluation.csv", stringsAsFactors = FALSE)
 ```
 
+\newpage
+# Data Exploration of StudentData.csv. #       
 
+Initially,  we'll do a cursory exploration of the data. After that, we'll iteratively prepare and explore the data, wherever required.     
 
-```{r warning=FALSE, message=FALSE}
-bev_raw%>%
- select(-`Brand Code`) %>%   
-  select(`Carb Flow`, Density, MFR, Balling, `Pressure Vacuum`, PH, `Oxygen Filler`, `Bowl Setpoint`, `Pressure Setpoint`, `Air Pressurer`, `Alch Rel`,`Carb Rel`,`Balling Lvl`)   %>%               
-  gather() %>%                             
-  ggplot(aes(value)) +                     
-    facet_wrap(~ key, scales = "free") +  
-    geom_density() 
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+dim1 <- dim(Ins_train_data)
+print(paste0('Dimension of training set:   ', 'Number of rows: ', dim1[1], ', ', 'Number of cols: ', dim1[2]))
 ```
 
-
-
-# Data Preprocessing
-
-***TODO:***
-We perform 3 data preparation steps - Remove the near-zero variance variables we previously mentioned - Impute missing values with a Random Forest Regression with the MICE package - Create dummy variables for the categorical variable, brand
-
-Random Forest was chosen as the regression method in imputation because it requires very little tuning, allowing and there is no interface to tune the imputation model in MICE.
-***TODO:***
-
-
-```{r data-process-1, warning=FALSE, message=FALSE}
-cl <- makeCluster(detectCores())
-registerDoParallel(cl)
-set.seed(42)
-
-bev <- select(bev_raw, -PH) %>%
-  union_all(se_data) #since we're not using the labels (y values), combining the sets for data clearning is fine
-cols <- str_replace(colnames(bev), '\\s', '')
-colnames(bev) <- cols
-bev <- mutate(bev, BrandCode = ifelse(is.na(BrandCode), 'Unknown', BrandCode))
-y <- bev_raw$PH
-
-zero_vars <- nearZeroVar(bev[1:2566, ])
-bev_new <- bev[, -zero_vars]
-
-pred <- mice(data = bev_new, m = 3, method = 'rf', maxit = 3)
-bev_imputed <- complete(pred)
-
-form <- dummyVars(~ ., data = bev_imputed)
-bev_imputed <- predict(form, bev_imputed) %>% data.frame() %>% as.matrix()
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+print('Head of training data set:')
+head(Ins_train_data)
 ```
 
-# Model Building
+\newpage
 
-## Test Train Split
-
-***TODO:***
-We will split the data into train/test sets before running cross validation. This will allow us to make sure that predictions are consistent at all levels of PH.
-***TODO:***
-
-
-```{r test-train-split-1, model-bld-1, warning=FALSE, message=FALSE}
-bev_eval <- bev_imputed[2567:2833,]
-bev_train <- bev_imputed[1:2566,]
-samples <- createDataPartition(y, p = .75, list = F)
-x_train <- bev_train[samples, ]
-x_test<- bev_train[-samples, ]
-
-y_train <- y[samples]
-y_test <- y[-samples]
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+print('Structure of training data set:')
+str(Ins_train_data)
 ```
 
+There are few fields, which have missing values, which we'll investigate in greater details later.     
 
-## Modeling Technique and Approach
+\newpage
+# Data Preparation of StudentData.csv. #      
 
-***TODO:***
-For state-of-the-art prediction quality, we will use a model stack. This will consist of tuning models separately and then combining the candidate models into a metamodel that will formulate predictions with a linear combination of our tuned models.
+At this stage, we'll explore and prepare iteratively. Now, we'll check for NA. After that if required, we'll impute them. After that we'll show some boxplots of the numeric fields.       
 
-From the perspective of understanding the manufacturing process, the model stack will also provide benefits. The stack is like a panel of experts, each looking at the data through slightly different lenses to form their diagnoses. By looking at the predictors each model uses, we can gather assemble a complete picture of the factors that affect our manufacturing process.
+Checking for NA.    
 
-Four of the five models will be tree-based ensembles because this model type can handle non-linear relationships, is robust to outliers and skewed distributions, and can model complex interactions. One non-tree modle is included for divsersity in the stack.
-***TODO:***
-
-
-```{r model-tech-app-1, warning=FALSE, message=FALSE}
-xgb_grid <- expand.grid(eta = c(.01), nrounds = c(1000), max_depth = c(6), gamma = c(0), colsample_bytree = c(.8), min_child_weight = c(.8), subsample = c(.8))
-cub_grid <- expand.grid(.committees = c(5), .neighbors = c(7))
-mars_grid <- expand.grid(.degree = c(2), .nprune = 24)
-dart_grid <- expand.grid(eta = c(.01), nrounds = c(1000), gamma = c(.1), skip_drop = c(.6), rate_drop = c(.4), max_depth = c(6), colsample_bytree = c(.6), min_child_weight = c(.6), subsample = c(.6))
-rf_grid <- expand.grid(mtry = 25)
-
-tuning_list <-list(
-  caretModelSpec(method="xgbTree", tuneGrid = xgb_grid),
-  caretModelSpec(method="xgbDART", tuneGrid = dart_grid),
-  caretModelSpec(method="cubist", tuneGrid = cub_grid),
-  caretModelSpec(method="rf", tuneGrid = rf_grid, importance = TRUE),
-  caretModelSpec(method="bagEarth", tuneGrid = mars_grid)
-)
-
-my_control <- trainControl(method = 'cv',
-                           number = 5,
-                           savePredictions = 'final',
-                           index = createFolds(y_train, 5),
-                           allowParallel = TRUE) 
-
-mod_list <- caretList(
-  x = x_train,
-  y = y_train,
-  preProcess = c('center', 'scale'),
-  trControl = my_control,
-  tuneList = tuning_list
-)
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+any(is.na(Ins_train_data))
 ```
-wwwwwwwwwwwwwwwwwww
-***TODO:***
-The training grid is commented out because of the time required to run, but can be uncommented for reproducibility of our model optimization
-***TODO:***
 
-## MARS
+NA does exist. So, we'll impute with mice().     
 
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_train_imputed <- mice(Ins_train_data, m = 1, method = "pmm", print = F) %>% mice::complete()
+```
 
-```{r mars-1, warning=FALSE, message=FALSE}
-#helper function
-show_results <- function(model){ 
-  rslts <- model$results %>%
-    arrange(RMSE)
-  head(rslts, 10) %>% kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
+Rechecking for NA after imputation.    
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+any(is.na(Ins_train_imputed))
+```
+
+We observe that NA were removed. In the following, we'll visualize with missmap().        
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_train_imputed %>% missmap(main = "Missing / Observed")
+```
+
+Both is.na() and missmap() confirm that NA were eliminated.    
+
+\newpage
+# More Data Exploration of StudentData.csv.       
+
+Here, we'll explore the data a little further. First, we'll take a quick look at min, 1st quartile, median, mean, 2nd quartile, max etc.     
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+summary(Ins_train_imputed) # %>% kable
+```
+\newpage
+## Boxplots       
+First look at the boxplots.      
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+par(mfrow = c(3, 3))
+for(i in 2:33) {
+	if (is.numeric(Ins_train_imputed[,i])) {
+	  boxplot(Ins_train_imputed[,i], main = names(Ins_train_imputed[i]), col = 4, horizontal = TRUE)
+   }
+}
+```
+\newpage
+The boxplots show that some of the variables have outliers in them. So, we'll cap them.      
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_train_cap <- Ins_train_imputed
+
+for (i in 2:33) {
+  qntl <- quantile(Ins_train_cap[,i], probs = c(0.25, 0.75), na.rm = T)
+  cap_amt <- quantile(Ins_train_cap[,i], probs = c(0.05, 0.95), na.rm = T)
+  High <- 1.5 * IQR(Ins_train_cap[,i], na.rm = T)
+  
+  Ins_train_cap[,i][Ins_train_cap[,i] < (qntl[1] - High)] <- cap_amt[1]
+  Ins_train_cap[,i][Ins_train_cap[,i] > (qntl[2] + High)] <- cap_amt[2]
 }
 ```
 
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+par(mfrow = c(3, 3))
+for(i in 2:33) {
+	if (is.numeric(Ins_train_cap[,i])) {
+	  boxplot(Ins_train_cap[,i], main = names(Ins_train_cap[i]), col = 4, horizontal = TRUE)
+   }
+}
+```
+
+The outliers were caped and now we see that several fields PSC.FILL, PSC.C02, Mnf.Flow, Hyd.Pressure1, Hyd.Pressure2, Hyd.Pressure3, Usage.cont, Carb.Flow, Density, Balling, Oxygen.Filler, Bowl.Setpoint, Pressure.Setpoint, Alch.Rel, Balling.Lvl have high variance.        
+
+\newpage
+## Histograms       
+Histograms tell us how the data is distributed in the dataset (numeric fields).    
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+for(i in seq(from = 2, to = length(Ins_train_cap), by = 9)) {
+  if(i <= 27) {
+    multi.hist(Ins_train_cap[i:(i + 8)])
+  } else {
+    multi.hist(Ins_train_cap[i:(i + 4)])
+  }
+}
+```
+
+Observing the above histograms, I decided the critical skewness, needing BoxCox transformation, to be 0.75 or higher. Based on this critical value, I am creating a vector transform_cols, which'll contain the column names of skewed columns.    
+
+The columns, whose skewness exceed the critical value of 0.75, are printed below.    
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+transform_cols <- c()
+
+for(i in seq(from = 2, to = length(Ins_train_cap), by = 1)) {
+  if(abs(skewness(Ins_train_cap[, i])) >= 1) {
+    transform_cols <- append(transform_cols, names(Ins_train_cap[i]))
+    print(paste0(names(Ins_train_cap[i]), ": ", skewness(Ins_train_cap[, i])))
+  }
+}
+```
+
+\newpage
+Many of these histograms are skewed. So, following the recommendations of "Applied Statistical Learning" (page 105, 2nd para), I'll apply Box-Cox transformation to remove the skewness.       
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+lambda <- NULL
+data_imputed_2 <- Ins_train_cap
+
+for (i in 1:length(transform_cols)) {
+  lambda[transform_cols[i]] <- BoxCox.lambda(abs(Ins_train_cap[, transform_cols[i]]))
+  
+  data_imputed_2[c(transform_cols[i])] <- BoxCox(Ins_train_cap[transform_cols[i]], lambda[transform_cols[i]])
+}
+```
+
+Now, we don't need to observe the histograms all over again. It will suffice to see the skewness.    
+
+We observe that skewness of most or all of the columns reduced and some even reduced to less than 1.    
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+for(i in seq(from = 2, to = length(data_imputed_2), by = 1)) {
+  if(abs(skewness(data_imputed_2[, i])) >= 1) {
+    print(paste0(names(data_imputed_2[i]), ": ", skewness(data_imputed_2[, i])))
+  }
+}
+```
+
+\newpage
+## Categorical variables     
+Now, we'll explore the Categorical variables.    
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+cat('Brand.Code:')
+table(data_imputed_2$Brand.Code)
+```
+Observation: In Brand.Code column, 120 rows are empty. So, we'll impute them with "X".         
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_train_cap_imputed <- data_imputed_2 %>% mutate(Brand.Code = ifelse((Brand.Code == ""), "X", Brand.Code))
+
+cat("Brand.Code:")
+table(Ins_train_cap_imputed$Brand.Code)
+```
+
+\newpage
+## Correlations    
+
+At this point the data is prepared. So, we'll explore the top correlated variables.      
+
+For the purpose of correlation, we'll remove the only non-numeric field Brand.Code, out of the correlation.     
+
+Now, we'll look at the correlation matrix of the variables.      
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_train_corr <- Ins_train_cap_imputed[-1]
+
+cor_mx = cor(Ins_train_corr, use = "pairwise.complete.obs", method = "pearson")
+
+corrplot(cor_mx, method = "color", type = "upper", order = "original", number.cex = .7, addCoef.col = "black",   #Add coefficient of correlation
+                            tl.srt = 90,  # Text label color and rotation
+                            diag = TRUE,  # hide correlation coefficient on the principal diagonal
+                            tl.cex = 0.5)
+```
+
+At this point exploration, preparation and pair-wise correlations of **StudentData.csv** are done. So, I'll begin the same exericse for **StudentEvaluation.csv**.         
+
+\newpage
+# Data Exploration of StudentEvaluation.csv.      
+
+Initially, we’ll do a cursory exploration of the data. After that, we’ll iteratively prepare and explore the data, wherever required.       
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+dim2 <- dim(Ins_eval_data)
+print(paste0('Dimension of training set:   ', 'Number of rows: ', dim2[1], ', ', 'Number of cols: ', dim2[2]))
+```
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+print('Head of training data set:')
+head(Ins_eval_data)
+```
+
+\newpage
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+print('Structure of training data set:')
+str(Ins_eval_data)
+```
+
+There are few fields, which have missing values, which we'll investigate in greater details later.     
+
+\newpage
+# Data Preparation of StudentEvaluation.csv.      
+
+At this stage, we'll explore and prepare iteratively. Now, we'll check for NA. After that if required, we'll impute them.     
+
+After that we'll show some boxplots of the numeric fields.       
+
+Checking for NA.    
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+any(is.na(Ins_eval_data))
+```
+
+NA does exist. So, we'll impute with mice().     
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_eval_imputed <- mice(Ins_eval_data, m = 1, method = "pmm", print = F) %>% mice::complete()
+```
+
+Rechecking for NA after imputation.    
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+any(is.na(subset(Ins_eval_imputed, select = -c(PH))))
+```
+
+We observe that NA were removed in all columns except TARGET_FLAG and TARGET_AMT, which is what we want. In the following, we'll visualize with missmap().        
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_eval_imputed %>% missmap(main = "Missing / Observed")
+```
+
+Both is.na() and missmap() confirm that NA were eliminated.    
+
+\newpage
+# More Data exploration of StudentEvaluation.csv.       
+
+Now, we'll explore the data a little further. First, we'll take a quick look at min, 1st quartile, median, mean, 2nd quartile, max etc.     
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+summary(Ins_eval_imputed) # %>% kable
+```
+
+## Zeroing PH column     
+Currently, PH has NA. We'll insert zero into column PH, for convenience of analysis.     
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_eval_imputed$PH[is.na(Ins_eval_imputed$PH)] <- 0
+```
+
+\newpage
+## Boxplots     
+Let's take a first look at the boxplots      
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+par(mfrow = c(3, 3))
+for(i in 2:33) {
+	if (is.numeric(Ins_eval_imputed[,i])) {
+	  boxplot(Ins_eval_imputed[,i], main = names(Ins_eval_imputed[i]), col = 4, horizontal = TRUE)
+   }
+}
+```
+
+\newpage
+The boxplots show that some of the variables have outliers in them. So, we'll cap them.      
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_eval_cap <- Ins_eval_imputed
+
+for (i in 2:33) {
+  if(i == 26) next # skipping the PH column, which is a 26th column position.
+
+  qntl <- quantile(Ins_eval_cap[,i], probs = c(0.25, 0.75), na.rm = T)
+  cap_amt <- quantile(Ins_eval_cap[,i], probs = c(0.05, 0.95), na.rm = T)
+  High <- 1.5 * IQR(Ins_eval_cap[,i], na.rm = T)
+
+  Ins_eval_cap[,i][Ins_eval_cap[,i] < (qntl[1] - High)] <- cap_amt[1]
+  Ins_eval_cap[,i][Ins_eval_cap[,i] > (qntl[2] + High)] <- cap_amt[2]
+}
+```
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+par(mfrow = c(3, 3))
+for(i in 2:33) {
+  if(i == 26) next # skipping the PH column, which is a 26th column position.
+  
+	if (is.numeric(Ins_eval_cap[,i])) {
+	  boxplot(Ins_eval_cap[,i], main = names(Ins_eval_cap[i]), col = 4, horizontal = TRUE)
+   }
+}
+```
+
+The outliers were caped and now we see that several fields Carb.Volume, PSC.FILL, PSC.C02, Mnf.Flow, Hyd.Pressure1, Hyd.Pressure2, Hyd.Pressure3, Usage.cont, Carb.Flow, Density, Balling, Bowl.Setpoint, Pressure.Setpoint, Alch.Rel, Carb.Rel, Balling.Lvl have high variance.        
+
+We'll do the boxplots differently, with gglplot, to check if there are any differences.      
+
+\newpage
+## Histograms
+Histograms tell us how the data is distributed in the dataset (numeric fields).    
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+for(i in seq(from = 2, to = length(Ins_eval_cap), by = 9)) {
+  if(i <= 27) {
+    multi.hist(Ins_eval_cap[i:(i + 8)])
+  } else {
+    multi.hist(Ins_eval_cap[i:(i + 4)])
+  }
+}
+```
+
+We can ignore PH, which is target column, where zeros were forced in.      
+
+Observing the above histograms, I decided the critical skewness, needing BoxCox transformation, to be 0.75 or higher. Based on this critical value, I am creating a vector transform_cols2, which'll contain the column names of skewed columns.    
+
+The columns, whose skewness exceed the critical value of 0.75, are printed below.    
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+transform_cols2 <- c()
+
+for(i in seq(from = 2, to = length(Ins_eval_cap), by = 1)) {
+  if(i == 26) next # skipping the PH column, which is a 26th column position.
+
+  if(abs(skewness(Ins_eval_cap[, i])) >= 1) {
+   transform_cols2 <- append(transform_cols2, names(Ins_eval_cap[i]))
+   print(paste0(names(Ins_eval_cap[i]), ": ", skewness(Ins_eval_cap[, i])))
+  }
+}
+```
+
+Many of these histograms are skewed. So, following the recommendations of "Applied Statistical Learning" (page 105, 2nd para), I'll apply Box-Cox transformation to remove the skewness.       
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+lambda <- NULL
+data_imputed_3 <- Ins_eval_cap
+
+for (i in 1:length(transform_cols2)) {
+  lambda[transform_cols2[i]] <- BoxCox.lambda(abs(Ins_eval_cap[, transform_cols2[i]]))
+  
+  data_imputed_3[c(transform_cols2[i])] <- BoxCox(Ins_eval_cap[transform_cols2[i]], lambda[transform_cols2[i]])
+}
+```
+
+Now, we don't need to observe the histograms all over again. It will suffice to see the skewness.    
+
+We observe that skewness of most or all of the columns reduced and some even reduced to less than 1.    
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+for(i in seq(from = 2, to = length(data_imputed_3), by = 1)) {
+  if(i == 26) next # skipping the PH column, which is a 26th column position.
+
+  if(abs(skewness(data_imputed_3[, i])) >= 1) {
+    print(paste0(names(data_imputed_3[i]), ": ", skewness(data_imputed_3[, i])))
+  }
+}
+```
+
+\newpage
+## Categorical variables     
+Now, we'll explore the Categorical variables.    
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+cat('Brand.Code:')
+table(data_imputed_3$Brand.Code)
+```
+Observation: In Brand.Code column, 120 rows are empty. So, we'll impute them with "X".         
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_eval_cap_imputed <- data_imputed_3 %>% mutate(Brand.Code = ifelse((Brand.Code == ""), "X", Brand.Code))
+
+cat("Brand.Code:")
+table(Ins_eval_cap_imputed$Brand.Code)
+```
+
+\newpage
+## Correlations    
+
+At this point the data is prepared. So, we'll explore the top correlated variables.      
+
+For the purpose of correlation, we'll remove the only non-numeric field Brand.Code, out of the correlation.     
+
+Now, we'll look at the correlation matrix of the variables.      
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE}
+Ins_cap_corr <- subset(Ins_eval_cap_imputed, select = -c(Brand.Code, PH))
+
+cor_mx = cor(Ins_cap_corr, use = "pairwise.complete.obs", method = "pearson")
+
+corrplot(cor_mx, method = "color", type = "upper", order = "original", number.cex = .7, addCoef.col = "black",   #Add coefficient of correlation
+                            tl.srt = 90,  # Text label color and rotation
+                            diag = TRUE,  # hide correlation coefficient on the principal diagonal
+                            tl.cex = 0.5)
+```
+
+At this point exploration, preparation and pair-wise correlations of **StudentEvaluation.csv** are done.  So, I’ll begin the building process.        
+
+# Models
+
+## Splitting Test and Train
+
+We will use 80/20 split to create Test and Train data from our Ins_train_cap_imputed file. Since our dataset is not that large, we want to have as much training data available for modeling as possible. 
+
+```{r}
+set.seed(300)
+trainingRows <- createDataPartition(Ins_train_cap_imputed$PH, p = 0.8, list = FALSE)
+Ins_train <- Ins_train_cap_imputed[trainingRows, ]
+Ins_test <- Ins_train_cap_imputed[-trainingRows, ]
+
+Ins_train_Y <- subset( Ins_train, select = PH )
+Ins_train_X <- subset( Ins_train, select = -PH )
+Ins_test_Y <- subset( Ins_test, select = PH )
+Ins_test_X <- subset( Ins_test, select = -PH )
+```
+
+## Linear Models
+
+First we are going to try to use linear models to predict the relationship between our predictors and PH values, assuming that the relationship shows a constant rate of change. We do not have very high hopes for these models since there are a lot of limitations associated with Linear Models - in the real world, the data is rarely linearly separable.
+
+### GLM Model
+
+First, we will try Generalized Linear model. The GLM generalizes linear regression by allowing the linear model to be related to the response variable via a link function and by allowing the magnitude of the variance of each measurement to be a function of its predicted value.
+
+```{r}
+
+set.seed(300)
+lmFit1 = train(PH ~ ., data = Ins_train, 
+                      metric = 'RMSE', 
+                      method = 'glm', 
+                      preProcess = c('center', 'scale'), 
+                      trControl = trainControl(method = 'cv', number = 5, savePredictions = TRUE)
+)
+
+lmFit1_pred <- predict(lmFit1, Ins_test_X)
+
+lmFit1
+
+```
+
+The GLM R-Squared value is not very high - 0.40, meaning that the model explains 40% of variability in the data. RMSE for GLM is 0.135.
+
+### PLS Model
+
+Next, we will try Partial Least Squares model. PSL finds a linear regression model by projecting the predicted variables and the observable variables to a new space. If the correlation among predictors is high, then the partial least squares squares might be a better option. PSL might also be better is the number of predictors may be greater than the number of observations. 
+
+```{r}
+set.seed(300)
+lmFit2 = train(PH ~ ., data = Ins_train, 
+                      metric = 'RMSE', 
+                      method = 'pls', 
+                      preProcess = c('center', 'scale'), 
+                      trControl = trainControl(method = 'cv', number = 5, savePredictions = TRUE)
+)
+
+lmFit2_pred <- predict(lmFit2, Ins_test_X)
+
+lmFit2
+```
+
+The PLS R-Squared value is not very high - 0.37, meaning that the model explains 37% of variability in the data. RMSE for PLS is 0.132.
+
+
+### Ridge Model
+
+Next, we will try some penalized models, we will start with a Ridge model. Ridge regression adds a penalty on the sum of the squared regression parameters.
+
+```{r}
+set.seed(300)
+ridgeGrid <- data.frame(.lambda = seq(0, .1, length = 15))
+ridgeRegFit <- train(x = Ins_train_X[,-1], y = Ins_train_Y$PH,
+                      method = "ridge",
+                      tuneGrid = ridgeGrid,
+                      trControl = trainControl(method = "cv", number = 10),
+                      preProc = c("center", "scale")
+                     )
+ridgeRegFit
+
+ridge_pred <- predict(ridgeRegFit, Ins_test_X)
+```
+ 
+The Ridge R-Squared value is not very high - 0.376, meaning that the model explains 38% of variability in the data. RMSE for Ridge is 0.132.
+
+### ENET Model
+
+Next, we will try ENET model. Elastic net model has both ridge penalties and lasso penalties.
+ 
+```{r}
+df1_enet <-  train(x = as.matrix(Ins_train_X[,-1]), 
+                 y = Ins_train_Y$PH,
+                 method='enet',
+                 metric='RMSE',
+                 trControl = trainControl(method = 'cv', number = 5, savePredictions = TRUE))
+
+df1_enet
+
+enet_pred <- predict(df1_enet, Ins_test_X)
+```
+
+
+The ENet R-Squared value is not very high - 0.319, meaning that the model explains 32% of variability in the data. RMSE for Enet is 0.144.
+
+### Comparing Linear Models
+
+As expected, it doesn't look like either of the linear models has a good performance based on their R-squared and RMSE values, but let's compare those and see which model performs best. 
+
+```{r}
+z<- rbind(
+  postResample(pred = lmFit1_pred, obs = Ins_test_Y$PH),
+  postResample(pred = lmFit2_pred, obs = Ins_test_Y$PH),
+  postResample(pred = ridge_pred, obs = Ins_test_Y$PH),
+  postResample(pred = enet_pred, obs = Ins_test_Y$PH) 
+)
+
+data.frame(z,row.names = c('GLM', 'PLS', 'RIDGE', 'ENET'))
+```
+
+The best linear model based on the highest R-Squared and lowest RSME value is GLM.
+
+## Non-Linear Models
+
+Next we will try several Non-Linear models:multivariate adaptive regression splines (MARS), support vector machines (SVMs), and K-nearest neighbors (KNNs). We expect these models to perform better than Linear Models. We will look at Tree models separately. 
+
+### MARS Model
+
+We will continue modeling by tuning and evaluating a MARS model. MARS uses surrogate features instead of the original predictors.
+
+```{r}
+set.seed(200)
+marsGrid <- expand.grid(.degree = 1:2, .nprune = 2:20)
+marsTune <- train(x = Ins_train_X, 
+                  y = Ins_train_Y$PH, 
+                  method = "earth",
+                  preProc=c("center", "scale"),
+                  tuneGrid= marsGrid,
+                  trControl = trainControl(method = "cv"))
+```
+
+Evaluating MARS model's performance:
+
+```{r}
+marsPred = predict(marsTune, newdata = Ins_test_X)
+postResample(pred = marsPred, obs = Ins_test_Y$PH) 
+```
+
+The MARS R-Squared value is 0.506, meaning that the model explains 51% of variability in the data. RMSE for MARS is 0.122.
+
+### SVM Model
+
+The next model we will tune and evaluate is SVM model - I will use pre-process to center and scale the data and will use tune length of 10. The benefist of SVM are that, since the squared residuals are not used, large outliers have a limited effect on the regression equation. Second, samples that the model fits well have no effect on the regression equation. 
+
+```{r}
+set.seed(200)
+svmTuned = train(x = Ins_train_X[,-1], 
+                 y = Ins_train_Y$PH, 
+                 method="svmRadial", 
+                 preProc=c("center", "scale"), 
+                 tuneLength=10,
+                 trControl = trainControl(method = "repeatedcv"))
+
+svmTuned
+
+SVMPred = predict(svmTuned, newdata = Ins_test_X[,-1])
+postResample(pred = SVMPred, obs = Ins_test_Y$PH) 
+```
+
+The SVM R-Squared value is 0.432, meaning that the model explains 43% of variability in the data. RMSE for SVM is 0.133.
+
+### KNN Model
+
+The next Non-Linear model we will tune and evaluate is KNN model. The KNN approach predicts a new sample using the K-closest samples from the training set.
+
+```{r}
+set.seed(333)
+knnModel <- train(x = Ins_train_X[,-1], 
+                 y = Ins_train_Y$PH, 
+                 method = "knn",
+                 preProc = c("center", "scale"),
+                 tuneLength = 10)
+knnModel
+```
+
+Evaluating the model's performance:
+
+```{r}
+knnPred <- predict(knnModel, newdata = Ins_test_X[,-1])
+postResample(pred = knnPred, obs = Ins_test_Y$PH) 
+```
+
+The SVM R-Squared value is 0.416, meaning that the model explains 42% of variability in the data. RMSE for SVM is 0.135.
+
+### Comparing Non-Linear Models
+
+It looks like non-linear models are performing better than the linear models based on their R-squared values, but let's compare those and see which model performs best. 
+
+```{r}
+z<- rbind(
+  postResample(pred = marsPred, obs = Ins_test_Y$PH),
+  postResample(pred = SVMPred, obs = Ins_test_Y$PH),
+  postResample(pred = knnPred, obs = Ins_test_Y$PH)
+)
+
+data.frame(z,row.names = c('MARS', 'SVM', 'KNN'))
+```
+
+The best non-linear model based on the highest R-Squared and lowest RSME value is MARS
+
+## Tree Models
+
+We will now try some Tree models. Decision tree analysis involves making a tree-shaped diagram to chart out a course of action or a statistical probability analysis. It is used to break down complex problems or branches. Each branch of the decision tree could be a possible outcome.
+
+### Random Forest
+
+First, we will try a Random Forest Model, these model achieves variance reduction by selecting strong, complex learners that exhibit low bias. Because each learner is selected independently of all previous learners, random forests is robust to a noisy response.
+
+```{r}
+suppressWarnings(library(randomForest))
+set.seed(333)
+RF_model <- randomForest(x = Ins_train_X[,-1], 
+                  y = Ins_train_Y$PH, 
+                  importance = TRUE,
+                  ntree = 700
+                  )
+
+RFPred <- predict(RF_model, newdata = Ins_test_X[,-1])
+postResample(pred = RFPred, obs = Ins_test_Y$PH) 
+```
+
+The Random Forest R-Squared value is 0.641, meaning that the model explains 64% of variability in the data. RMSE for Random Forest is 0.109.
+
+### Boosted trees
+
+Next, we will try a Boosted Tree Model. The basic principles of gradient boosting are as follows: given a loss function (e.g., squared error for regression) and a weak learner (e.g., regression trees), the algorithm seeks to find an additive model that minimizes the loss function.
+
+```{r}
+suppressWarnings(library(gbm))
+set.seed(333)
+gbmGrid <- expand.grid(.interaction.depth = seq(1, 5, by = 2), 
+                       .n.trees = seq(300, 1000, by = 100),
+                       .shrinkage = c(0.05, 0.1),
+                       .n.minobsinnode = 5)
+
+gbmTune <- suppressWarnings(train(Ins_train_X[,-1], Ins_train_Y$PH,
+                method = "gbm",
+                tuneGrid = gbmGrid,
+                verbose = FALSE)
+                )
+
+GBM_Pred <- predict(gbmTune, newdata = Ins_test_X[,-1])
+postResample(pred = GBM_Pred, obs = Ins_test_Y$PH) 
+```
+
+The Boosted Tree R-Squared value is 0.578, meaning that the model explains 58% of variability in the data. RMSE for Boosted Tree is 0.114.
+
+### Single Tree
+
+Next, we will try a Single Tree Model. Basic regression trees partition the data into smaller groups that are more homogenous with respect to the response.
+
+```{r}
+set.seed(333)
+rpartTune <- train(Ins_train_X, Ins_train_Y$PH,
+                   method = "rpart2",
+                   tuneLength = 10,
+                   trControl = trainControl(method = "cv"))
+
+ST_Pred <- predict(rpartTune, newdata = Ins_test_X)
+postResample(pred = ST_Pred, obs = Ins_test_Y$PH) 
+```
+
+The Basic Regression Tree R-Squared value is 0.459, meaning that the model explains 46% of variability in the data. RMSE for Basic Regression Tree is 0.129.
+
+#### Cubist
+
+Next, we will try a Cubist Model. Cubist is a rule–based model. A tree is grown where the terminal leaves contain linear regression models. These models are based on the predictors used in previous splits. Also, there are intermediate linear models at each step of the tree.
+
+```{r}
+suppressWarnings(library(Cubist))
+set.seed(333)
+
+cubistMod <- cubist(Ins_train_X, 
+                    Ins_train_Y$PH, 
+                    committees = 6
+)
+
+cubistModPred <- predict(cubistMod, newdata = Ins_test_X)
+postResample(pred = cubistModPred, obs = Ins_test_Y$PH)
+```
+
+The Cubist R-Squared value is 0.671, meaning that the model explains 67% of variability in the data. RMSE for Cubist is 0.101.
+
+
+### Bagged Trees
+
+Finally, we will try Bagged Trees Model. Bagging effectively reduces the variance of a prediction through its aggregation process.
+
+```{r}
+set.seed(333)
+suppressWarnings(library(ipred))
+
+baggedTree <- ipredbagg(Ins_train_Y$PH, Ins_train_X)
+
+baggedTreePred <- predict(baggedTree, newdata = Ins_test_X)
+postResample(pred = baggedTreePred, obs = Ins_test_Y$PH)
+```
+
+The Bagged R-Squared value is 0.523, meaning that the model explains 53% of variability in the data. RMSE for Bagged Tree is 0.122.
+
+### Comparing Tree Models
+
+It looks like Tree Models are performing better than non-linear models and linear models based on their R-squared values, but let's compare those and see which model performs best. 
+
+```{r}
+z<- rbind(
+  postResample(pred = RFPred, obs = Ins_test_Y$PH),
+  postResample(pred = GBM_Pred, obs = Ins_test_Y$PH),
+  postResample(pred = ST_Pred, obs = Ins_test_Y$PH),
+  postResample(pred = cubistModPred, obs = Ins_test_Y$PH),
+  postResample(pred = baggedTreePred, obs = Ins_test_Y$PH)
+)
+
+data.frame(z,row.names = c('Random Forrest', 'Boosted Trees', 'Single Tree', 'Cubist', 'Bagged Tree'))
+```
+
+Based on the combination of R-Squared and RMSE values for all models we tried - the best Model is Cubist - that's what we will use for our predictions. Random Forest model also has vevry good performance compared to all the other models we tuned and evaluated. Overall, Tree models are performing better that Linear and other Non-Linear Models based on RMSE and R-Squared values. 
+
+Here is the list of most relevant variables in this Cubist model:
+```{r}
+varImp(cubistMod)
+```
+
+## Predictions
+
+Now that we have identified the best model, we can use our evaluation data to make PH predictions and output predictions to an excel readable format. We are adding predicted PH values to our Evaluation data set. 
+
+```{r}
+final_predictions <- predict(cubistMod, newdata=Ins_eval_cap_imputed)
+Ins_eval_cap_imputed$PH <- final_predictions
+final_predictions_df <- data.frame(Ins_eval_cap_imputed)
+head(final_predictions_df)
+write_csv(final_predictions_df, "PH_Result.csv")
+```
+
+Marker: 624-12_p
+
 
 ```{r warning=FALSE, message=FALSE}
-show_results(mod_list$bagEarth)
-```
 
-
-```{r warning=FALSE, message=FALSE}
-predict(mod_list$bagEarth, x_test) %>%
-  postResample(y_test)
-```
-
-
-## RandomForest
-
-
-```{r randon-fr-1, warning=FALSE, message=FALSE}
-show_results(mod_list$rf)
-```
-
-
-```{r warning=FALSE, message=FALSE}
-predict(mod_list$rf, x_test) %>%
-  postResample(y_test)
-```
-
-
-## Cubist
-
-
-```{r cubist-1, warning=FALSE, message=FALSE}
-show_results(mod_list$cubist)
-```
-
-
-```{r warning=FALSE, message=FALSE}
-predict(mod_list$cubist, x_test) %>%
-  postResample(y_test)
-```
-
-
-## XGB Trees
-
-```{r warning=FALSE, message=FALSE}
-show_results(mod_list$xgbTree)
-```
-
-```{r warning=FALSE, message=FALSE}
-predict(mod_list$xgbTree, x_test) %>%
-  postResample(y_test)
-```
-
-## XGB Dart
-
-
-```{r warning=FALSE, message=FALSE}
-show_results(mod_list$xgbDART)
-```
-
-```{r warning=FALSE, message=FALSE}
-predict(mod_list$xgbDART, x_test) %>%
-  postResample(y_test)
-```
-
-***TODO:***
-Assessment
-
-While the XGBTee model offers the lowest RMSE, it still only explains about 50% of the variance in PH. There is plenty of room for the other models to offer value. We will use the hyperparameters yielding the best RMSE in our final ensemble that will be built later.
-***TODO:***
-
-
-# Model Evaluation And Model Selection
-
-## Variable Importances
-
-
-```{r car-imp-1, warning=FALSE, message=FALSE}
-#p1 <- varImp(mod_list$cubist) %>%
-#  plot(top = 10, main = 'Cubist')
-#p2 <- varImp(mod_list$xgbTree) %>%
-#  plot(top = 10, main = 'XGBTrees')
-#p3 <- varImp(mod_list$xgbDART) %>%
-#  plot(top = 10, main = 'XGBDart')
-#p4 <- varImp(mod_list$bagEarth) %>%
-#  plot(top = 10, main = 'MARS')
-#p5 <- varImp(mod_list$rf) %>%
-#  plot(top = 10, main = 'RF')
-#grid.arrange(p1,p2,p3,p4,p5, nrow = 3, ncol = 2)
-```
-
-***TODO:***
-Observations:
-
-The top predictor, MnFlow, is consistent throughout the set of models
-The XGBoost models are similar in variables, but less similar in their distributions of importance
-After the top 5, divergence increases
-Based on what we see, there are more factors contributing to PH with the ensemble than with a single model. We’ll confirm this by looking at the count by predictor among each top 10:
-
-Variable Counts among the Models
-***TODO:***
-
-
-```{r warning=FALSE, message=FALSE}
-#top_10 <- function(model) {
-#  varImp(model)$importance %>%
-#  rownames_to_column('var') %>%
-#  arrange(desc(Overall)) %>%
-#  head(10) %>%
-#  select(var) 
-#}
-
-#rbind(top_10(mod_list$xgbDART), top_10(mod_list$xgbTree), top_10(mod_list$cubist), top_10(mod_list$bagEarth), top_10(mod_list$rf)) %>%
-#  group_by(var) %>%
-#  summarise(ModelCount = n()) %>%
-#  arrange(desc(ModelCount)) %>%
-#  kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
-```
-
-***TODO:***
-Best Single Tree
-
-Because 4 of the 5 models in the ensemble are tree-based, looking a single decision tree model will give us an idea of not just what predictors are important, but how they are being used to form predictions.
-***TODO:***
-
-```{r warning=FALSE, message=FALSE}
-#rp_mod <- rpart::rpart(ph ~ ., data = data.frame(bev_train, ph = y), method = 'anova')
-#rpart.plot(rp_mod, uniform=TRUE)
-```
-
-## Test Model Stack
-
-***TODO:***
-Now that our models are optimized and understood, we will form the ensemble and test the results. We first look at their prediction correlations to confirm that the stack, intuitively, be effective. The lower the correlation between the models, the more effective the stack will be.
-***TODO:***
-
-```{r warning=FALSE, message=FALSE}
-resamples <- resamples(mod_list)
-modelCor(resamples) %>% kable() %>% kable_styling(bootstrap_options = "striped", full_width = F)
-```
-
-***TODO:***
-Our model list has negative correlations, indicating that it will be effective.
-***TODO:***
-
-```{r warning=FALSE, message=FALSE}
-#ensemble1 <- caretStack(
-#  mod_list,
-#  method="glmnet",
-#  metric="RMSE",
-#  trControl=trainControl(
-#    method="cv",
-#    number=5,
-#    savePredictions="final"
-#  )
-#)
-#ensemble1$ens_model$results %>% kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
-```
-
-***TODO:***
-We see a several percent improvement over the best single model.
-***TODO:***
-
-```{r warning=FALSE, message=FALSE}
-#preds <- predict(ensemble1, x_test) 
-#preds %>% postResample(y_test)
-```
-
-***TODO:***
-Predicted Vs Actual
-***TODO:***
-
-```{r warning=FALSE, message=FALSE}
-#preds_df <- data.frame(predicted = preds, actual = y_test)
-#ggplot(preds_df) + geom_point(aes(x = predicted, y = actual)) + geom_smooth(aes(x = predicted, y = actual))
-```
-
-
-## Model Selection
-
-***TODO:***
-On the test set, the ensemble’s predictions are consistent throughout the range of PH. Consistent quality is, theoretically, a feature of ensemble models because the models are weighted such that predictions are maximized. If one model predicts better at lower PH, it will be upweighted over that range. There are several outliers, but when not all of the variance is explainable, this is unavoidable.
-***TODO:***
-
-
-
-
-
-## Predict on Eval Set
-
-
-***TODO:***
-With our hyperparameters of the individual models optimized, we want to provide each model the entire training set and build the meta-model based on these optimized single models.
-***TODO:***
-
-
-```{r warning=FALSE, message=FALSE}
-#xgb_grid <- expand.grid(eta = c(.01), nrounds = c(1000), max_depth = c(6), gamma = c(0), colsample_bytree = c(.8), min_child_weight = c(.8), subsample = c(.8))
-#cub_grid <- expand.grid(.committees = c(5), .neighbors = c(7))
-#mars_grid <- expand.grid(.degree = c(2), .nprune = 24)
-#dart_grid <- expand.grid(eta = c(.01), nrounds = c(1000), gamma = c(.1), skip_drop = c(.6), rate_drop = c(.4), max_depth = c(6), colsample_bytree = c(.6), min_child_weight = c(.6), subsample = c(.6))
-#rf_grid <- expand.grid(mtry = 25)
-
-#tuning_list <-list(
-#  caretModelSpec(method="xgbTree", tuneGrid = xgb_grid),
-#  caretModelSpec(method="xgbDART", tuneGrid = dart_grid),
-#  caretModelSpec(method="cubist", tuneGrid = cub_grid),
-#  caretModelSpec(method="rf", tuneGrid = rf_grid, importance = TRUE),
-#  caretModelSpec(method="bagEarth", tuneGrid = mars_grid)
-#)
-
-
-
-#my_control <- trainControl(method = 'cv',
-#                           number = 5,
-#                           savePredictions = 'final',
-#                           index = createFolds(y, 5),
-#                           allowParallel = TRUE) 
-
-#mod_list <- caretList(
-#  x = bev_train,
-#  y = y,
-#  preProcess = c('center', 'scale'),
-#  trControl = my_control,
-#  tuneList = tuning_list
-#)
-#final_ensemble <- caretStack(
-#  mod_list,
-#  method="glmnet",
-#  metric="RMSE",
-#  trControl=trainControl(
-#    method="cv",
-#    number=5,
-#    savePredictions="final"
-#  )
-#)
-#final_ensemble$ens_model$results %>% kable () %>% kable_styling(bootstrap_options = "striped", full_width = F)
-
-```
-
-***TODO:***
-With more data available, the ensemble improve around 6%. Our model is considerably more predictive than a “baseline” single model.
-
-Ensemble Model Importances
-***TODO:***
-
-```{r warning=FALSE, message=FALSE}
-#plot(varImp(final_ensemble$ens_model))
-```
-
-***TODO:***
-The MARS model is excluded, but all four tree models contribute the the final prediction
-
-Export Predictions
-***TODO:***
-
-```{r warning=FALSE, message=FALSE}
-#predictions <- predict(final_ensemble, bev_eval)
-#predictions %>% tibble::enframe(name = NULL) %>% datatable()
-```
-
-***TODO:***
-The MARS model is excluded, but all four tree models contribute the the final prediction
-
-Export Predictions
-***TODO:***
-
-```{r warning=FALSE, message=FALSE}
-#predictions <- predict(final_ensemble, bev_eval)
-#predictions %>% tibble::enframe(name = NULL) %>% datatable()
 ```
 
 
