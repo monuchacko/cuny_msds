@@ -4,7 +4,7 @@ author: "Abdelmalek Hajjam, Monu Chacko, Paul Perez"
 date: "5/22/2021"
 output:
   html_document:
-    toc: true
+    toc: false
     toc_float:
       collapsed: false
       smooth_scroll: false
@@ -888,11 +888,11 @@ We evaluated many linear, non-linear, tree based models using the historical dat
 
 # References
 
-- Github : https://github.com/monuchacko/cuny_msds/blob/master/data_624/project2.Rmd
+- Github : https://github.com/monuchacko/cuny_msds/blob/master/data_624/project2/project2.Rmd
 - RPubs: https://rpubs.com/monuchacko/772822
-- Prediction Results: https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/data/FinalResult.csv
+- Prediction Results: https://raw.githubusercontent.com/monuchacko/cuny_msds/master/data_624/project2/data/FinalResult.csv
 - Forecasting: Principles and Practice - 2nd edition: https://otexts.com/fpp2/
-- Executive Report: https://github.com/monuchacko/cuny_msds/blob/master/data_624/data/SummaryReport.pdf
+- Executive Report: https://github.com/monuchacko/cuny_msds/blob/master/data_624/project2/data/SummaryReport.pdf
 
 
 
